@@ -1,0 +1,88 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: var(--font-inter);
+  --font-heading: var(--font-sora);
+
+  --color-brand-orange: #f1591e;
+  --color-brand-orange-dark: #d6470f;
+  --color-brand-orange-light: #fdede7;
+  --color-brand-navy: #0f1b33;
+  --color-brand-navy-light: #1b2c4f;
+  --color-ink: #1a1a1a;
+  --color-muted: #6b7280;
+  --color-line: #e7e9ee;
+  --color-surface: #ffffff;
+  --color-surface-alt: #f7f8fa;
+  --color-success: #1a9e5c;
+  --color-success-light: #e8f7ef;
+  --color-danger: #d93636;
+  --color-danger-light: #fceaea;
+  --color-star: #fbbf24;
+}
+
+:root {
+  --background: var(--color-surface-alt);
+  --foreground: var(--color-ink);
+}
+
+* {
+  border-color: var(--color-line);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+h1, h2, h3, h4, .font-heading {
+  font-family: var(--font-heading), var(--font-sans), system-ui, sans-serif;
+}
+
+/* Phone-proportioned app shell: full-bleed on mobile, a framed column on
+   larger screens — the screens were designed as a mobile app, so this keeps
+   that intent instead of stretching everything edge to edge on desktop.
+   It's a fixed-height flex column so bottom nav stays put while
+   `.app-content` (the inner scroll area) scrolls independently. */
+.app-shell {
+  max-width: 480px;
+  margin-inline: auto;
+  height: 100dvh;
+  background: var(--color-surface);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.app-content {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (min-width: 480px) {
+  .app-shell {
+    box-shadow: 0 0 0 1px var(--color-line), 0 24px 64px -16px rgba(15, 27, 51, 0.18);
+    height: calc(100dvh - 2rem);
+    margin-block: 1rem;
+    border-radius: 28px;
+  }
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-up {
+  animation: fade-up 0.4s ease-out both;
+}

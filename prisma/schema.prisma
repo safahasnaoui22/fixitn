@@ -1,0 +1,221 @@
+// FixiTN — data model
+// NOTE on provider: this uses SQLite so the whole app runs with zero external
+// setup (npm install && npm run dev). Every field below was chosen to also be
+// valid on PostgreSQL — no native enums, since SQLite can't store them — so
+// moving to production is just: change `provider` to "postgresql" below, point
+// DATABASE_URL at your Postgres instance (Neon, Supabase, RDS...), and run
+// `npx prisma migrate deploy`. Nothing else changes.
+//
+// NOTE on runtime: this file is the real, full data model and the intended
+// long-term setup. The shipped app talks to SQLite through a hand-written
+// driver (src/lib/db) instead of a generated Prisma Client, only because the
+// sandbox this was built in can't reach Prisma's engine-binary CDN. Table and
+// column names below match src/lib/db/schema.sql 1:1, so running
+// `npx prisma generate` yourself (works fine outside this sandbox) and
+// swapping the import is a same-shape, low-risk migration whenever you want it.
+
+generator client {
+  provider   = "prisma-client"
+  output     = "../src/generated/prisma"
+  engineType = "client"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// --- People -----------------------------------------------------------
+
+// role is one of "CLIENT" | "TECHNICIAN" | "ADMIN" — see src/lib/constants.ts
+model User {
+  id           String   @id @default(cuid())
+  fullName     String
+  phone        String   @unique
+  email        String?  @unique
+  passwordHash String
+  role         String
+  city         String?
+  address      String?
+  avatarUrl    String?
+  createdAt    DateTime @default(now())
+
+  technician    Technician?
+  requestsMade  ServiceRequest[] @relation("ClientRequests")
+  messagesSent  Message[]
+  reviewsWritten Review[]
+  notifications Notification[]
+}
+
+// A Technician is always attached to a User (the account/login),
+// with the extra fields a tradesperson profile needs.
+model Technician {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title           String // e.g. "AC Technician", "Multi Services"
+  bio             String?
+  yearsExperience Int      @default(0)
+  startingPrice   Int      @default(0) // DT
+  latitude        Float    @default(36.8065)
+  longitude       Float    @default(10.1815)
+  verified        Boolean  @default(false)
+  galleryImages   String? // JSON-encoded string[] of image urls/data-urls
+  planId          String?
+  plan            Plan?    @relation(fields: [planId], references: [id])
+  createdAt       DateTime @default(now())
+
+  categories       Category[]
+  requestsReceived ServiceRequest[] @relation("TechnicianRequests")
+  reviews          Review[]         @relation("TechnicianReviews")
+  payments         Payment[]
+  subscriptions    Subscription[]
+}
+
+// --- Catalog ------------------------------------------------------------
+
+model Category {
+  id           String  @id @default(cuid())
+  slug         String  @unique
+  name         String
+  icon         String // lucide-react icon name, see CategoryIcon.tsx
+  color        String // hex used for the icon badge
+  description  String?
+  howItWorks   String? // JSON-encoded string[] of step copy
+  videoUrl     String?
+  ratingAvg    Float?
+  ratingCount  Int?
+  sortOrder    Int     @default(0)
+
+  technicians Technician[]
+  requests    ServiceRequest[]
+}
+
+// --- The booking lifecycle -----------------------------------------------
+
+// status is one of the JOB_STATUSES in src/lib/constants.ts:
+// PENDING -> ACCEPTED -> ON_THE_WAY -> ARRIVED -> IN_PROGRESS -> COMPLETED
+// or PENDING -> DECLINED, or any non-terminal -> CANCELLED
+model ServiceRequest {
+  id           String  @id @default(cuid())
+  clientId     String
+  client       User    @relation("ClientRequests", fields: [clientId], references: [id])
+  technicianId String
+  technician   Technician @relation("TechnicianRequests", fields: [technicianId], references: [id])
+  categoryId   String
+  category     Category @relation(fields: [categoryId], references: [id])
+
+  fullName    String // snapshotted at submission time
+  phone       String
+  address     String
+  latitude    Float?
+  longitude   Float?
+  description String
+  photos      String? // JSON-encoded string[] of data-urls
+
+  status                String  @default("PENDING")
+  clientConfirmedSolved Boolean?
+
+  pendingAt    DateTime  @default(now())
+  acceptedAt   DateTime?
+  onTheWayAt   DateTime?
+  arrivedAt    DateTime?
+  inProgressAt DateTime?
+  completedAt  DateTime?
+  declinedAt   DateTime?
+  cancelledAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  messages Message[]
+  review   Review?
+  payment  Payment?
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  requestId String
+  request   ServiceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  senderId  String
+  sender    User     @relation(fields: [senderId], references: [id])
+  body      String?
+  imageUrl  String? // data-url for a shared photo
+  createdAt DateTime @default(now())
+}
+
+model Review {
+  id           String  @id @default(cuid())
+  requestId    String  @unique
+  request      ServiceRequest @relation(fields: [requestId], references: [id])
+  technicianId String
+  technician   Technician @relation("TechnicianReviews", fields: [technicianId], references: [id])
+  authorId     String
+  author       User    @relation(fields: [authorId], references: [id])
+  rating       Int
+  comment      String?
+  createdAt    DateTime @default(now())
+}
+
+// --- Monetization ---------------------------------------------------------
+
+// key is one of "FREE" | "PRO_MONTHLY" | "PRO_YEARLY"
+model Plan {
+  id                 String  @id @default(cuid())
+  key                String  @unique
+  name               String
+  price              Int // DT, 0 for Free
+  billingCycle       String // "NONE" | "MONTHLY" | "YEARLY"
+  commissionRate     Float // e.g. 0.10 = platform keeps 10% of each job on this plan
+  maxRequestsPerMonth Int? // null = unlimited
+  priorityVisibility Boolean @default(false)
+  features           String // JSON-encoded string[] of bullet copy
+  badge              String? // e.g. "Save 34%"
+
+  technicians   Technician[]
+  subscriptions Subscription[]
+}
+
+model Subscription {
+  id           String   @id @default(cuid())
+  technicianId String
+  technician   Technician @relation(fields: [technicianId], references: [id])
+  planId       String
+  plan         Plan     @relation(fields: [planId], references: [id])
+  startedAt    DateTime @default(now())
+  expiresAt    DateTime?
+  status       String   @default("ACTIVE") // "ACTIVE" | "EXPIRED" | "CANCELLED"
+}
+
+// A unified ledger row: a job commission taken from a Free-plan technician,
+// a subscription charge, or a payout to the technician's wallet.
+// method is one of "D17" | "FLOUCI" | "BANK_TRANSFER" | "CASH"
+// type is one of "PAYOUT" | "COMMISSION" | "SUBSCRIPTION"
+model Payment {
+  id           String   @id @default(cuid())
+  technicianId String
+  technician   Technician @relation(fields: [technicianId], references: [id])
+  requestId    String?  @unique
+  request      ServiceRequest? @relation(fields: [requestId], references: [id])
+  amount       Int // gross DT
+  platformFee  Int @default(0)
+  method       String
+  status       String  @default("PAID") // "PAID" | "PENDING" | "FAILED"
+  type         String
+  createdAt    DateTime @default(now())
+}
+
+// --- Notifications ----------------------------------------------------------
+
+// type is one of NOTIFICATION_TYPES in src/lib/constants.ts
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  title     String
+  body      String?
+  requestId String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
