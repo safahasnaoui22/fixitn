@@ -7,22 +7,23 @@
  * Run with `npm run db:seed` (or `npm run db:reset` to wipe + reseed).
  * Every seeded account uses the password: password123
  */
-import { db, dbReady, genId } from "../src/lib/db/client";
-import { createUser } from "../src/lib/db/users";
-import { createTechnicianProfile } from "../src/lib/db/catalog";
-import { subscribeTechnicianToPlan } from "../src/lib/db/monetization";
-import {
-  createServiceRequest,
-  acceptRequest,
+
+
+
+
+import { createReview } from "./reviews";
+import { toStringArray } from "../utils";
+import { createUser } from "./users";
+import { createTechnicianProfile } from "./catalog";
+import { subscribeTechnicianToPlan } from "./monetization";
+import { createServiceRequest , acceptRequest,
   advanceStatus,
   markCompleted,
   confirmSolved,
   declineRequest,
   cancelRequest,
-  createMessage,
-} from "../src/lib/db/requests";
-import { createReview } from "../src/lib/db/reviews";
-import { toStringArray } from "../src/lib/utils";
+  createMessage, } from "./requests";
+import { dbReady , db,  genId } from "./client";
 
 const PASSWORD = "password123";
 const HOW_IT_WORKS = [

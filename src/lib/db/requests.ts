@@ -72,6 +72,108 @@ function mapMessage(row: Record<string, unknown>): MessageWithSender {
   };
 }
 
+export async function listChatsForUser(userId: string): Promise<
+  Array<{
+    requestId: string;
+    clientId: string;
+    technicianId: string;
+    status: JobStatus;
+
+    clientFullName: string;
+    clientAvatarUrl: string | null;
+
+    technicianFullName: string;
+    technicianAvatarUrl: string | null;
+
+    categoryName: string;
+    categoryIcon: string;
+    categoryColor: string;
+
+    lastMsg: string | null;
+    lastMsgAt: string | null;
+  }>
+> {
+  await dbReady;
+
+  const res = await db.execute({
+    sql: `
+      SELECT
+        sr.id                AS requestId,
+        sr.clientId,
+        sr.technicianId,
+        sr.status,
+
+        cu.fullName          AS clientFullName,
+        cu.avatarUrl         AS clientAvatarUrl,
+
+        tu.fullName          AS technicianFullName,
+        tu.avatarUrl         AS technicianAvatarUrl,
+
+        c.name               AS categoryName,
+        c.icon               AS categoryIcon,
+        c.color              AS categoryColor,
+
+        (
+          SELECT m.body
+          FROM Message m
+          WHERE m.requestId = sr.id
+          ORDER BY m.createdAt DESC
+          LIMIT 1
+        ) AS lastMsg,
+
+        (
+          SELECT m.createdAt
+          FROM Message m
+          WHERE m.requestId = sr.id
+          ORDER BY m.createdAt DESC
+          LIMIT 1
+        ) AS lastMsgAt
+
+      FROM ServiceRequest sr
+
+      JOIN Category c
+        ON c.id = sr.categoryId
+
+      JOIN Technician t
+        ON t.id = sr.technicianId
+
+      JOIN User tu
+        ON tu.id = t.userId
+
+      JOIN User cu
+        ON cu.id = sr.clientId
+
+      WHERE
+          sr.clientId = ?
+          OR tu.id = ?
+
+      ORDER BY COALESCE(lastMsgAt, sr.updatedAt) DESC
+    `,
+    args: [userId, userId],
+  });
+
+  return res.rows.map((row) => ({
+    requestId: row.requestId as string,
+    clientId: row.clientId as string,
+    technicianId: row.technicianId as string,
+    status: row.status as JobStatus,
+
+    clientFullName: row.clientFullName as string,
+    clientAvatarUrl: (row.clientAvatarUrl as string | null) ?? null,
+
+    technicianFullName: row.technicianFullName as string,
+    technicianAvatarUrl:
+      (row.technicianAvatarUrl as string | null) ?? null,
+
+    categoryName: row.categoryName as string,
+    categoryIcon: row.categoryIcon as string,
+    categoryColor: row.categoryColor as string,
+
+    lastMsg: (row.lastMsg as string | null) ?? null,
+    lastMsgAt: (row.lastMsgAt as string | null) ?? null,
+  }));
+}
+
 export async function getRequestById(id: string): Promise<ServiceRequestWithRelations | null> {
   await dbReady;
   const res = await db.execute({
