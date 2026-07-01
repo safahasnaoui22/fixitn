@@ -1,236 +1,94 @@
-import { db, dbReady, genId } from "./client";
+import { prisma } from "./client";
 import { createNotification } from "./notifications";
 import { parseStringArray, toStringArray } from "../utils";
 import type { JobStatus } from "../constants";
 import type { MessageWithSender, ServiceRequestWithRelations } from "../types";
 
-function now(): string {
-  return new Date().toISOString();
-}
+const REQUEST_INCLUDE = {
+  category: true,
+  technician: {
+    include: {
+      user: { select: { id: true, fullName: true, avatarUrl: true } },
+    },
+  },
+  client: { select: { id: true, fullName: true, avatarUrl: true } },
+} as const;
 
-const REQUEST_WITH_RELATIONS_SELECT = `
-  SELECT sr.*,
-    c.name as categoryName, c.icon as categoryIcon, c.color as categoryColor,
-    tu.id as technicianUserId, t.title as technicianTitle,
-    tu.fullName as technicianFullName, tu.avatarUrl as technicianAvatarUrl,
-    cu.fullName as clientFullName, cu.avatarUrl as clientAvatarUrl
-  FROM ServiceRequest sr
-  JOIN Category c ON c.id = sr.categoryId
-  JOIN Technician t ON t.id = sr.technicianId
-  JOIN User tu ON tu.id = t.userId
-  JOIN User cu ON cu.id = sr.clientId
-`;
-
-function mapRequest(row: Record<string, unknown>): ServiceRequestWithRelations {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapRequest(r: any): ServiceRequestWithRelations {
   return {
-    id: row.id as string,
-    clientId: row.clientId as string,
-    technicianId: row.technicianId as string,
-    categoryId: row.categoryId as string,
-    fullName: row.fullName as string,
-    phone: row.phone as string,
-    address: row.address as string,
-    latitude: (row.latitude as number | null) ?? null,
-    longitude: (row.longitude as number | null) ?? null,
-    description: row.description as string,
-    photos: parseStringArray(row.photos as string | null),
-    status: row.status as JobStatus,
-    clientConfirmedSolved:
-      row.clientConfirmedSolved == null ? null : Boolean(row.clientConfirmedSolved),
-    pendingAt: row.pendingAt as string,
-    acceptedAt: (row.acceptedAt as string | null) ?? null,
-    onTheWayAt: (row.onTheWayAt as string | null) ?? null,
-    arrivedAt: (row.arrivedAt as string | null) ?? null,
-    inProgressAt: (row.inProgressAt as string | null) ?? null,
-    completedAt: (row.completedAt as string | null) ?? null,
-    declinedAt: (row.declinedAt as string | null) ?? null,
-    cancelledAt: (row.cancelledAt as string | null) ?? null,
-    createdAt: row.createdAt as string,
-    updatedAt: row.updatedAt as string,
-    categoryName: row.categoryName as string,
-    categoryIcon: row.categoryIcon as string,
-    categoryColor: row.categoryColor as string,
-    technicianUserId: row.technicianUserId as string,
-    technicianTitle: row.technicianTitle as string,
-    technicianFullName: row.technicianFullName as string,
-    technicianAvatarUrl: (row.technicianAvatarUrl as string | null) ?? null,
-    clientFullName: row.clientFullName as string,
-    clientAvatarUrl: (row.clientAvatarUrl as string | null) ?? null,
+    id: r.id,
+    clientId: r.clientId,
+    technicianId: r.technicianId,
+    categoryId: r.categoryId,
+    fullName: r.fullName,
+    phone: r.phone,
+    address: r.address,
+    latitude: r.latitude,
+    longitude: r.longitude,
+    description: r.description,
+    photos: parseStringArray(r.photos),
+    status: r.status as JobStatus,
+    clientConfirmedSolved: r.clientConfirmedSolved,
+    pendingAt: r.pendingAt instanceof Date ? r.pendingAt.toISOString() : r.pendingAt,
+    acceptedAt: r.acceptedAt ? (r.acceptedAt instanceof Date ? r.acceptedAt.toISOString() : r.acceptedAt) : null,
+    onTheWayAt: r.onTheWayAt ? (r.onTheWayAt instanceof Date ? r.onTheWayAt.toISOString() : r.onTheWayAt) : null,
+    arrivedAt: r.arrivedAt ? (r.arrivedAt instanceof Date ? r.arrivedAt.toISOString() : r.arrivedAt) : null,
+    inProgressAt: r.inProgressAt ? (r.inProgressAt instanceof Date ? r.inProgressAt.toISOString() : r.inProgressAt) : null,
+    completedAt: r.completedAt ? (r.completedAt instanceof Date ? r.completedAt.toISOString() : r.completedAt) : null,
+    declinedAt: r.declinedAt ? (r.declinedAt instanceof Date ? r.declinedAt.toISOString() : r.declinedAt) : null,
+    cancelledAt: r.cancelledAt ? (r.cancelledAt instanceof Date ? r.cancelledAt.toISOString() : r.cancelledAt) : null,
+    createdAt: r.createdAt instanceof Date ? r.createdAt.toISOString() : r.createdAt,
+    updatedAt: r.updatedAt instanceof Date ? r.updatedAt.toISOString() : r.updatedAt,
+    categoryName: r.category.name,
+    categoryIcon: r.category.icon,
+    categoryColor: r.category.color,
+    technicianUserId: r.technician.userId,
+    technicianTitle: r.technician.title,
+    technicianFullName: r.technician.user.fullName,
+    technicianAvatarUrl: r.technician.user.avatarUrl,
+    clientFullName: r.client.fullName,
+    clientAvatarUrl: r.client.avatarUrl,
   };
-}
-
-function mapMessage(row: Record<string, unknown>): MessageWithSender {
-  return {
-    id: row.id as string,
-    requestId: row.requestId as string,
-    senderId: row.senderId as string,
-    body: (row.body as string | null) ?? null,
-    imageUrl: (row.imageUrl as string | null) ?? null,
-    createdAt: row.createdAt as string,
-    senderFullName: row.senderFullName as string,
-    senderAvatarUrl: (row.senderAvatarUrl as string | null) ?? null,
-  };
-}
-
-export async function listChatsForUser(userId: string): Promise<
-  Array<{
-    requestId: string;
-    clientId: string;
-    technicianId: string;
-    status: JobStatus;
-
-    clientFullName: string;
-    clientAvatarUrl: string | null;
-
-    technicianFullName: string;
-    technicianAvatarUrl: string | null;
-
-    categoryName: string;
-    categoryIcon: string;
-    categoryColor: string;
-
-    lastMsg: string | null;
-    lastMsgAt: string | null;
-  }>
-> {
-  await dbReady;
-
-  const res = await db.execute({
-    sql: `
-      SELECT
-        sr.id                AS requestId,
-        sr.clientId,
-        sr.technicianId,
-        sr.status,
-
-        cu.fullName          AS clientFullName,
-        cu.avatarUrl         AS clientAvatarUrl,
-
-        tu.fullName          AS technicianFullName,
-        tu.avatarUrl         AS technicianAvatarUrl,
-
-        c.name               AS categoryName,
-        c.icon               AS categoryIcon,
-        c.color              AS categoryColor,
-
-        (
-          SELECT m.body
-          FROM Message m
-          WHERE m.requestId = sr.id
-          ORDER BY m.createdAt DESC
-          LIMIT 1
-        ) AS lastMsg,
-
-        (
-          SELECT m.createdAt
-          FROM Message m
-          WHERE m.requestId = sr.id
-          ORDER BY m.createdAt DESC
-          LIMIT 1
-        ) AS lastMsgAt
-
-      FROM ServiceRequest sr
-
-      JOIN Category c
-        ON c.id = sr.categoryId
-
-      JOIN Technician t
-        ON t.id = sr.technicianId
-
-      JOIN User tu
-        ON tu.id = t.userId
-
-      JOIN User cu
-        ON cu.id = sr.clientId
-
-      WHERE
-          sr.clientId = ?
-          OR tu.id = ?
-
-      ORDER BY COALESCE(lastMsgAt, sr.updatedAt) DESC
-    `,
-    args: [userId, userId],
-  });
-
-  return res.rows.map((row) => ({
-    requestId: row.requestId as string,
-    clientId: row.clientId as string,
-    technicianId: row.technicianId as string,
-    status: row.status as JobStatus,
-
-    clientFullName: row.clientFullName as string,
-    clientAvatarUrl: (row.clientAvatarUrl as string | null) ?? null,
-
-    technicianFullName: row.technicianFullName as string,
-    technicianAvatarUrl:
-      (row.technicianAvatarUrl as string | null) ?? null,
-
-    categoryName: row.categoryName as string,
-    categoryIcon: row.categoryIcon as string,
-    categoryColor: row.categoryColor as string,
-
-    lastMsg: (row.lastMsg as string | null) ?? null,
-    lastMsgAt: (row.lastMsgAt as string | null) ?? null,
-  }));
 }
 
 export async function getRequestById(id: string): Promise<ServiceRequestWithRelations | null> {
-  await dbReady;
-  const res = await db.execute({
-    sql: `${REQUEST_WITH_RELATIONS_SELECT} WHERE sr.id = ?`,
-    args: [id],
-  });
-  const row = res.rows[0];
-  return row ? mapRequest(row as unknown as Record<string, unknown>) : null;
+  const r = await prisma.serviceRequest.findUnique({ where: { id }, include: REQUEST_INCLUDE });
+  return r ? mapRequest(r) : null;
 }
 
-export async function listRequestsForClient(
-  clientId: string
-): Promise<ServiceRequestWithRelations[]> {
-  await dbReady;
-  const res = await db.execute({
-    sql: `${REQUEST_WITH_RELATIONS_SELECT} WHERE sr.clientId = ? ORDER BY sr.createdAt DESC`,
-    args: [clientId],
+export async function listRequestsForClient(clientId: string): Promise<ServiceRequestWithRelations[]> {
+  const rows = await prisma.serviceRequest.findMany({
+    where: { clientId },
+    include: REQUEST_INCLUDE,
+    orderBy: { createdAt: "desc" },
   });
-  return res.rows.map((r) => mapRequest(r as unknown as Record<string, unknown>));
+  return rows.map(mapRequest);
 }
 
 export async function listRequestsForTechnician(
   technicianId: string,
   status?: JobStatus[]
 ): Promise<ServiceRequestWithRelations[]> {
-  await dbReady;
-  if (!status || status.length === 0) {
-    const res = await db.execute({
-      sql: `${REQUEST_WITH_RELATIONS_SELECT} WHERE sr.technicianId = ? ORDER BY sr.createdAt DESC`,
-      args: [technicianId],
-    });
-    return res.rows.map((r) => mapRequest(r as unknown as Record<string, unknown>));
-  }
-  const placeholders = status.map(() => "?").join(", ");
-  const res = await db.execute({
-    sql: `${REQUEST_WITH_RELATIONS_SELECT} WHERE sr.technicianId = ? AND sr.status IN (${placeholders}) ORDER BY sr.createdAt DESC`,
-    args: [technicianId, ...status],
+  const rows = await prisma.serviceRequest.findMany({
+    where: {
+      technicianId,
+      ...(status && status.length > 0 ? { status: { in: status } } : {}),
+    },
+    include: REQUEST_INCLUDE,
+    orderBy: { createdAt: "desc" },
   });
-  return res.rows.map((r) => mapRequest(r as unknown as Record<string, unknown>));
+  return rows.map(mapRequest);
 }
 
 export async function getRequestParties(
   requestId: string
 ): Promise<{ clientUserId: string; technicianUserId: string } | null> {
-  await dbReady;
-  const res = await db.execute({
-    sql: `SELECT sr.clientId as clientUserId, tu.id as technicianUserId
-          FROM ServiceRequest sr
-          JOIN Technician t ON t.id = sr.technicianId
-          JOIN User tu ON tu.id = t.userId
-          WHERE sr.id = ?`,
-    args: [requestId],
+  const r = await prisma.serviceRequest.findUnique({
+    where: { id: requestId },
+    select: { clientId: true, technician: { select: { userId: true } } },
   });
-  const row = res.rows[0];
-  return row
-    ? { clientUserId: row.clientUserId as string, technicianUserId: row.technicianUserId as string }
-    : null;
+  return r ? { clientUserId: r.clientId, technicianUserId: r.technician.userId } : null;
 }
 
 export async function createServiceRequest(input: {
@@ -245,55 +103,38 @@ export async function createServiceRequest(input: {
   description: string;
   photos: string[];
 }): Promise<string> {
-  await dbReady;
-  const id = genId();
-  const ts = now();
-  await db.execute({
-    sql: `INSERT INTO ServiceRequest
-      (id, clientId, technicianId, categoryId, fullName, phone, address, latitude, longitude,
-       description, photos, status, pendingAt, createdAt, updatedAt)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING', ?, ?, ?)`,
-    args: [
-      id,
-      input.clientId,
-      input.technicianId,
-      input.categoryId,
-      input.fullName,
-      input.phone,
-      input.address,
-      input.latitude ?? null,
-      input.longitude ?? null,
-      input.description,
-      toStringArray(input.photos),
-      ts,
-      ts,
-      ts,
-    ],
+  const req = await prisma.serviceRequest.create({
+    data: {
+      clientId: input.clientId,
+      technicianId: input.technicianId,
+      categoryId: input.categoryId,
+      fullName: input.fullName,
+      phone: input.phone,
+      address: input.address,
+      latitude: input.latitude ?? null,
+      longitude: input.longitude ?? null,
+      description: input.description,
+      photos: toStringArray(input.photos),
+      status: "PENDING",
+    },
+    select: { id: true, technician: { select: { userId: true } } },
   });
 
-  const techRes = await db.execute({
-    sql: "SELECT userId FROM Technician WHERE id = ?",
-    args: [input.technicianId],
+  await createNotification({
+    userId: req.technician.userId,
+    type: "NEW_REQUEST",
+    title: "New service request",
+    body: input.description.slice(0, 80),
+    requestId: req.id,
   });
-  const technicianUserId = techRes.rows[0]?.userId as string | undefined;
-  if (technicianUserId) {
-    await createNotification({
-      userId: technicianUserId,
-      type: "NEW_REQUEST",
-      title: "New service request",
-      body: input.description.slice(0, 80),
-      requestId: id,
-    });
-  }
-  return id;
+
+  return req.id;
 }
 
 export async function acceptRequest(requestId: string): Promise<void> {
-  await dbReady;
-  const ts = now();
-  await db.execute({
-    sql: "UPDATE ServiceRequest SET status = 'ACCEPTED', acceptedAt = ?, updatedAt = ? WHERE id = ? AND status = 'PENDING'",
-    args: [ts, ts, requestId],
+  await prisma.serviceRequest.updateMany({
+    where: { id: requestId, status: "PENDING" },
+    data: { status: "ACCEPTED", acceptedAt: new Date() },
   });
   const parties = await getRequestParties(requestId);
   if (parties) {
@@ -307,11 +148,9 @@ export async function acceptRequest(requestId: string): Promise<void> {
 }
 
 export async function declineRequest(requestId: string): Promise<void> {
-  await dbReady;
-  const ts = now();
-  await db.execute({
-    sql: "UPDATE ServiceRequest SET status = 'DECLINED', declinedAt = ?, updatedAt = ? WHERE id = ? AND status = 'PENDING'",
-    args: [ts, ts, requestId],
+  await prisma.serviceRequest.updateMany({
+    where: { id: requestId, status: "PENDING" },
+    data: { status: "DECLINED", declinedAt: new Date() },
   });
   const parties = await getRequestParties(requestId);
   if (parties) {
@@ -326,31 +165,25 @@ export async function declineRequest(requestId: string): Promise<void> {
 }
 
 export async function cancelRequest(requestId: string): Promise<void> {
-  await dbReady;
-  const ts = now();
-  await db.execute({
-    sql: "UPDATE ServiceRequest SET status = 'CANCELLED', cancelledAt = ?, updatedAt = ? WHERE id = ? AND status = 'PENDING'",
-    args: [ts, ts, requestId],
+  await prisma.serviceRequest.updateMany({
+    where: { id: requestId, status: "PENDING" },
+    data: { status: "CANCELLED", cancelledAt: new Date() },
   });
 }
 
-const STATUS_TIMESTAMP_COLUMN: Partial<Record<JobStatus, string>> = {
+const STATUS_TIMESTAMP: Record<string, string> = {
   ON_THE_WAY: "onTheWayAt",
   ARRIVED: "arrivedAt",
   IN_PROGRESS: "inProgressAt",
 };
 
-/** For the non-terminal middle statuses only — completion goes through markCompleted. */
 export async function advanceStatus(
   requestId: string,
   toStatus: "ON_THE_WAY" | "ARRIVED" | "IN_PROGRESS"
 ): Promise<void> {
-  await dbReady;
-  const ts = now();
-  const column = STATUS_TIMESTAMP_COLUMN[toStatus];
-  await db.execute({
-    sql: `UPDATE ServiceRequest SET status = ?, ${column} = ?, updatedAt = ? WHERE id = ?`,
-    args: [toStatus, ts, ts, requestId],
+  await prisma.serviceRequest.update({
+    where: { id: requestId },
+    data: { status: toStatus, [STATUS_TIMESTAMP[toStatus]]: new Date() },
   });
   const parties = await getRequestParties(requestId);
   if (parties) {
@@ -364,34 +197,38 @@ export async function advanceStatus(
 }
 
 export async function markCompleted(requestId: string): Promise<void> {
-  await dbReady;
-  const reqRes = await db.execute({
-    sql: "SELECT technicianId FROM ServiceRequest WHERE id = ?",
-    args: [requestId],
+  const req = await prisma.serviceRequest.findUnique({
+    where: { id: requestId },
+    select: { technicianId: true },
   });
-  const technicianId = reqRes.rows[0]?.technicianId as string | undefined;
-  if (!technicianId) return;
+  if (!req) return;
 
-  const techRes = await db.execute({
-    sql: `SELECT t.startingPrice as startingPrice, COALESCE(p.commissionRate, 0.15) as commissionRate
-          FROM Technician t LEFT JOIN Plan p ON p.id = t.planId WHERE t.id = ?`,
-    args: [technicianId],
+  const tech = await prisma.technician.findUnique({
+    where: { id: req.technicianId },
+    select: { startingPrice: true, plan: { select: { commissionRate: true } } },
   });
-  const startingPrice = Number(techRes.rows[0]?.startingPrice ?? 0);
-  const commissionRate = Number(techRes.rows[0]?.commissionRate ?? 0.15);
-  const amount = startingPrice > 0 ? startingPrice : 40;
+
+  const commissionRate = tech?.plan?.commissionRate ?? 0.15;
+  const amount = (tech?.startingPrice ?? 0) > 0 ? tech!.startingPrice : 40;
   const platformFee = Math.round(amount * commissionRate);
 
-  const ts = now();
-  await db.execute({
-    sql: "UPDATE ServiceRequest SET status = 'COMPLETED', completedAt = ?, updatedAt = ? WHERE id = ?",
-    args: [ts, ts, requestId],
-  });
-  await db.execute({
-    sql: `INSERT INTO Payment (id, technicianId, requestId, amount, platformFee, method, status, type, createdAt)
-          VALUES (?, ?, ?, ?, ?, 'D17', 'PAID', 'PAYOUT', ?)`,
-    args: [genId(), technicianId, requestId, amount, platformFee, ts],
-  });
+  await prisma.$transaction([
+    prisma.serviceRequest.update({
+      where: { id: requestId },
+      data: { status: "COMPLETED", completedAt: new Date() },
+    }),
+    prisma.payment.create({
+      data: {
+        technicianId: req.technicianId,
+        requestId,
+        amount,
+        platformFee,
+        method: "D17",
+        status: "PAID",
+        type: "PAYOUT",
+      },
+    }),
+  ]);
 
   const parties = await getRequestParties(requestId);
   if (parties) {
@@ -406,41 +243,53 @@ export async function markCompleted(requestId: string): Promise<void> {
 }
 
 export async function confirmSolved(requestId: string, solved: boolean): Promise<void> {
-  await dbReady;
-  await db.execute({
-    sql: "UPDATE ServiceRequest SET clientConfirmedSolved = ? WHERE id = ?",
-    args: [solved ? 1 : 0, requestId],
+  await prisma.serviceRequest.update({
+    where: { id: requestId },
+    data: { clientConfirmedSolved: solved },
   });
 }
 
 export async function getTechnicianDashboardStats(
   technicianId: string
 ): Promise<{ newToday: number; inProgress: number }> {
-  await dbReady;
-  const res = await db.execute({
-    sql: `SELECT
-            SUM(CASE WHEN date(createdAt) = date('now') AND status = 'PENDING' THEN 1 ELSE 0 END) as newToday,
-            SUM(CASE WHEN status IN ('ACCEPTED','ON_THE_WAY','ARRIVED','IN_PROGRESS') THEN 1 ELSE 0 END) as inProgress
-          FROM ServiceRequest WHERE technicianId = ?`,
-    args: [technicianId],
-  });
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const [newToday, inProgress] = await Promise.all([
+    prisma.serviceRequest.count({
+      where: { technicianId, status: "PENDING", createdAt: { gte: today } },
+    }),
+    prisma.serviceRequest.count({
+      where: { technicianId, status: { in: ["ACCEPTED", "ON_THE_WAY", "ARRIVED", "IN_PROGRESS"] } },
+    }),
+  ]);
+
+  return { newToday, inProgress };
+}
+
+// --- Messages -----------------------------------------------------------
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapMessage(m: any): MessageWithSender {
   return {
-    newToday: Number(res.rows[0]?.newToday ?? 0),
-    inProgress: Number(res.rows[0]?.inProgress ?? 0),
+    id: m.id,
+    requestId: m.requestId,
+    senderId: m.senderId,
+    body: m.body,
+    imageUrl: m.imageUrl,
+    createdAt: m.createdAt instanceof Date ? m.createdAt.toISOString() : m.createdAt,
+    senderFullName: m.sender.fullName,
+    senderAvatarUrl: m.sender.avatarUrl,
   };
 }
 
-// --- Messages -------------------------------------------------------------
-
 export async function listMessages(requestId: string): Promise<MessageWithSender[]> {
-  await dbReady;
-  const res = await db.execute({
-    sql: `SELECT m.*, u.fullName as senderFullName, u.avatarUrl as senderAvatarUrl
-          FROM Message m JOIN User u ON u.id = m.senderId
-          WHERE m.requestId = ? ORDER BY m.createdAt ASC`,
-    args: [requestId],
+  const messages = await prisma.message.findMany({
+    where: { requestId },
+    include: { sender: { select: { fullName: true, avatarUrl: true } } },
+    orderBy: { createdAt: "asc" },
   });
-  return res.rows.map((r) => mapMessage(r as unknown as Record<string, unknown>));
+  return messages.map(mapMessage);
 }
 
 export async function createMessage(input: {
@@ -449,16 +298,21 @@ export async function createMessage(input: {
   body?: string | null;
   imageUrl?: string | null;
 }): Promise<void> {
-  await dbReady;
-  const ts = now();
-  await db.execute({
-    sql: `INSERT INTO Message (id, requestId, senderId, body, imageUrl, createdAt) VALUES (?, ?, ?, ?, ?, ?)`,
-    args: [genId(), input.requestId, input.senderId, input.body ?? null, input.imageUrl ?? null, ts],
+  await prisma.message.create({
+    data: {
+      requestId: input.requestId,
+      senderId: input.senderId,
+      body: input.body ?? null,
+      imageUrl: input.imageUrl ?? null,
+    },
   });
+
   const parties = await getRequestParties(input.requestId);
   if (parties) {
     const recipient =
-      input.senderId === parties.clientUserId ? parties.technicianUserId : parties.clientUserId;
+      input.senderId === parties.clientUserId
+        ? parties.technicianUserId
+        : parties.clientUserId;
     await createNotification({
       userId: recipient,
       type: "NEW_MESSAGE",
@@ -467,4 +321,74 @@ export async function createMessage(input: {
       requestId: input.requestId,
     });
   }
+}
+
+// --- Chat inbox ---------------------------------------------------------
+
+export interface ChatSummary {
+  requestId: string;
+  status: string;
+  categoryName: string;
+  categoryIcon: string;
+  categoryColor: string;
+  technicianFullName: string;
+  technicianAvatarUrl: string | null;
+  clientFullName: string;
+  clientAvatarUrl: string | null;
+  clientId: string;
+  technicianUserId: string;
+  lastMsg: string | null;
+  lastMsgAt: string | null;
+}
+
+export async function listChatsForUser(userId: string): Promise<ChatSummary[]> {
+  type RawRow = {
+    requestId: string;
+    status: string;
+    categoryName: string;
+    categoryIcon: string;
+    categoryColor: string;
+    technicianFullName: string;
+    technicianAvatarUrl: string | null;
+    clientFullName: string;
+    clientAvatarUrl: string | null;
+    clientId: string;
+    technicianUserId: string;
+    lastMsg: string | null;
+    lastMsgAt: Date | string | null;
+  };
+
+  const rows = await prisma.$queryRaw<RawRow[]>`
+    SELECT
+      sr.id                                                                  AS "requestId",
+      sr.status,
+      c.name                                                                 AS "categoryName",
+      c.icon                                                                 AS "categoryIcon",
+      c.color                                                                AS "categoryColor",
+      tu."fullName"                                                          AS "technicianFullName",
+      tu."avatarUrl"                                                         AS "technicianAvatarUrl",
+      cu."fullName"                                                          AS "clientFullName",
+      cu."avatarUrl"                                                         AS "clientAvatarUrl",
+      sr."clientId",
+      tu.id                                                                  AS "technicianUserId",
+      (SELECT m.body       FROM "Message" m WHERE m."requestId" = sr.id ORDER BY m."createdAt" DESC LIMIT 1) AS "lastMsg",
+      (SELECT m."createdAt" FROM "Message" m WHERE m."requestId" = sr.id ORDER BY m."createdAt" DESC LIMIT 1) AS "lastMsgAt"
+    FROM "ServiceRequest" sr
+    JOIN "Category"    c  ON c.id   = sr."categoryId"
+    JOIN "Technician"  t  ON t.id   = sr."technicianId"
+    JOIN "User"        tu ON tu.id  = t."userId"
+    JOIN "User"        cu ON cu.id  = sr."clientId"
+    WHERE (sr."clientId" = ${userId} OR tu.id = ${userId})
+      AND EXISTS (SELECT 1 FROM "Message" m WHERE m."requestId" = sr.id)
+    ORDER BY "lastMsgAt" DESC NULLS LAST
+  `;
+
+  return rows.map((r) => ({
+    ...r,
+    lastMsgAt: r.lastMsgAt
+      ? r.lastMsgAt instanceof Date
+        ? r.lastMsgAt.toISOString()
+        : String(r.lastMsgAt)
+      : null,
+  }));
 }

@@ -1,35 +1,36 @@
-import { db, dbReady, genId } from "./client";
+import { prisma } from "./client";
 import { hashPassword } from "../auth";
 import type { Role } from "../constants";
 import type { User, PublicUser } from "../types";
 
-function now(): string {
-  return new Date().toISOString();
-}
-
-function toPublicUser(user: User): PublicUser {
-  const { passwordHash: _passwordHash, ...rest } = user;
-  return rest;
+function mapUser(u: {
+  id: string; fullName: string; phone: string; email: string | null;
+  passwordHash: string; role: string; city: string | null;
+  address: string | null; avatarUrl: string | null; createdAt: Date;
+}): User {
+  return { ...u, role: u.role as Role, createdAt: u.createdAt.toISOString() };
 }
 
 export async function findUserByPhone(phone: string): Promise<User | null> {
-  await dbReady;
-  const res = await db.execute({
-    sql: "SELECT * FROM User WHERE phone = ?",
-    args: [phone],
-  });
-  return (res.rows[0] as unknown as User) ?? null;
+  const u = await prisma.user.findUnique({ where: { phone } });
+  return u ? mapUser(u) : null;
 }
 
 export async function findUserById(id: string): Promise<User | null> {
-  await dbReady;
-  const res = await db.execute({ sql: "SELECT * FROM User WHERE id = ?", args: [id] });
-  return (res.rows[0] as unknown as User) ?? null;
+  const u = await prisma.user.findUnique({ where: { id } });
+  return u ? mapUser(u) : null;
 }
 
 export async function getPublicUserById(id: string): Promise<PublicUser | null> {
-  const user = await findUserById(id);
-  return user ? toPublicUser(user) : null;
+  const u = await prisma.user.findUnique({
+    where: { id },
+    select: {
+      id: true, fullName: true, phone: true, email: true,
+      role: true, city: true, address: true, avatarUrl: true, createdAt: true,
+    },
+  });
+  if (!u) return null;
+  return { ...u, role: u.role as Role, createdAt: u.createdAt.toISOString() };
 }
 
 export async function createUser(input: {
@@ -41,43 +42,21 @@ export async function createUser(input: {
   city?: string | null;
   address?: string | null;
 }): Promise<User> {
-  await dbReady;
-  const id = genId();
   const passwordHash = await hashPassword(input.password);
-  const createdAt = now();
-  await db.execute({
-    sql: `INSERT INTO User (id, fullName, phone, email, passwordHash, role, city, address, avatarUrl, createdAt)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, ?)`,
-    args: [
-      id,
-      input.fullName,
-      input.phone,
-      input.email ?? null,
+  const u = await prisma.user.create({
+    data: {
+      fullName: input.fullName,
+      phone: input.phone,
+      email: input.email ?? null,
       passwordHash,
-      input.role,
-      input.city ?? null,
-      input.address ?? null,
-      createdAt,
-    ],
+      role: input.role,
+      city: input.city ?? null,
+      address: input.address ?? null,
+    },
   });
-  return {
-    id,
-    fullName: input.fullName,
-    phone: input.phone,
-    email: input.email ?? null,
-    passwordHash,
-    role: input.role,
-    city: input.city ?? null,
-    address: input.address ?? null,
-    avatarUrl: null,
-    createdAt,
-  };
+  return mapUser(u);
 }
 
 export async function updateUserAvatar(userId: string, avatarUrl: string): Promise<void> {
-  await dbReady;
-  await db.execute({
-    sql: "UPDATE User SET avatarUrl = ? WHERE id = ?",
-    args: [avatarUrl, userId],
-  });
+  await prisma.user.update({ where: { id: userId }, data: { avatarUrl } });
 }

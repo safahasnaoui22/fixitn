@@ -1,22 +1,29 @@
-import { db, dbReady } from "../db/client";
+import { prisma } from "./client";
+
+// --- Dashboard stats ------------------------------------------------------
 
 export async function getAdminStats() {
-  await dbReady;
-  const [users, techs, reqs, revenue, disputes] = await Promise.all([
-    db.execute("SELECT COUNT(*) as n FROM User WHERE role = 'CLIENT'"),
-    db.execute("SELECT COUNT(*) as n FROM Technician"),
-    db.execute("SELECT COUNT(*) as n FROM ServiceRequest WHERE date(createdAt) = date('now')"),
-    db.execute("SELECT COALESCE(SUM(platformFee),0) as total FROM Payment WHERE type='PAYOUT'"),
-    db.execute("SELECT COUNT(*) as n FROM ServiceRequest WHERE status='COMPLETED' AND clientConfirmedSolved=0"),
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const [totalClients, totalTechnicians, jobsToday, revenueAgg, disputes] = await Promise.all([
+    prisma.user.count({ where: { role: "CLIENT" } }),
+    prisma.technician.count(),
+    prisma.serviceRequest.count({ where: { createdAt: { gte: today } } }),
+    prisma.payment.aggregate({ where: { type: "PAYOUT" }, _sum: { platformFee: true } }),
+    prisma.serviceRequest.count({ where: { status: "COMPLETED", clientConfirmedSolved: false } }),
   ]);
+
   return {
-    totalClients: Number(users.rows[0].n),
-    totalTechnicians: Number(techs.rows[0].n),
-    jobsToday: Number(reqs.rows[0].n),
-    totalRevenue: Number(revenue.rows[0].total),
-    disputes: Number(disputes.rows[0].n),
+    totalClients,
+    totalTechnicians,
+    jobsToday,
+    totalRevenue: revenueAgg._sum.platformFee ?? 0,
+    disputes,
   };
 }
+
+// --- Users -----------------------------------------------------------------
 
 export interface AdminUser {
   id: string;
@@ -31,70 +38,62 @@ export interface AdminUser {
 }
 
 export async function listAdminUsers(role?: string): Promise<AdminUser[]> {
-  await dbReady;
-  const sql = role
-    ? `SELECT u.*,
-         CASE WHEN u.role='CLIENT'
-           THEN (SELECT COUNT(*) FROM ServiceRequest WHERE clientId=u.id)
-           ELSE (SELECT COUNT(*) FROM ServiceRequest sr JOIN Technician t ON t.id=sr.technicianId WHERE t.userId=u.id)
-         END as jobCount
-       FROM User u WHERE u.role=? ORDER BY u.createdAt DESC`
-    : `SELECT u.*,
-         CASE WHEN u.role='CLIENT'
-           THEN (SELECT COUNT(*) FROM ServiceRequest WHERE clientId=u.id)
-           ELSE (SELECT COUNT(*) FROM ServiceRequest sr JOIN Technician t ON t.id=sr.technicianId WHERE t.userId=u.id)
-         END as jobCount
-       FROM User u ORDER BY u.createdAt DESC`;
-  const res = await db.execute({ sql, args: role ? [role] : [] });
-  return res.rows.map((r) => ({
-    id: r.id as string,
-    fullName: r.fullName as string,
-    phone: r.phone as string,
-    email: (r.email as string | null) ?? null,
-    role: r.role as string,
-    city: (r.city as string | null) ?? null,
-    avatarUrl: (r.avatarUrl as string | null) ?? null,
-    createdAt: r.createdAt as string,
-    jobCount: Number(r.jobCount ?? 0),
+  const users = await prisma.user.findMany({
+    where: role ? { role } : undefined,
+    include: {
+      _count: { select: { requestsMade: true } },
+      technician: { include: { _count: { select: { requestsReceived: true } } } },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return users.map((u) => ({
+    id: u.id,
+    fullName: u.fullName,
+    phone: u.phone,
+    email: u.email,
+    role: u.role,
+    city: u.city,
+    avatarUrl: u.avatarUrl,
+    createdAt: u.createdAt.toISOString(),
+    jobCount: u.role === "CLIENT" ? u._count.requestsMade : (u.technician?._count.requestsReceived ?? 0),
   }));
 }
 
 export async function getAdminUserDetail(userId: string) {
-  await dbReady;
-  const [userRes, recentReqs] = await Promise.all([
-    db.execute({ sql: "SELECT * FROM User WHERE id=?", args: [userId] }),
-    db.execute({
-      sql: `SELECT sr.id, sr.status, sr.createdAt, c.name as categoryName
-            FROM ServiceRequest sr
-            JOIN Category c ON c.id=sr.categoryId
-            WHERE sr.clientId=? ORDER BY sr.createdAt DESC LIMIT 10`,
-      args: [userId],
-    }),
-  ]);
-  const user = userRes.rows[0];
+  const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) return null;
+
+  const recentRequests = await prisma.serviceRequest.findMany({
+    where: { clientId: userId },
+    include: { category: { select: { name: true } } },
+    orderBy: { createdAt: "desc" },
+    take: 10,
+  });
+
   return {
-    id: user.id as string,
-    fullName: user.fullName as string,
-    phone: user.phone as string,
-    email: (user.email as string | null) ?? null,
-    role: user.role as string,
-    city: (user.city as string | null) ?? null,
-    avatarUrl: (user.avatarUrl as string | null) ?? null,
-    createdAt: user.createdAt as string,
-    recentRequests: recentReqs.rows.map((r) => ({
-      id: r.id as string,
-      status: r.status as string,
-      createdAt: r.createdAt as string,
-      categoryName: r.categoryName as string,
+    id: user.id,
+    fullName: user.fullName,
+    phone: user.phone,
+    email: user.email,
+    role: user.role,
+    city: user.city,
+    avatarUrl: user.avatarUrl,
+    createdAt: user.createdAt.toISOString(),
+    recentRequests: recentRequests.map((r) => ({
+      id: r.id,
+      status: r.status,
+      createdAt: r.createdAt.toISOString(),
+      categoryName: r.category.name,
     })),
   };
 }
 
 export async function deleteUser(userId: string): Promise<void> {
-  await dbReady;
-  await db.execute({ sql: "DELETE FROM User WHERE id=?", args: [userId] });
+  await prisma.user.delete({ where: { id: userId } });
 }
+
+// --- Technicians -------------------------------------------------------
 
 export interface AdminTechnician {
   id: string;
@@ -114,97 +113,97 @@ export interface AdminTechnician {
 }
 
 export async function listAdminTechnicians(): Promise<AdminTechnician[]> {
-  await dbReady;
-  const res = await db.execute(`
-    SELECT t.*, u.fullName, u.phone, u.avatarUrl, u.city,
-      p.key as planKey,
-      (SELECT AVG(rating) FROM Review WHERE technicianId=t.id) as ratingAvg,
-      (SELECT COUNT(*) FROM Review WHERE technicianId=t.id) as ratingCount,
-      (SELECT COUNT(*) FROM ServiceRequest WHERE technicianId=t.id AND status='COMPLETED') as jobsCompleted
-    FROM Technician t
-    JOIN User u ON u.id=t.userId
-    LEFT JOIN Plan p ON p.id=t.planId
-    ORDER BY t.createdAt DESC
-  `);
-  return res.rows.map((r) => ({
-    id: r.id as string,
-    userId: r.userId as string,
-    fullName: r.fullName as string,
-    phone: r.phone as string,
-    avatarUrl: (r.avatarUrl as string | null) ?? null,
-    title: r.title as string,
-    city: (r.city as string | null) ?? null,
-    verified: Boolean(r.verified),
-    planKey: (r.planKey as string | null) ?? null,
-    startingPrice: r.startingPrice as number,
-    ratingAvg: r.ratingAvg == null ? null : Number(r.ratingAvg),
-    ratingCount: Number(r.ratingCount ?? 0),
-    jobsCompleted: Number(r.jobsCompleted ?? 0),
-    createdAt: r.createdAt as string,
-  }));
+  const technicians = await prisma.technician.findMany({
+    include: {
+      user: { select: { fullName: true, phone: true, avatarUrl: true, city: true } },
+      plan: { select: { key: true } },
+      reviews: { select: { rating: true } },
+      _count: { select: { requestsReceived: { where: { status: "COMPLETED" } } } },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return technicians.map((t) => {
+    const ratingCount = t.reviews.length;
+    const ratingAvg = ratingCount > 0 ? t.reviews.reduce((s, r) => s + r.rating, 0) / ratingCount : null;
+    return {
+      id: t.id,
+      userId: t.userId,
+      fullName: t.user.fullName,
+      phone: t.user.phone,
+      avatarUrl: t.user.avatarUrl,
+      title: t.title,
+      city: t.user.city,
+      verified: t.verified,
+      planKey: t.plan?.key ?? null,
+      startingPrice: t.startingPrice,
+      ratingAvg,
+      ratingCount,
+      jobsCompleted: t._count.requestsReceived,
+      createdAt: t.createdAt.toISOString(),
+    };
+  });
 }
 
 export async function getAdminTechnicianDetail(technicianId: string) {
-  await dbReady;
-  const [techRes, categories, recentReqs, earnings] = await Promise.all([
-    db.execute({
-      sql: `SELECT t.*, u.fullName, u.phone, u.email, u.avatarUrl, u.city, u.createdAt as userCreatedAt,
-              p.key as planKey, p.name as planName, p.commissionRate
-            FROM Technician t JOIN User u ON u.id=t.userId LEFT JOIN Plan p ON p.id=t.planId WHERE t.id=?`,
-      args: [technicianId],
+  const t = await prisma.technician.findUnique({
+    where: { id: technicianId },
+    include: {
+      user: { select: { fullName: true, phone: true, email: true, avatarUrl: true, city: true, createdAt: true } },
+      plan: { select: { key: true, name: true, commissionRate: true } },
+      categories: { select: { name: true } },
+    },
+  });
+  if (!t) return null;
+
+  const [recentRequests, earningsAgg] = await Promise.all([
+    prisma.serviceRequest.findMany({
+      where: { technicianId },
+      include: { category: { select: { name: true } }, client: { select: { fullName: true } } },
+      orderBy: { createdAt: "desc" },
+      take: 10,
     }),
-    db.execute({
-      sql: `SELECT c.name FROM Category c JOIN TechnicianCategory tc ON tc.categoryId=c.id WHERE tc.technicianId=?`,
-      args: [technicianId],
-    }),
-    db.execute({
-      sql: `SELECT sr.id, sr.status, sr.createdAt, c.name as categoryName, u.fullName as clientName
-            FROM ServiceRequest sr JOIN Category c ON c.id=sr.categoryId JOIN User u ON u.id=sr.clientId
-            WHERE sr.technicianId=? ORDER BY sr.createdAt DESC LIMIT 10`,
-      args: [technicianId],
-    }),
-    db.execute({
-      sql: `SELECT COALESCE(SUM(amount-platformFee),0) as net, COALESCE(SUM(platformFee),0) as fees
-            FROM Payment WHERE technicianId=? AND type='PAYOUT'`,
-      args: [technicianId],
+    prisma.payment.aggregate({
+      where: { technicianId, type: "PAYOUT" },
+      _sum: { amount: true, platformFee: true },
     }),
   ]);
-  const t = techRes.rows[0];
-  if (!t) return null;
+
   return {
-    id: t.id as string,
-    userId: t.userId as string,
-    fullName: t.fullName as string,
-    phone: t.phone as string,
-    email: (t.email as string | null) ?? null,
-    avatarUrl: (t.avatarUrl as string | null) ?? null,
-    city: (t.city as string | null) ?? null,
-    title: t.title as string,
-    bio: (t.bio as string | null) ?? null,
-    yearsExperience: t.yearsExperience as number,
-    startingPrice: t.startingPrice as number,
-    verified: Boolean(t.verified),
-    planKey: (t.planKey as string | null) ?? null,
-    planName: (t.planName as string | null) ?? null,
-    commissionRate: t.commissionRate == null ? null : Number(t.commissionRate),
-    createdAt: t.userCreatedAt as string,
-    categories: categories.rows.map((r) => r.name as string),
-    recentRequests: recentReqs.rows.map((r) => ({
-      id: r.id as string,
-      status: r.status as string,
-      createdAt: r.createdAt as string,
-      categoryName: r.categoryName as string,
-      clientName: r.clientName as string,
+    id: t.id,
+    userId: t.userId,
+    fullName: t.user.fullName,
+    phone: t.user.phone,
+    email: t.user.email,
+    avatarUrl: t.user.avatarUrl,
+    city: t.user.city,
+    title: t.title,
+    bio: t.bio,
+    yearsExperience: t.yearsExperience,
+    startingPrice: t.startingPrice,
+    verified: t.verified,
+    planKey: t.plan?.key ?? null,
+    planName: t.plan?.name ?? null,
+    commissionRate: t.plan?.commissionRate ?? null,
+    createdAt: t.user.createdAt.toISOString(),
+    categories: t.categories.map((c) => c.name),
+    recentRequests: recentRequests.map((r) => ({
+      id: r.id,
+      status: r.status,
+      createdAt: r.createdAt.toISOString(),
+      categoryName: r.category.name,
+      clientName: r.client.fullName,
     })),
-    netEarnings: Number(earnings.rows[0]?.net ?? 0),
-    feesCollected: Number(earnings.rows[0]?.fees ?? 0),
+    netEarnings: (earningsAgg._sum.amount ?? 0) - (earningsAgg._sum.platformFee ?? 0),
+    feesCollected: earningsAgg._sum.platformFee ?? 0,
   };
 }
 
 export async function setTechnicianVerified(technicianId: string, verified: boolean): Promise<void> {
-  await dbReady;
-  await db.execute({ sql: "UPDATE Technician SET verified=? WHERE id=?", args: [verified ? 1 : 0, technicianId] });
+  await prisma.technician.update({ where: { id: technicianId }, data: { verified } });
 }
+
+// --- Requests ------------------------------------------------------------
 
 export interface AdminRequest {
   id: string;
@@ -218,31 +217,131 @@ export interface AdminRequest {
 }
 
 export async function listAdminRequests(status?: string): Promise<AdminRequest[]> {
-  await dbReady;
-  const sql = status
-    ? `SELECT sr.id, sr.status, sr.createdAt, sr.completedAt, sr.clientConfirmedSolved,
-         c.name as categoryName, cu.fullName as clientFullName, tu.fullName as technicianFullName
-       FROM ServiceRequest sr
-       JOIN Category c ON c.id=sr.categoryId
-       JOIN User cu ON cu.id=sr.clientId
-       JOIN Technician t ON t.id=sr.technicianId JOIN User tu ON tu.id=t.userId
-       WHERE sr.status=? ORDER BY sr.createdAt DESC`
-    : `SELECT sr.id, sr.status, sr.createdAt, sr.completedAt, sr.clientConfirmedSolved,
-         c.name as categoryName, cu.fullName as clientFullName, tu.fullName as technicianFullName
-       FROM ServiceRequest sr
-       JOIN Category c ON c.id=sr.categoryId
-       JOIN User cu ON cu.id=sr.clientId
-       JOIN Technician t ON t.id=sr.technicianId JOIN User tu ON tu.id=t.userId
-       ORDER BY sr.createdAt DESC`;
-  const res = await db.execute({ sql, args: status ? [status] : [] });
-  return res.rows.map((r) => ({
-    id: r.id as string,
-    status: r.status as string,
-    categoryName: r.categoryName as string,
-    clientFullName: r.clientFullName as string,
-    technicianFullName: r.technicianFullName as string,
-    createdAt: r.createdAt as string,
-    completedAt: (r.completedAt as string | null) ?? null,
-    clientConfirmedSolved: r.clientConfirmedSolved == null ? null : Boolean(r.clientConfirmedSolved),
+  const rows = await prisma.serviceRequest.findMany({
+    where: status ? { status } : undefined,
+    include: {
+      category: { select: { name: true } },
+      client: { select: { fullName: true } },
+      technician: { include: { user: { select: { fullName: true } } } },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return rows.map((r) => ({
+    id: r.id,
+    status: r.status,
+    categoryName: r.category.name,
+    clientFullName: r.client.fullName,
+    technicianFullName: r.technician.user.fullName,
+    createdAt: r.createdAt.toISOString(),
+    completedAt: r.completedAt ? r.completedAt.toISOString() : null,
+    clientConfirmedSolved: r.clientConfirmedSolved,
   }));
+}
+
+// --- Payments -----------------------------------------------------------
+
+export async function listAdminPayments(type?: string) {
+  const payments = await prisma.payment.findMany({
+    where: type ? { type } : undefined,
+    include: {
+      technician: { include: { user: { select: { fullName: true, phone: true } } } },
+    },
+    orderBy: { createdAt: "desc" },
+    take: 100,
+  });
+  return payments.map((p) => ({
+    id: p.id,
+    type: p.type,
+    method: p.method,
+    status: p.status,
+    amount: p.amount,
+    platformFee: p.platformFee,
+    technicianFullName: p.technician.user.fullName,
+    technicianId: p.technicianId,
+    requestId: p.requestId,
+    createdAt: p.createdAt.toISOString(),
+  }));
+}
+
+// --- Categories ---------------------------------------------------------
+
+export async function listAdminCategories() {
+  const cats = await prisma.category.findMany({
+    include: { _count: { select: { technicians: true, requests: true } } },
+    orderBy: { sortOrder: "asc" },
+  });
+  return cats.map((c) => ({
+    id: c.id,
+    slug: c.slug,
+    name: c.name,
+    icon: c.icon,
+    color: c.color,
+    description: c.description,
+    sortOrder: c.sortOrder,
+    technicianCount: c._count.technicians,
+    requestCount: c._count.requests,
+  }));
+}
+
+export async function createAdminCategory(input: {
+  name: string; icon: string; color: string; description: string | null;
+}) {
+  const slug = input.name.toLowerCase().trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-+|-+$)/g, "");
+  const last = await prisma.category.findFirst({ orderBy: { sortOrder: "desc" } });
+  await prisma.category.create({
+    data: { slug, name: input.name, icon: input.icon, color: input.color, description: input.description, sortOrder: (last?.sortOrder ?? -1) + 1 },
+  });
+}
+
+export async function updateAdminCategory(id: string, input: {
+  name: string; icon: string; color: string; description: string | null;
+}) {
+  await prisma.category.update({ where: { id }, data: input });
+}
+
+export async function reorderAdminCategory(id: string, direction: "up" | "down") {
+  const all = await prisma.category.findMany({ orderBy: { sortOrder: "asc" } });
+  const idx = all.findIndex((c) => c.id === id);
+  const swapIdx = direction === "up" ? idx - 1 : idx + 1;
+  if (idx === -1 || swapIdx < 0 || swapIdx >= all.length) return;
+  await prisma.$transaction([
+    prisma.category.update({ where: { id: all[idx].id }, data: { sortOrder: all[swapIdx].sortOrder } }),
+    prisma.category.update({ where: { id: all[swapIdx].id }, data: { sortOrder: all[idx].sortOrder } }),
+  ]);
+}
+
+export async function deleteAdminCategory(id: string) {
+  await prisma.category.delete({ where: { id } });
+}
+
+// --- Plans --------------------------------------------------------------
+
+export async function listAdminPlans() {
+  const plans = await prisma.plan.findMany({
+    include: { _count: { select: { subscriptions: { where: { status: "ACTIVE" } } } } },
+    orderBy: { price: "asc" },
+  });
+  return plans.map((p) => ({
+    id: p.id,
+    key: p.key,
+    name: p.name,
+    price: p.price,
+    billingCycle: p.billingCycle,
+    commissionRate: p.commissionRate,
+    maxRequestsPerMonth: p.maxRequestsPerMonth,
+    priorityVisibility: p.priorityVisibility,
+    features: p.features,
+    badge: p.badge,
+    activeSubscriptions: p._count.subscriptions,
+  }));
+}
+
+export async function updateAdminPlan(
+  id: string,
+  input: { price: number; commissionRate: number; maxRequestsPerMonth: number | null; badge: string | null }
+) {
+  await prisma.plan.update({ where: { id }, data: input });
 }
