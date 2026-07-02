@@ -129,3 +129,39 @@ export async function listPaymentsForTechnician(
   });
   return payments.map(mapPayment);
 }
+export async function getJobPaymentInfo(requestId: string) {
+  const payment = await prisma.payment.findUnique({
+    where: { requestId },
+    include: {
+      technician: {
+        include: { user: { select: { fullName: true, phone: true, avatarUrl: true } } },
+      },
+    },
+  });
+  if (!payment) return null;
+  return {
+    id: payment.id,
+    amount: payment.amount,
+    platformFee: payment.platformFee,
+    method: payment.method,
+    status: payment.status,
+    createdAt: payment.createdAt.toISOString(),
+    technicianName: payment.technician.user.fullName,
+    technicianPhone: payment.technician.user.phone,
+    technicianAvatarUrl: payment.technician.user.avatarUrl,
+  };
+}
+
+export async function updatePaymentMethod(requestId: string, method: string): Promise<void> {
+  await prisma.payment.updateMany({ where: { requestId }, data: { method } });
+}
+
+export async function createWithdrawalRequest(
+  technicianId: string,
+  amount: number,
+  method: string
+): Promise<void> {
+  await prisma.payment.create({
+    data: { technicianId, amount, platformFee: 0, method, status: "PENDING", type: "PAYOUT" },
+  });
+}
