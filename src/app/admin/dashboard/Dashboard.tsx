@@ -2,266 +2,62 @@
 
 import React, { useState } from "react";
 import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Area,
-  AreaChart,
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
 import {
-  Search,
-  Bell,
-  Plus,
-  ChevronDown,
-  Calendar,
-  TrendingUp,
-  Star,
-  BarChart2,
-  Users,
-  Wrench,
-  DollarSign,
-  Briefcase,
-  UserCheck,
-  Building2,
-  Percent,
+  Search, Bell, Plus, ChevronDown, Calendar, TrendingUp,
+  Star, BarChart2, Users, Wrench, DollarSign, Briefcase, Percent,
+  UserCheck, Building2,
 } from "lucide-react";
+import Link from "next/link";
 import Navbar from "./Navbar";
 import styles from "./dashboard.module.css";
+import { formatDT, formatRelativeTime, initials } from "@/lib/utils";
 
-/* ── Data ── */
-const revenueData = [
-  { date: "16 May", value: 2100 },
-  { date: "17 May", value: 1800 },
-  { date: "18 May", value: 2600 },
-  { date: "19 May", value: 2200 },
-  { date: "20 May", value: 3100 },
-  { date: "21 May", value: 2400 },
-  { date: "22 May", value: 3000 },
-];
-
-const recentJobs = [
-  {
-    id: "#J5902",
-    service: "AC Repair",
-    serviceIcon: "❄️",
-    client: "Safa Dkhili",
-    technician: "Ahmed Ben Salah",
-    status: "In Progress",
-    amount: "80 DT",
-    date: "Today, 10:30 AM",
-    clientInitials: "SD",
-    techInitials: "AB",
-    clientColor: "#dbeafe",
-    techColor: "#dcfce7",
-  },
-  {
-    id: "#J5901",
-    service: "Plumbing",
-    serviceIcon: "🔧",
-    client: "Yassine Trabelsi",
-    technician: "Yassine Kriaa",
-    status: "Pending",
-    amount: "60 DT",
-    date: "Today, 09:15 AM",
-    clientInitials: "YT",
-    techInitials: "YK",
-    clientColor: "#fef3c7",
-    techColor: "#fef3c7",
-  },
-  {
-    id: "#J5900",
-    service: "Washing Machine",
-    serviceIcon: "🫧",
-    client: "Mohamed Ali",
-    technician: "Walid Mhiri",
-    status: "Completed",
-    amount: "70 DT",
-    date: "Today, 08:45 AM",
-    clientInitials: "MA",
-    techInitials: "WM",
-    clientColor: "#dcfce7",
-    techColor: "#ede9fe",
-  },
-  {
-    id: "#J5899",
-    service: "Electrical",
-    serviceIcon: "⚡",
-    client: "Khaled Mzoughi",
-    technician: "Mohamed Ali",
-    status: "In Progress",
-    amount: "120 DT",
-    date: "Today, 08:20 AM",
-    clientInitials: "KM",
-    techInitials: "MA",
-    clientColor: "#fef9c3",
-    techColor: "#dcfce7",
-  },
-  {
-    id: "#J5898",
-    service: "TV Repair",
-    serviceIcon: "📺",
-    client: "Ines Ben Saad",
-    technician: "Ahmed Ben Salah",
-    status: "Pending",
-    amount: "50 DT",
-    date: "Today, 07:50 AM",
-    clientInitials: "IB",
-    techInitials: "AB",
-    clientColor: "#fee2e2",
-    techColor: "#dcfce7",
-  },
-];
-
-const topTechnicians = [
-  {
-    name: "Ahmed Ben Salah",
-    role: "AC Technician",
-    jobs: 128,
-    rating: 4.9,
-    earnings: "1,245 DT",
-    initials: "AB",
-    color: "#dbeafe",
-  },
-  {
-    name: "Yassine Kriaa",
-    role: "Plumber",
-    jobs: 96,
-    rating: 4.8,
-    earnings: "1,012 DT",
-    initials: "YK",
-    color: "#fef3c7",
-  },
-  {
-    name: "Mohamed Ali",
-    role: "Electrician",
-    jobs: 85,
-    rating: 4.7,
-    earnings: "856 DT",
-    initials: "MA",
-    color: "#dcfce7",
-  },
-  {
-    name: "Walid Mhiri",
-    role: "Refrigeration",
-    jobs: 74,
-    rating: 4.6,
-    earnings: "742 DT",
-    initials: "WM",
-    color: "#ede9fe",
-  },
-  {
-    name: "Hichem Ayari",
-    role: "Multi Services",
-    jobs: 68,
-    rating: 4.5,
-    earnings: "612 DT",
-    initials: "HA",
-    color: "#fce7f3",
-  },
-];
-
-const paymentsData = [
-  {
-    id: "#P8861",
-    technician: "Ahmed Ben Salah",
-    amount: "128.500 DT",
-    fee: "12.850 DT",
-    method: "D17",
-    status: "Paid",
-    date: "22 May 2024 – 11:20 AM",
-    type: "Payout",
-    txId: "D17-8945612",
-    initials: "AB",
-    color: "#dbeafe",
-  },
-  {
-    id: "#P8860",
-    technician: "Yassine Kriaa",
-    amount: "86.000 DT",
-    fee: "8.600 DT",
-    method: "Flouci",
-    status: "Paid",
-    date: "22 May 2024 – 10:45 AM",
-    type: "Payout",
-    txId: "FLC-7893512",
-    initials: "YK",
-    color: "#fef3c7",
-  },
-  {
-    id: "#P8859",
-    technician: "Mohamed Ali",
-    amount: "74.000 DT",
-    fee: "7.400 DT",
-    method: "Virement",
-    status: "Paid",
-    date: "22 May 2024 – 09:30 AM",
-    type: "Payout",
-    txId: "VIR-4569871",
-    initials: "MA",
-    color: "#dcfce7",
-  },
-  {
-    id: "#P8858",
-    technician: "Safa Dkhili (Client)",
-    amount: "120.000 DT",
-    fee: "12.000 DT",
-    method: "D17",
-    status: "Completed",
-    date: "22 May 2024 – 09:15 AM",
-    type: "Payment",
-    txId: "D17-8521479",
-    initials: "SD",
-    color: "#fee2e2",
-  },
-];
-
-const notifications = [
-  {
-    text: "New technician registered",
-    time: "2 mins ago",
-    icon: "👤",
-    bg: "#dbeafe",
-  },
-  { text: "New job request", time: "5 mins ago", icon: "📋", bg: "#fef3c7" },
-  { text: "Payment received", time: "15 mins ago", icon: "💳", bg: "#dcfce7" },
-  { text: "New review received", time: "1 hour ago", icon: "⭐", bg: "#fef9c3" },
-  {
-    text: "Payout completed",
-    time: "2 hours ago",
-    icon: "✅",
-    bg: "#ede9fe",
-  },
-];
-
-/* ── Helpers ── */
-const getStatusClass = (status: string) => {
-  switch (status) {
-    case "In Progress":
-      return styles.badgeInProgress;
-    case "Pending":
-      return styles.badgePending;
-    case "Completed":
-      return styles.badgeCompleted;
-    case "Cancelled":
-      return styles.badgeCancelled;
-    case "Paid":
-      return styles.badgePaid;
-    default:
-      return styles.badgePending;
-  }
+type DashboardData = {
+  stats: { totalClients: number; totalTechnicians: number; totalJobs: number; platformEarnings: number; totalRevenue: number };
+  jobsOverview: { completed: number; pending: number; inProgress: number; terminated: number };
+  recentJobs: Array<{ id: string; service: string; clientName: string; clientAvatar: string | null; technicianName: string; technicianAvatar: string | null; status: string; amount: number | null; createdAt: string }>;
+  topTechnicians: Array<{ name: string; avatarUrl: string | null; title: string; jobs: number; rating: number | null; earnings: number }>;
+  recentPayments: Array<{ id: string; technicianName: string; amount: number; platformFee: number; method: string; status: string; type: string; createdAt: string }>;
+  recentNotifications: Array<{ title: string; type: string; userName: string; createdAt: string }>;
+  monthly: Array<{ date: string; value: number; fee: number }>;
 };
 
-/* ── Donut SVG ── */
-const DonutChart: React.FC = () => {
+const COLORS = ["#22c55e", "#3b82f6", "#f59e0b", "#ef4444"];
+
+const NOTIF_CONFIG: Record<string, { icon: string; bg: string }> = {
+  NEW_REQUEST: { icon: "📋", bg: "#fef3c7" },
+  STATUS_UPDATE: { icon: "🔄", bg: "#dbeafe" },
+  NEW_MESSAGE: { icon: "💬", bg: "#dcfce7" },
+  NEW_REVIEW: { icon: "⭐", bg: "#fef9c3" },
+};
+
+function getStatusDisplay(status: string): string {
+  if (["ACCEPTED", "ON_THE_WAY", "ARRIVED", "IN_PROGRESS"].includes(status)) return "In Progress";
+  if (status === "COMPLETED") return "Completed";
+  if (status === "PENDING") return "Pending";
+  if (["CANCELLED", "DECLINED"].includes(status)) return "Cancelled";
+  return status;
+}
+
+function getStatusClass(status: string, styles: Record<string, string>): string {
+  const display = getStatusDisplay(status);
+  if (display === "In Progress") return styles.badgeInProgress;
+  if (display === "Completed") return styles.badgeCompleted;
+  if (display === "Pending") return styles.badgePending;
+  return styles.badgeCancelled;
+}
+
+const DonutChart: React.FC<{ completed: number; inProgress: number; pending: number; terminated: number }> = (
+  { completed, inProgress, pending, terminated }
+) => {
+  const total = completed + inProgress + pending + terminated || 1;
   const data = [
-    { value: 55, color: "#22c55e" },
-    { value: 19, color: "#3b82f6" },
-    { value: 15, color: "#f59e0b" },
-    { value: 11, color: "#ef4444" },
+    { value: Math.round((completed / total) * 100), color: COLORS[0] },
+    { value: Math.round((inProgress / total) * 100), color: COLORS[1] },
+    { value: Math.round((pending / total) * 100), color: COLORS[2] },
+    { value: Math.round((terminated / total) * 100), color: COLORS[3] },
   ];
 
   const radius = 70;
@@ -276,14 +72,8 @@ const DonutChart: React.FC = () => {
         const dashOffset = -offset * (circumference / 100);
         offset += seg.value;
         return (
-          <circle
-            key={i}
-            cx="77.5"
-            cy="77.5"
-            r={radius}
-            fill="none"
-            stroke={seg.color}
-            strokeWidth={strokeWidth}
+          <circle key={i} cx="77.5" cy="77.5" r={radius} fill="none"
+            stroke={seg.color} strokeWidth={strokeWidth}
             strokeDasharray={`${dashArray} ${circumference}`}
             strokeDashoffset={dashOffset}
             transform="rotate(-90 77.5 77.5)"
@@ -296,39 +86,18 @@ const DonutChart: React.FC = () => {
   );
 };
 
-/* ── Payment Method Badge ── */
 const PayMethodBadge: React.FC<{ method: string }> = ({ method }) => {
-  if (method === "D17") {
-    return (
-      <span className={`${styles.pmBadge} ${styles.pmD17}`}>D17</span>
-    );
-  }
-  if (method === "Flouci") {
-    return (
-      <span className={`${styles.pmBadge} ${styles.pmFlouci}`}>Flouci</span>
-    );
-  }
-  return (
-    <span className={`${styles.pmBadge} ${styles.pmVirement}`}>
-      🏛 Virement Bancaire
-    </span>
-  );
+  if (method === "D17") return <span className={`${styles.pmBadge} ${styles.pmD17}`}>D17</span>;
+  if (method === "FLOUCI") return <span className={`${styles.pmBadge} ${styles.pmFlouci}`}>Flouci</span>;
+  if (method === "BANK_TRANSFER") return <span className={`${styles.pmBadge} ${styles.pmVirement}`}>🏛 Virement</span>;
+  return <span className={`${styles.pmBadge} ${styles.pmVirement}`}>{method}</span>;
 };
 
-/* ── Custom Tooltip ── */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const CustomTooltip = ({ active, payload, label }: any) => {
-  if (active && payload && payload.length) {
+  if (active && payload?.length) {
     return (
-      <div
-        style={{
-          background: "#1a1d2e",
-          color: "#fff",
-          borderRadius: 8,
-          padding: "6px 12px",
-          fontSize: 12,
-          boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-        }}
-      >
+      <div style={{ background: "#1a1d2e", color: "#fff", borderRadius: 8, padding: "6px 12px", fontSize: 12 }}>
         <div style={{ color: "#9ca3af", marginBottom: 2 }}>{label}</div>
         <div style={{ fontWeight: 700 }}>{payload[0].value.toLocaleString()} DT</div>
       </div>
@@ -337,64 +106,48 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
-/* ── Main Dashboard ── */
-const Dashboard: React.FC = () => {
+function AvatarCell({ name, avatarUrl, size = 28 }: { name: string; avatarUrl: string | null; size?: number }) {
+  const bg = ["#dbeafe", "#fef3c7", "#dcfce7", "#ede9fe", "#fee2e2"];
+  const colorIdx = name.charCodeAt(0) % bg.length;
+  return (
+    <div
+      className={styles.avatar}
+      style={{ width: size, height: size, background: bg[colorIdx], color: "#374151", flexShrink: 0, fontSize: size * 0.35 }}
+    >
+      {avatarUrl
+        // eslint-disable-next-line @next/next/no-img-element
+        ? <img src={avatarUrl} alt={name} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} />
+        : initials(name)
+      }
+    </div>
+  );
+}
+
+const Dashboard: React.FC<{ data: DashboardData }> = ({ data }) => {
   const [activeNav, setActiveNav] = useState("Dashboard");
+  const { stats, jobsOverview, recentJobs, topTechnicians, recentPayments, recentNotifications, monthly } = data;
+  const total = jobsOverview.completed + jobsOverview.inProgress + jobsOverview.pending + jobsOverview.terminated || 1;
 
   return (
     <div className={styles.dashboardLayout}>
-      {/* Sidebar */}
       <Navbar activeItem={activeNav} onSelect={setActiveNav} />
 
-      {/* Main area */}
       <div className={styles.mainContent}>
-        {/* Top bar */}
+        {/* Topbar */}
         <header className={styles.topbar}>
           <div className={styles.topbarLeft}>
-            <button className={styles.hamburger}>
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <path
-                  d="M2 4.5h14M2 9h14M2 13.5h14"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                  strokeLinecap="round"
-                />
-              </svg>
-            </button>
             <h1 className={styles.topbarTitle}>Dashboard Overview</h1>
           </div>
-
           <div className={styles.topbarRight}>
-            {/* Search */}
             <div className={styles.searchBox}>
               <Search size={14} className={styles.searchIcon} />
-              <input
-                type="text"
-                placeholder="Search anything..."
-                className={styles.searchInput}
-              />
+              <input type="text" placeholder="Search anything..." className={styles.searchInput} />
             </div>
-
-            {/* Bell */}
-            <button className={styles.notifBtn}>
+            <Link href="/notifications" className={styles.notifBtn}>
               <Bell size={16} />
-              <span className={styles.notifBadge}>8</span>
-            </button>
-
-            {/* Quick Action */}
-            <button className={styles.quickActionBtn}>
-              <Plus size={14} />
-              Quick Action
-            </button>
-
-            {/* Admin profile */}
+            </Link>
             <div className={styles.adminProfile}>
-              <div
-                className={styles.adminAvatar}
-                style={{ background: "#dbeafe", color: "#1d4ed8" }}
-              >
-                AD
-              </div>
+              <div className={styles.adminAvatar} style={{ background: "#dbeafe", color: "#1d4ed8" }}>AD</div>
               <div className={styles.adminInfo}>
                 <span className={styles.adminName}>Admin</span>
                 <span className={styles.adminRole}>Super Admin</span>
@@ -404,196 +157,116 @@ const Dashboard: React.FC = () => {
           </div>
         </header>
 
-        {/* Page content */}
         <main className={styles.dashboardPage}>
-          {/* Date Range */}
-          <div className={styles.dateRangeRow}>
-            <button className={styles.dateRangePicker}>
-              <Calendar size={13} />
-              22 May 2024 – 28 May 2024
-              <ChevronDown size={13} />
-            </button>
-          </div>
 
-          {/* ── STAT CARDS ── */}
+          {/* Stat Cards */}
           <div className={styles.statCards}>
-            {/* Total Revenue */}
             <div className={styles.statCard}>
-              <div className={`${styles.statIconWrap} ${styles.statIconOrange}`}>
-                <DollarSign size={20} color="#fff" />
-              </div>
+              <div className={`${styles.statIconWrap} ${styles.statIconOrange}`}><DollarSign size={20} color="#fff" /></div>
               <div className={styles.statInfo}>
                 <div className={styles.statLabel}>Total Revenue</div>
-                <div className={styles.statValue}>17,430 DT</div>
+                <div className={styles.statValue}>{formatDT(stats.totalRevenue)}</div>
                 <div className={styles.statChange}>
                   <TrendingUp size={12} className={styles.statChangeUp} />
-                  <span className={styles.statChangeUp}>28.5%</span>
-                  <span className={styles.statChangeSub}>vs last 7 days</span>
+                  <span className={styles.statChangeUp}>Gross job value</span>
                 </div>
               </div>
             </div>
 
-            {/* Platform Earnings */}
             <div className={styles.statCard}>
-              <div className={`${styles.statIconWrap} ${styles.statIconGreen}`}>
-                <Briefcase size={20} color="#fff" />
-              </div>
+              <div className={`${styles.statIconWrap} ${styles.statIconGreen}`}><Briefcase size={20} color="#fff" /></div>
               <div className={styles.statInfo}>
                 <div className={styles.statLabel}>Platform Earnings</div>
-                <div className={styles.statValue}>2,614 DT</div>
+                <div className={styles.statValue}>{formatDT(stats.platformEarnings)}</div>
                 <div className={styles.statChange}>
                   <TrendingUp size={12} className={styles.statChangeUp} />
-                  <span className={styles.statChangeUp}>19.3%</span>
-                  <span className={styles.statChangeSub}>vs last 7 days</span>
+                  <span className={styles.statChangeUp}>Commission collected</span>
                 </div>
               </div>
             </div>
 
-            {/* Total Technicians */}
             <div className={styles.statCard}>
-              <div className={`${styles.statIconWrap} ${styles.statIconPurple}`}>
-                <Wrench size={20} color="#fff" />
-              </div>
+              <div className={`${styles.statIconWrap} ${styles.statIconPurple}`}><Wrench size={20} color="#fff" /></div>
               <div className={styles.statInfo}>
                 <div className={styles.statLabel}>Total Technicians</div>
-                <div className={styles.statValue}>1,248</div>
-                <div className={styles.statChange}>
-                  <TrendingUp size={12} className={styles.statChangeUp} />
-                  <span className={styles.statChangeUp}>15.4%</span>
-                  <span className={styles.statChangeSub}>vs last 7 days</span>
-                </div>
+                <div className={styles.statValue}>{stats.totalTechnicians.toLocaleString()}</div>
               </div>
             </div>
 
-            {/* Total Clients */}
             <div className={styles.statCard}>
-              <div className={`${styles.statIconWrap} ${styles.statIconBlue}`}>
-                <Users size={20} color="#fff" />
-              </div>
+              <div className={`${styles.statIconWrap} ${styles.statIconBlue}`}><Users size={20} color="#fff" /></div>
               <div className={styles.statInfo}>
                 <div className={styles.statLabel}>Total Clients</div>
-                <div className={styles.statValue}>3,562</div>
-                <div className={styles.statChange}>
-                  <TrendingUp size={12} className={styles.statChangeUp} />
-                  <span className={styles.statChangeUp}>20.7%</span>
-                  <span className={styles.statChangeSub}>vs last 7 days</span>
-                </div>
+                <div className={styles.statValue}>{stats.totalClients.toLocaleString()}</div>
               </div>
             </div>
 
-            {/* Total Jobs */}
             <div className={styles.statCard}>
-              <div className={`${styles.statIconWrap} ${styles.statIconYellow}`}>
-                <Briefcase size={20} color="#fff" />
-              </div>
+              <div className={`${styles.statIconWrap} ${styles.statIconYellow}`}><Briefcase size={20} color="#fff" /></div>
               <div className={styles.statInfo}>
                 <div className={styles.statLabel}>Total Jobs</div>
-                <div className={styles.statValue}>5,894</div>
-                <div className={styles.statChange}>
-                  <TrendingUp size={12} className={styles.statChangeUp} />
-                  <span className={styles.statChangeUp}>18.2%</span>
-                  <span className={styles.statChangeSub}>vs last 7 days</span>
-                </div>
+                <div className={styles.statValue}>{stats.totalJobs.toLocaleString()}</div>
               </div>
             </div>
           </div>
 
-          {/* ── CHARTS ROW ── */}
+          {/* Charts Row */}
           <div className={styles.chartsRow}>
             {/* Revenue Chart */}
             <div className={`${styles.card} ${styles.revenueCard}`}>
               <div className={styles.cardHeader}>
                 <span className={styles.cardTitle}>Revenue Overview</span>
-                <button className={styles.chartDropdown}>
-                  Last 7 Days
-                  <ChevronDown size={13} />
-                </button>
+                <Link href="/admin/revenue" className={styles.viewAll}>View full →</Link>
               </div>
               <div className={styles.chartArea}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart
-                    data={revenueData}
-                    margin={{ top: 4, right: 4, bottom: 0, left: -20 }}
-                  >
-                    <defs>
-                      <linearGradient
-                        id="revenueGrad"
-                        x1="0"
-                        y1="0"
-                        x2="0"
-                        y2="1"
-                      >
-                        <stop
-                          offset="0%"
-                          stopColor="#f97316"
-                          stopOpacity={0.2}
-                        />
-                        <stop
-                          offset="100%"
-                          stopColor="#f97316"
-                          stopOpacity={0.02}
-                        />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      stroke="#f3f4f6"
-                      vertical={false}
-                    />
-                    <XAxis
-                      dataKey="date"
-                      tick={{ fontSize: 11, fill: "#9ca3af" }}
-                      axisLine={false}
-                      tickLine={false}
-                    />
-                    <YAxis
-                      tick={{ fontSize: 11, fill: "#9ca3af" }}
-                      axisLine={false}
-                      tickLine={false}
-                      tickFormatter={(v) =>
-                        v >= 1000 ? `${v / 1000}K` : `${v}`
-                      }
-                    />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Area
-                      type="monotone"
-                      dataKey="value"
-                      stroke="#f97316"
-                      strokeWidth={2.5}
-                      fill="url(#revenueGrad)"
-                      dot={{
-                        fill: "#f97316",
-                        r: 4,
-                        strokeWidth: 2,
-                        stroke: "#fff",
-                      }}
-                      activeDot={{ r: 6, fill: "#f97316" }}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
+                {monthly.length === 0 ? (
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "#9ca3af", fontSize: 13 }}>
+                    No payment data yet
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={monthly} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+                      <defs>
+                        <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#f97316" stopOpacity={0.2} />
+                          <stop offset="100%" stopColor="#f97316" stopOpacity={0.02} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
+                      <XAxis dataKey="date" tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false}
+                        tickFormatter={(v) => v >= 1000 ? `${v / 1000}K` : `${v}`} />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Area type="monotone" dataKey="value" stroke="#f97316" strokeWidth={2.5}
+                        fill="url(#revenueGrad)"
+                        dot={{ fill: "#f97316", r: 4, strokeWidth: 2, stroke: "#fff" }}
+                        activeDot={{ r: 6, fill: "#f97316" }} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                )}
               </div>
             </div>
 
-            {/* Jobs Overview */}
+            {/* Jobs Overview Donut */}
             <div className={`${styles.card} ${styles.jobsCard}`}>
-              <div className={styles.cardHeader}>
-                <span className={styles.cardTitle}>Jobs Overview</span>
-              </div>
+              <div className={styles.cardHeader}><span className={styles.cardTitle}>Jobs Overview</span></div>
               <div className={styles.donutWrap}>
-                <DonutChart />
+                <DonutChart
+                  completed={jobsOverview.completed}
+                  inProgress={jobsOverview.inProgress}
+                  pending={jobsOverview.pending}
+                  terminated={jobsOverview.terminated}
+                />
                 <div className={styles.donutLegend}>
                   {[
-                    { label: "Completed", value: "3,245 (55%)", color: "#22c55e" },
-                    { label: "In Progress", value: "1,152 (19%)", color: "#3b82f6" },
-                    { label: "Pending", value: "874 (15%)", color: "#f59e0b" },
-                    { label: "Cancelled", value: "623 (11%)", color: "#ef4444" },
+                    { label: "Completed", value: `${jobsOverview.completed} (${Math.round((jobsOverview.completed / total) * 100)}%)`, color: COLORS[0] },
+                    { label: "In Progress", value: `${jobsOverview.inProgress} (${Math.round((jobsOverview.inProgress / total) * 100)}%)`, color: COLORS[1] },
+                    { label: "Pending", value: `${jobsOverview.pending} (${Math.round((jobsOverview.pending / total) * 100)}%)`, color: COLORS[2] },
+                    { label: "Cancelled", value: `${jobsOverview.terminated} (${Math.round((jobsOverview.terminated / total) * 100)}%)`, color: COLORS[3] },
                   ].map((item) => (
                     <div key={item.label} className={styles.legendItem}>
                       <div className={styles.legendLeft}>
-                        <span
-                          className={styles.legendDot}
-                          style={{ background: item.color }}
-                        />
+                        <span className={styles.legendDot} style={{ background: item.color }} />
                         <span className={styles.legendLabel}>{item.label}</span>
                       </div>
                       <span className={styles.legendValue}>{item.value}</span>
@@ -607,100 +280,67 @@ const Dashboard: React.FC = () => {
             <div className={`${styles.card} ${styles.notifCard}`}>
               <div className={styles.cardHeader}>
                 <span className={styles.cardTitle}>Recent Notifications</span>
-                <button className={styles.viewAll}>View All</button>
+                <Link href="/notifications" className={styles.viewAll}>View All</Link>
               </div>
               <div className={styles.notifList}>
-                {notifications.map((n, i) => (
-                  <div key={i} className={styles.notifItem}>
-                    <div
-                      className={styles.notifIconWrap}
-                      style={{ background: n.bg }}
-                    >
-                      {n.icon}
+                {recentNotifications.length === 0 && (
+                  <p style={{ color: "#9ca3af", fontSize: 13, padding: "8px 0" }}>No notifications yet</p>
+                )}
+                {recentNotifications.map((n, i) => {
+                  const cfg = NOTIF_CONFIG[n.type] ?? { icon: "🔔", bg: "#f3f4f6" };
+                  return (
+                    <div key={i} className={styles.notifItem}>
+                      <div className={styles.notifIconWrap} style={{ background: cfg.bg }}>{cfg.icon}</div>
+                      <span className={styles.notifText}>{n.title}</span>
+                      <span className={styles.notifTime}>{formatRelativeTime(n.createdAt)}</span>
                     </div>
-                    <span className={styles.notifText}>{n.text}</span>
-                    <span className={styles.notifTime}>{n.time}</span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
 
-          {/* ── TABLES ROW ── */}
+          {/* Tables Row */}
           <div className={styles.tablesRow}>
             {/* Recent Jobs */}
             <div className={`${styles.card} ${styles.tableCard}`}>
               <div className={styles.cardHeader}>
                 <span className={styles.cardTitle}>Recent Jobs</span>
-                <button className={styles.viewAll}>View All</button>
+                <Link href="/admin/requests" className={styles.viewAll}>View All</Link>
               </div>
               <table className={styles.dataTable}>
                 <thead>
                   <tr>
-                    <th>Job ID</th>
-                    <th>Service</th>
-                    <th>Client</th>
-                    <th>Technician</th>
-                    <th>Status</th>
-                    <th>Amount</th>
-                    <th>Date</th>
+                    <th>Job ID</th><th>Service</th><th>Client</th>
+                    <th>Technician</th><th>Status</th><th>Amount</th>
                   </tr>
                 </thead>
                 <tbody>
+                  {recentJobs.length === 0 && (
+                    <tr><td colSpan={6} style={{ textAlign: "center", color: "#9ca3af", padding: 16 }}>No jobs yet</td></tr>
+                  )}
                   {recentJobs.map((job) => (
                     <tr key={job.id}>
+                      <td><Link href={`/admin/requests`} className={styles.jobId}>{job.id}</Link></td>
+                      <td>{job.service}</td>
                       <td>
-                        <span className={styles.jobId}>{job.id}</span>
-                      </td>
-                      <td>
-                        <div className={styles.serviceCell}>
-                          <span className={styles.serviceIcon}>
-                            {job.serviceIcon}
-                          </span>
-                          <span>{job.service}</span>
+                        <div className={styles.personCell}>
+                          <AvatarCell name={job.clientName} avatarUrl={job.clientAvatar} />
+                          <span>{job.clientName}</span>
                         </div>
                       </td>
                       <td>
                         <div className={styles.personCell}>
-                          <div
-                            className={styles.avatar}
-                            style={{
-                              background: job.clientColor,
-                              color: "#374151",
-                            }}
-                          >
-                            {job.clientInitials}
-                          </div>
-                          <span>{job.client}</span>
+                          <AvatarCell name={job.technicianName} avatarUrl={job.technicianAvatar} />
+                          <span>{job.technicianName}</span>
                         </div>
                       </td>
                       <td>
-                        <div className={styles.personCell}>
-                          <div
-                            className={styles.avatar}
-                            style={{
-                              background: job.clientColor,
-                              color: "#374151",
-                            }}
-                          >
-                            {job.techInitials}
-                          </div>
-                          <span>{job.technician}</span>
-                        </div>
-                      </td>
-                      <td>
-                        <span
-                          className={`${styles.badge} ${getStatusClass(
-                            job.status
-                          )}`}
-                        >
-                          {job.status}
+                        <span className={`${styles.badge} ${getStatusClass(job.status, styles)}`}>
+                          {getStatusDisplay(job.status)}
                         </span>
                       </td>
-                      <td style={{ fontWeight: 600 }}>{job.amount}</td>
-                      <td style={{ color: "#9ca3af", whiteSpace: "nowrap" }}>
-                        {job.date}
-                      </td>
+                      <td style={{ fontWeight: 600 }}>{job.amount ? formatDT(job.amount) : "—"}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -711,51 +351,37 @@ const Dashboard: React.FC = () => {
             <div className={`${styles.card} ${styles.techCard}`}>
               <div className={styles.cardHeader}>
                 <span className={styles.cardTitle}>Top Technicians</span>
-                <button className={styles.viewAll}>View All</button>
+                <Link href="/admin/technicians" className={styles.viewAll}>View All</Link>
               </div>
               <table className={styles.techTable}>
                 <thead>
-                  <tr>
-                    <th>Technician</th>
-                    <th>Jobs</th>
-                    <th>Rating</th>
-                    <th>Earnings</th>
-                  </tr>
+                  <tr><th>Technician</th><th>Jobs</th><th>Rating</th><th>Earnings</th></tr>
                 </thead>
                 <tbody>
+                  {topTechnicians.length === 0 && (
+                    <tr><td colSpan={4} style={{ textAlign: "center", color: "#9ca3af", padding: 16 }}>No data yet</td></tr>
+                  )}
                   {topTechnicians.map((tech) => (
                     <tr key={tech.name}>
                       <td>
                         <div className={styles.personCell}>
-                          <div
-                            className={styles.avatar}
-                            style={{
-                              background: tech.color,
-                              color: "#374151",
-                            }}
-                          >
-                            {tech.initials}
-                          </div>
+                          <AvatarCell name={tech.name} avatarUrl={tech.avatarUrl} />
                           <div>
                             <div className={styles.techName}>{tech.name}</div>
-                            <div className={styles.techRole}>{tech.role}</div>
+                            <div className={styles.techRole}>{tech.title}</div>
                           </div>
                         </div>
                       </td>
                       <td style={{ fontWeight: 600 }}>{tech.jobs}</td>
                       <td>
-                        <div className={styles.ratingCell}>
-                          <Star
-                            size={12}
-                            fill="#f59e0b"
-                            className={styles.starIcon}
-                          />
-                          {tech.rating}
-                        </div>
+                        {tech.rating != null ? (
+                          <div className={styles.ratingCell}>
+                            <Star size={12} fill="#f59e0b" className={styles.starIcon} />
+                            {tech.rating.toFixed(1)}
+                          </div>
+                        ) : "—"}
                       </td>
-                      <td style={{ fontWeight: 600, whiteSpace: "nowrap" }}>
-                        {tech.earnings}
-                      </td>
+                      <td style={{ fontWeight: 600, whiteSpace: "nowrap" }}>{formatDT(tech.earnings)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -763,240 +389,79 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* ── BOTTOM ROW ── */}
+          {/* Bottom Row */}
           <div className={styles.bottomRow}>
-            {/* Payments & Payouts */}
+            {/* Payments */}
             <div className={`${styles.card} ${styles.paymentsCard}`}>
               <div className={styles.cardHeader}>
-                <span className={styles.cardTitle}>Payments & Payouts</span>
-                <button className={styles.viewAll}>View All</button>
+                <span className={styles.cardTitle}>Recent Payments</span>
+                <Link href="/admin/payments" className={styles.viewAll}>View All</Link>
               </div>
               <table className={styles.dataTable}>
                 <thead>
                   <tr>
-                    <th>ID</th>
-                    <th>Technician</th>
-                    <th>Amount</th>
-                    <th>Platform Fee (10%)</th>
-                    <th>Payment Method</th>
-                    <th>Status</th>
-                    <th>Date</th>
-                    <th>Type</th>
-                    <th>Transaction ID</th>
+                    <th>ID</th><th>Technician</th><th>Amount</th>
+                    <th>Platform Fee</th><th>Method</th><th>Status</th><th>Type</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {paymentsData.map((p) => (
+                  {recentPayments.length === 0 && (
+                    <tr><td colSpan={7} style={{ textAlign: "center", color: "#9ca3af", padding: 16 }}>No payments yet</td></tr>
+                  )}
+                  {recentPayments.map((p) => (
                     <tr key={p.id}>
-                      <td>
-                        <span className={styles.jobId}>{p.id}</span>
-                      </td>
+                      <td><span className={styles.jobId}>{p.id}</span></td>
                       <td>
                         <div className={styles.personCell}>
-                          <div
-                            className={styles.avatar}
-                            style={{
-                              background: p.color,
-                              color: "#374151",
-                            }}
-                          >
-                            {p.initials}
-                          </div>
-                          <span>{p.technician}</span>
+                          <AvatarCell name={p.technicianName} avatarUrl={null} />
+                          <span>{p.technicianName}</span>
                         </div>
                       </td>
-                      <td style={{ fontWeight: 600 }}>{p.amount}</td>
-                      <td style={{ fontWeight: 600, color: "#ef4444" }}>
-                        {p.fee}
-                      </td>
+                      <td style={{ fontWeight: 600 }}>{formatDT(p.amount)}</td>
+                      <td style={{ fontWeight: 600, color: "#ef4444" }}>{formatDT(p.platformFee)}</td>
+                      <td><PayMethodBadge method={p.method} /></td>
                       <td>
-                        <PayMethodBadge method={p.method} />
-                      </td>
-                      <td>
-                        <span
-                          className={`${styles.badge} ${getStatusClass(
-                            p.status
-                          )}`}
-                        >
+                        <span className={`${styles.badge} ${p.status === "PAID" ? styles.badgePaid : p.status === "PENDING" ? styles.badgePending : styles.badgeCancelled}`}>
                           {p.status}
                         </span>
                       </td>
-                      <td
-                        style={{
-                          color: "#9ca3af",
-                          fontSize: 11,
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {p.date}
-                      </td>
                       <td style={{ color: "#6b7280" }}>{p.type}</td>
-                      <td
-                        style={{
-                          color: "#9ca3af",
-                          fontSize: 11,
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {p.txId}
-                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
 
-            {/* Platform Summary + Payment Methods */}
-            <div
-              style={{ display: "flex", flexDirection: "column", gap: 14 }}
-            >
-              {/* Payment Methods */}
-              <div className={styles.card} style={{ padding: "0 0 10px" }}>
-                <div className={styles.cardHeader}>
-                  <span className={styles.cardTitle}>Payment Methods</span>
-                  <button className={styles.viewAll}>Manage</button>
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 0,
-                    padding: "0 14px",
-                  }}
-                >
-                  {[
-                    {
-                      name: "D17 (Digital)",
-                      balance: "1,245,500 DT",
-                      bg: "#7c3aed",
-                      label: "D17",
-                    },
-                    {
-                      name: "Flouci",
-                      balance: "1,012,300 DT",
-                      bg: "#f59e0b",
-                      label: "Flouci",
-                    },
-                    {
-                      name: "Virement Bancaire",
-                      balance: "356,800 DT",
-                      bg: "#e5e7eb",
-                      label: "🏛",
-                      dark: false,
-                    },
-                  ].map((pm, i) => (
-                    <div
-                      key={i}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 10,
-                        padding: "9px 0",
-                        borderBottom:
-                          i < 2 ? "1px solid #f3f4f6" : "none",
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: 36,
-                          height: 36,
-                          borderRadius: 8,
-                          background: pm.bg,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontSize: pm.dark === false ? 18 : 11,
-                          fontWeight: 800,
-                          color:
-                            pm.dark === false ? "#374151" : "#fff",
-                          flexShrink: 0,
-                        }}
-                      >
-                        {pm.label}
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <div
-                          style={{
-                            fontSize: 13,
-                            fontWeight: 600,
-                            color: "#111827",
-                          }}
-                        >
-                          {pm.name}
-                        </div>
-                        <div style={{ fontSize: 11, color: "#9ca3af" }}>
-                          Balance: {pm.balance}
-                        </div>
-                      </div>
-                      <span
-                        className={`${styles.badge} ${styles.badgeCompleted}`}
-                        style={{ fontSize: 10.5 }}
-                      >
-                        Active
-                      </span>
-                    </div>
-                  ))}
-                </div>
+            {/* Platform Summary */}
+            <div className={`${styles.card} ${styles.summaryCard}`}>
+              <div className={styles.cardHeader}>
+                <span className={styles.cardTitle}>Platform Summary</span>
               </div>
-
-              {/* Platform Summary */}
-              <div className={`${styles.card} ${styles.summaryCard}`}>
-                <div className={styles.cardHeader}>
-                  <span className={styles.cardTitle}>Platform Summary</span>
-                </div>
-                <div className={styles.summaryList}>
-                  {[
-                    {
-                      label: "Commission Rate",
-                      value: "10%",
-                      icon: <Percent size={13} />,
-                    },
-                    {
-                      label: "Total Commission",
-                      value: "1,743 DT",
-                      icon: <DollarSign size={13} />,
-                    },
-                    {
-                      label: "Active Technicians",
-                      value: "1,102",
-                      icon: <Wrench size={13} />,
-                    },
-                    {
-                      label: "New Technicians (7 days)",
-                      value: "54",
-                      icon: <UserCheck size={13} />,
-                    },
-                    {
-                      label: "Active Jobs",
-                      value: "2,026",
-                      icon: <Building2 size={13} />,
-                    },
-                    {
-                      label: "Completed Jobs",
-                      value: "3,245",
-                      icon: <BarChart2 size={13} />,
-                    },
-                  ].map((item, i) => (
-                    <div key={i} className={styles.summaryItem}>
-                      <div className={styles.summaryLeft}>
-                        <span className={styles.summaryIcon}>
-                          {item.icon}
-                        </span>
-                        {item.label}
-                      </div>
-                      <span className={styles.summaryValue}>
-                        {item.value}
-                      </span>
+              <div className={styles.summaryList}>
+                {[
+                  { label: "Platform Earnings", value: formatDT(stats.platformEarnings), icon: <DollarSign size={13} /> },
+                  { label: "Total Technicians", value: stats.totalTechnicians, icon: <Wrench size={13} /> },
+                  { label: "Total Clients", value: stats.totalClients, icon: <UserCheck size={13} /> },
+                  { label: "Completed Jobs", value: jobsOverview.completed, icon: <BarChart2 size={13} /> },
+                  { label: "Active Jobs", value: jobsOverview.inProgress, icon: <Building2 size={13} /> },
+                  { label: "Pending Jobs", value: jobsOverview.pending, icon: <Percent size={13} /> },
+                ].map((item, i) => (
+                  <div key={i} className={styles.summaryItem}>
+                    <div className={styles.summaryLeft}>
+                      <span className={styles.summaryIcon}>{item.icon}</span>
+                      {item.label}
                     </div>
-                  ))}
-                </div>
-                <button className={styles.detailedReportsBtn}>
-                  <BarChart2 size={14} />
-                  View Detailed Reports
-                </button>
+                    <span className={styles.summaryValue}>{item.value}</span>
+                  </div>
+                ))}
               </div>
+              <Link href="/admin/revenue" className={styles.detailedReportsBtn}>
+                <BarChart2 size={14} />
+                View Detailed Reports
+              </Link>
             </div>
           </div>
+
         </main>
       </div>
     </div>

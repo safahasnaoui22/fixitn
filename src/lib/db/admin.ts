@@ -345,3 +345,335 @@ export async function updateAdminPlan(
 ) {
   await prisma.plan.update({ where: { id }, data: input });
 }
+
+
+export async function getDashboardData() {
+  const [
+    totalClients,
+    totalTechnicians,
+    revenue,
+    grossRevenue,
+    completed,
+    pending,
+    inProgress,
+    terminated,
+    recentRequests,
+    technicians,
+    recentPayments,
+    recentNotifications,
+    monthly,
+  ] = await Promise.all([
+    prisma.user.count({
+      where: { role: "CLIENT" },
+    }),
+
+    prisma.technician.count(),
+
+    prisma.payment.aggregate({
+      where: { type: "PAYOUT" },
+      _sum: {
+        platformFee: true,
+      },
+    }),
+
+    prisma.payment.aggregate({
+      where: { type: "PAYOUT" },
+      _sum: {
+        amount: true,
+      },
+    }),
+
+    prisma.serviceRequest.count({
+      where: { status: "COMPLETED" },
+    }),
+
+    prisma.serviceRequest.count({
+      where: { status: "PENDING" },
+    }),
+
+    prisma.serviceRequest.count({
+      where: {
+        status: {
+          in: [
+            "ACCEPTED",
+            "ON_THE_WAY",
+            "ARRIVED",
+            "IN_PROGRESS",
+          ],
+        },
+      },
+    }),
+
+    prisma.serviceRequest.count({
+      where: {
+        status: {
+          in: [
+            "CANCELLED",
+            "DECLINED",
+          ],
+        },
+      },
+    }),
+
+    prisma.serviceRequest.findMany({
+      take: 5,
+      orderBy: {
+        createdAt: "desc",
+      },
+      select: {
+        id: true,
+        status: true,
+        createdAt: true,
+
+        category: {
+          select: {
+            name: true,
+          },
+        },
+
+        client: {
+          select: {
+            fullName: true,
+            avatarUrl: true,
+          },
+        },
+
+        technician: {
+          select: {
+            user: {
+              select: {
+                fullName: true,
+                avatarUrl: true,
+              },
+            },
+          },
+        },
+
+        payment: {
+          select: {
+            amount: true,
+          },
+        },
+      },
+    }),
+
+    prisma.technician.findMany({
+      select: {
+        title: true,
+
+        user: {
+          select: {
+            fullName: true,
+            avatarUrl: true,
+          },
+        },
+
+        reviews: {
+          select: {
+            rating: true,
+          },
+        },
+
+        _count: {
+          select: {
+            requestsReceived: {
+              where: {
+                status: "COMPLETED",
+              },
+            },
+          },
+        },
+
+        payments: {
+          where: {
+            type: "PAYOUT",
+          },
+          select: {
+            amount: true,
+            platformFee: true,
+          },
+        },
+      },
+    }),
+
+    prisma.payment.findMany({
+      take: 5,
+      orderBy: {
+        createdAt: "desc",
+      },
+      select: {
+        id: true,
+        amount: true,
+        platformFee: true,
+        method: true,
+        status: true,
+        type: true,
+        createdAt: true,
+
+        technician: {
+          select: {
+            user: {
+              select: {
+                fullName: true,
+              },
+            },
+          },
+        },
+      },
+    }),
+
+    prisma.notification.findMany({
+      take: 5,
+      orderBy: {
+        createdAt: "desc",
+      },
+      select: {
+        title: true,
+        type: true,
+        createdAt: true,
+
+        user: {
+          select: {
+            fullName: true,
+          },
+        },
+      },
+    }),
+
+    prisma.$queryRaw<
+      Array<{
+        month: string;
+        fee: number;
+        gross: number;
+      }>
+    >`
+      SELECT
+        TO_CHAR("createdAt",'YYYY-MM') AS month,
+        SUM("platformFee")::int AS fee,
+        SUM("amount")::int AS gross
+      FROM "Payment"
+      WHERE type='PAYOUT'
+      GROUP BY TO_CHAR("createdAt",'YYYY-MM')
+      ORDER BY month ASC
+      LIMIT 7
+    `,
+  ]);
+
+  return {
+    stats: {
+      totalClients,
+      totalTechnicians,
+      totalJobs:
+        completed +
+        pending +
+        inProgress +
+        terminated,
+
+      platformEarnings:
+        revenue._sum.platformFee ?? 0,
+
+      totalRevenue:
+        grossRevenue._sum.amount ?? 0,
+    },
+
+    jobsOverview: {
+      completed,
+      pending,
+      inProgress,
+      terminated,
+    },
+
+    recentJobs: recentRequests.map((r) => ({
+      id: "#" + r.id.slice(0, 6).toUpperCase(),
+
+      service: r.category.name,
+
+      clientName: r.client.fullName,
+      clientAvatar: r.client.avatarUrl,
+
+      technicianName: r.technician.user.fullName,
+      technicianAvatar: r.technician.user.avatarUrl,
+
+      status: r.status,
+
+      amount: r.payment?.amount ?? null,
+
+      createdAt: r.createdAt.toISOString(),
+    })),
+
+    topTechnicians: technicians
+      .map((t) => ({
+        name: t.user.fullName,
+
+        avatarUrl: t.user.avatarUrl,
+
+        title: t.title,
+
+        jobs: t._count.requestsReceived,
+
+        rating:
+          t.reviews.length > 0
+            ? t.reviews.reduce(
+                (sum, review) => sum + review.rating,
+                0
+              ) / t.reviews.length
+            : null,
+
+        earnings: t.payments.reduce(
+          (sum, payment) =>
+            sum +
+            payment.amount -
+            payment.platformFee,
+          0
+        ),
+      }))
+      .sort((a, b) => b.jobs - a.jobs)
+      .slice(0, 5),
+
+    recentPayments: recentPayments.map((payment) => ({
+      id: "#" + payment.id.slice(0, 6).toUpperCase(),
+
+      technicianName:
+        payment.technician.user.fullName,
+
+      amount: payment.amount,
+
+      platformFee: payment.platformFee,
+
+      method: payment.method,
+
+      status: payment.status,
+
+      type: payment.type,
+
+      createdAt:
+        payment.createdAt.toISOString(),
+    })),
+
+    recentNotifications:
+      recentNotifications.map((notification) => ({
+        title: notification.title,
+
+        type: notification.type,
+
+        userName:
+          notification.user.fullName,
+
+        createdAt:
+          notification.createdAt.toISOString(),
+      })),
+
+    monthly: monthly.map((m) => ({
+      date: new Date(`${m.month}-01`).toLocaleDateString(
+        "en-US",
+        {
+          month: "short",
+        }
+      ),
+
+      value: Number(m.gross),
+
+      fee: Number(m.fee),
+    })),
+  };
+}

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Sora, Inter } from "next/font/google";
 import "./globals.css";
+import AppShell from "@/components/app-shell";
 
 const sora = Sora({
   variable: "--font-sora",
@@ -32,9 +33,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${sora.variable} ${inter.variable} antialiased`}>
-      <body className="bg-surface-alt">
-        <div className="app-shell">{children}</div>
-      </body>
+     <body className="bg-surface-alt">
+  <AppShell>{children}</AppShell>
+</body>
     </html>
   );
 }
