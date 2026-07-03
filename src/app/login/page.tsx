@@ -28,7 +28,19 @@ export default async function LoginPage({
   searchParams: Promise<{ error?: string }>;
 }) {
   const session = await getSession();
-  if (session) redirect(session.role === "TECHNICIAN" ? "/t/dashboard" : "/");
+ if (session) {
+  if (session.role === "TECHNICIAN") {
+    redirect("/t/dashboard");
+  }
+
+  if (session.role === "ADMIN") {
+    redirect("/admin");
+  }
+
+  // Customer or any other role
+  redirect("/");
+}
+  
   const { error } = await searchParams;
 
   return (
