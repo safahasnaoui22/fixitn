@@ -677,3 +677,101 @@ export async function getDashboardData() {
     })),
   };
 }
+export async function getAdminRequestDetail(requestId: string) {
+  const req = await prisma.serviceRequest.findUnique({
+    where: { id: requestId },
+    include: {
+      category: true,
+      client: { select: { id: true, fullName: true, phone: true, avatarUrl: true } },
+      technician: {
+        include: {
+          user: { select: { id: true, fullName: true, phone: true, avatarUrl: true } },
+          plan: { select: { key: true, commissionRate: true } },
+        },
+      },
+      payment: true,
+      review: { include: { author: { select: { fullName: true } } } },
+    },
+  });
+  if (!req) return null;
+  return {
+    id: req.id,
+    status: req.status,
+    description: req.description,
+    address: req.address,
+    phone: req.phone,
+    fullName: req.fullName,
+    clientConfirmedSolved: req.clientConfirmedSolved,
+    pendingAt: req.pendingAt.toISOString(),
+    acceptedAt: req.acceptedAt?.toISOString() ?? null,
+    onTheWayAt: req.onTheWayAt?.toISOString() ?? null,
+    arrivedAt: req.arrivedAt?.toISOString() ?? null,
+    inProgressAt: req.inProgressAt?.toISOString() ?? null,
+    completedAt: req.completedAt?.toISOString() ?? null,
+    declinedAt: req.declinedAt?.toISOString() ?? null,
+    cancelledAt: req.cancelledAt?.toISOString() ?? null,
+    createdAt: req.createdAt.toISOString(),
+    category: { name: req.category.name, icon: req.category.icon, color: req.category.color },
+    client: { ...req.client },
+    technician: {
+      id: req.technician.id,
+      userId: req.technician.user.id,
+      fullName: req.technician.user.fullName,
+      phone: req.technician.user.phone,
+      avatarUrl: req.technician.user.avatarUrl,
+      planKey: req.technician.plan?.key ?? "FREE",
+      commissionRate: req.technician.plan?.commissionRate ?? 0.15,
+    },
+    payment: req.payment
+      ? {
+          amount: req.payment.amount,
+          platformFee: req.payment.platformFee,
+          method: req.payment.method,
+          status: req.payment.status,
+          createdAt: req.payment.createdAt.toISOString(),
+        }
+      : null,
+    review: req.review
+      ? { rating: req.review.rating, comment: req.review.comment, authorFullName: req.review.author.fullName }
+      : null,
+  };
+}
+
+export async function getRevenueStats() {
+  const [totalFees, byMethod, monthly] = await Promise.all([
+    prisma.payment.aggregate({
+      where: { type: "PAYOUT" },
+      _sum: { platformFee: true, amount: true },
+      _count: true,
+    }),
+    prisma.payment.groupBy({
+      by: ["method"],
+      where: { type: "PAYOUT" },
+      _sum: { platformFee: true },
+      _count: true,
+    }),
+    prisma.$queryRaw<Array<{ month: string; fee: number; gross: number }>>`
+      SELECT
+        TO_CHAR("createdAt", 'YYYY-MM') AS month,
+        SUM("platformFee")::int          AS fee,
+        SUM("amount")::int               AS gross
+      FROM "Payment"
+      WHERE type = 'PAYOUT'
+      GROUP BY TO_CHAR("createdAt", 'YYYY-MM')
+      ORDER BY month DESC
+      LIMIT 12
+    `,
+  ]);
+
+  return {
+    totalFees: totalFees._sum.platformFee ?? 0,
+    totalGross: totalFees._sum.amount ?? 0,
+    totalJobs: totalFees._count,
+    byMethod: byMethod.map((b) => ({
+      method: b.method,
+      fees: b._sum.platformFee ?? 0,
+      count: b._count,
+    })),
+    monthly: monthly.reverse(),
+  };
+}
