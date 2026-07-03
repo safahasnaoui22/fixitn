@@ -19,7 +19,9 @@ async function loginAction(formData: FormData): Promise<void> {
   }
 
   await createSession({ userId: user.id, role: user.role, fullName: user.fullName });
-  redirect(user.role === "TECHNICIAN" ? "/t/dashboard" : "/");
+  if (user.role === "TECHNICIAN") redirect("/t/dashboard");
+  if (user.role === "ADMIN") redirect("/admin");
+  redirect("/");
 }
 
 export default async function LoginPage({
