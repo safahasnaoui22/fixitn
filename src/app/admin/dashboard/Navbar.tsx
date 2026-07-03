@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import styles from "./dashboard.module.css";
 import {
   LayoutDashboard, Users, Wrench, LayoutGrid,
   ClipboardList, CreditCard, BadgeDollarSign,
-  RefreshCcw, Globe, ChevronDown,
+  RefreshCcw, Globe, X,
 } from "lucide-react";
 
 interface NavItem {
@@ -33,9 +33,10 @@ interface NavSectionProps {
   title: string;
   items: NavItem[];
   pathname: string;
+  onNavigate?: () => void;
 }
 
-const NavSection: React.FC<NavSectionProps> = ({ title, items, pathname }) => (
+const NavSection: React.FC<NavSectionProps> = ({ title, items, pathname, onNavigate }) => (
   <div className={styles.navSection}>
     <span className={styles.navSectionTitle}>{title}</span>
     {items.map((item) => {
@@ -45,6 +46,7 @@ const NavSection: React.FC<NavSectionProps> = ({ title, items, pathname }) => (
           key={item.href}
           href={item.href}
           className={`${styles.navItem} ${active ? styles.navItemActive : ""}`}
+          onClick={onNavigate}
         >
           <span className={styles.navItemIcon}>{item.icon}</span>
           <span className={styles.navItemLabel}>{item.label}</span>
@@ -55,15 +57,15 @@ const NavSection: React.FC<NavSectionProps> = ({ title, items, pathname }) => (
 );
 
 interface NavbarProps {
-  activeItem?: string;
-  onSelect?: (label: string) => void;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
-const Navbar: React.FC<NavbarProps> = () => {
+const Navbar: React.FC<NavbarProps> = ({ isOpen = false, onClose }) => {
   const pathname = usePathname();
 
   return (
-    <aside className={styles.sidebar}>
+    <aside className={`${styles.sidebar} ${isOpen ? styles.sidebarOpen : ""}`}>
       {/* Logo */}
       <div className={styles.sidebarLogo}>
         <div className={styles.logoIcon}>
@@ -73,6 +75,9 @@ const Navbar: React.FC<NavbarProps> = () => {
           <span className={styles.logoTitle}>FixiTN</span>
           <span className={styles.logoSubtitle}>Admin Dashboard</span>
         </div>
+        <button className={styles.sidebarCloseBtn} onClick={onClose} aria-label="Close menu">
+          <X size={16} />
+        </button>
       </div>
 
       {/* Dashboard link */}
@@ -80,6 +85,7 @@ const Navbar: React.FC<NavbarProps> = () => {
         <Link
           href="/admin"
           className={`${styles.navItem} ${pathname === "/admin" ? styles.navItemDashboard : ""}`}
+          onClick={onClose}
         >
           <span className={styles.navItemIcon}><LayoutDashboard size={16} /></span>
           <span className={styles.navItemLabel}>Dashboard</span>
@@ -88,8 +94,8 @@ const Navbar: React.FC<NavbarProps> = () => {
 
       {/* Nav sections */}
       <nav className={styles.sidebarNav}>
-        <NavSection title="MANAGEMENT" items={MANAGEMENT_ITEMS} pathname={pathname} />
-        <NavSection title="FINANCIAL" items={FINANCIAL_ITEMS} pathname={pathname} />
+        <NavSection title="MANAGEMENT" items={MANAGEMENT_ITEMS} pathname={pathname} onNavigate={onClose} />
+        <NavSection title="FINANCIAL" items={FINANCIAL_ITEMS} pathname={pathname} onNavigate={onClose} />
       </nav>
 
       {/* Footer */}

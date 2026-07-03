@@ -5,9 +5,9 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
 import {
-  Search, Bell, Plus, ChevronDown, Calendar, TrendingUp,
+  Search, Bell, ChevronDown, TrendingUp,
   Star, BarChart2, Users, Wrench, DollarSign, Briefcase, Percent,
-  UserCheck, Building2,
+  UserCheck, Building2, Menu,
 } from "lucide-react";
 import Link from "next/link";
 import Navbar from "./Navbar";
@@ -125,17 +125,30 @@ function AvatarCell({ name, avatarUrl, size = 28 }: { name: string; avatarUrl: s
 
 const Dashboard: React.FC<{ data: DashboardData }> = ({ data }) => {
   const [activeNav, setActiveNav] = useState("Dashboard");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const { stats, jobsOverview, recentJobs, topTechnicians, recentPayments, recentNotifications, monthly } = data;
   const total = jobsOverview.completed + jobsOverview.inProgress + jobsOverview.pending + jobsOverview.terminated || 1;
 
   return (
     <div className={styles.dashboardLayout}>
-      <Navbar activeItem={activeNav} onSelect={setActiveNav} />
+      {/* Backdrop shown behind the sidebar when open on mobile/tablet */}
+      {sidebarOpen && (
+        <div className={styles.sidebarBackdrop} onClick={() => setSidebarOpen(false)} />
+      )}
+
+      <Navbar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div className={styles.mainContent}>
         {/* Topbar */}
         <header className={styles.topbar}>
           <div className={styles.topbarLeft}>
+            <button
+              className={styles.hamburger}
+              onClick={() => setSidebarOpen(true)}
+              aria-label="Open menu"
+            >
+              <Menu size={20} />
+            </button>
             <h1 className={styles.topbarTitle}>Dashboard Overview</h1>
           </div>
           <div className={styles.topbarRight}>
@@ -308,43 +321,45 @@ const Dashboard: React.FC<{ data: DashboardData }> = ({ data }) => {
                 <span className={styles.cardTitle}>Recent Jobs</span>
                 <Link href="/admin/requests" className={styles.viewAll}>View All</Link>
               </div>
-              <table className={styles.dataTable}>
-                <thead>
-                  <tr>
-                    <th>Job ID</th><th>Service</th><th>Client</th>
-                    <th>Technician</th><th>Status</th><th>Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recentJobs.length === 0 && (
-                    <tr><td colSpan={6} style={{ textAlign: "center", color: "#9ca3af", padding: 16 }}>No jobs yet</td></tr>
-                  )}
-                  {recentJobs.map((job) => (
-                    <tr key={job.id}>
-                      <td><Link href={`/admin/requests`} className={styles.jobId}>{job.id}</Link></td>
-                      <td>{job.service}</td>
-                      <td>
-                        <div className={styles.personCell}>
-                          <AvatarCell name={job.clientName} avatarUrl={job.clientAvatar} />
-                          <span>{job.clientName}</span>
-                        </div>
-                      </td>
-                      <td>
-                        <div className={styles.personCell}>
-                          <AvatarCell name={job.technicianName} avatarUrl={job.technicianAvatar} />
-                          <span>{job.technicianName}</span>
-                        </div>
-                      </td>
-                      <td>
-                        <span className={`${styles.badge} ${getStatusClass(job.status, styles)}`}>
-                          {getStatusDisplay(job.status)}
-                        </span>
-                      </td>
-                      <td style={{ fontWeight: 600 }}>{job.amount ? formatDT(job.amount) : "—"}</td>
+              <div className={styles.tableScroll}>
+                <table className={styles.dataTable}>
+                  <thead>
+                    <tr>
+                      <th>Job ID</th><th>Service</th><th>Client</th>
+                      <th>Technician</th><th>Status</th><th>Amount</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {recentJobs.length === 0 && (
+                      <tr><td colSpan={6} style={{ textAlign: "center", color: "#9ca3af", padding: 16 }}>No jobs yet</td></tr>
+                    )}
+                    {recentJobs.map((job) => (
+                      <tr key={job.id}>
+                        <td><Link href={`/admin/requests`} className={styles.jobId}>{job.id}</Link></td>
+                        <td>{job.service}</td>
+                        <td>
+                          <div className={styles.personCell}>
+                            <AvatarCell name={job.clientName} avatarUrl={job.clientAvatar} />
+                            <span>{job.clientName}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <div className={styles.personCell}>
+                            <AvatarCell name={job.technicianName} avatarUrl={job.technicianAvatar} />
+                            <span>{job.technicianName}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <span className={`${styles.badge} ${getStatusClass(job.status, styles)}`}>
+                            {getStatusDisplay(job.status)}
+                          </span>
+                        </td>
+                        <td style={{ fontWeight: 600 }}>{job.amount ? formatDT(job.amount) : "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             {/* Top Technicians */}
@@ -353,39 +368,41 @@ const Dashboard: React.FC<{ data: DashboardData }> = ({ data }) => {
                 <span className={styles.cardTitle}>Top Technicians</span>
                 <Link href="/admin/technicians" className={styles.viewAll}>View All</Link>
               </div>
-              <table className={styles.techTable}>
-                <thead>
-                  <tr><th>Technician</th><th>Jobs</th><th>Rating</th><th>Earnings</th></tr>
-                </thead>
-                <tbody>
-                  {topTechnicians.length === 0 && (
-                    <tr><td colSpan={4} style={{ textAlign: "center", color: "#9ca3af", padding: 16 }}>No data yet</td></tr>
-                  )}
-                  {topTechnicians.map((tech) => (
-                    <tr key={tech.name}>
-                      <td>
-                        <div className={styles.personCell}>
-                          <AvatarCell name={tech.name} avatarUrl={tech.avatarUrl} />
-                          <div>
-                            <div className={styles.techName}>{tech.name}</div>
-                            <div className={styles.techRole}>{tech.title}</div>
+              <div className={styles.tableScroll}>
+                <table className={styles.techTable}>
+                  <thead>
+                    <tr><th>Technician</th><th>Jobs</th><th>Rating</th><th>Earnings</th></tr>
+                  </thead>
+                  <tbody>
+                    {topTechnicians.length === 0 && (
+                      <tr><td colSpan={4} style={{ textAlign: "center", color: "#9ca3af", padding: 16 }}>No data yet</td></tr>
+                    )}
+                    {topTechnicians.map((tech) => (
+                      <tr key={tech.name}>
+                        <td>
+                          <div className={styles.personCell}>
+                            <AvatarCell name={tech.name} avatarUrl={tech.avatarUrl} />
+                            <div>
+                              <div className={styles.techName}>{tech.name}</div>
+                              <div className={styles.techRole}>{tech.title}</div>
+                            </div>
                           </div>
-                        </div>
-                      </td>
-                      <td style={{ fontWeight: 600 }}>{tech.jobs}</td>
-                      <td>
-                        {tech.rating != null ? (
-                          <div className={styles.ratingCell}>
-                            <Star size={12} fill="#f59e0b" className={styles.starIcon} />
-                            {tech.rating.toFixed(1)}
-                          </div>
-                        ) : "—"}
-                      </td>
-                      <td style={{ fontWeight: 600, whiteSpace: "nowrap" }}>{formatDT(tech.earnings)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                        </td>
+                        <td style={{ fontWeight: 600 }}>{tech.jobs}</td>
+                        <td>
+                          {tech.rating != null ? (
+                            <div className={styles.ratingCell}>
+                              <Star size={12} fill="#f59e0b" className={styles.starIcon} />
+                              {tech.rating.toFixed(1)}
+                            </div>
+                          ) : "—"}
+                        </td>
+                        <td style={{ fontWeight: 600, whiteSpace: "nowrap" }}>{formatDT(tech.earnings)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
 
@@ -397,39 +414,41 @@ const Dashboard: React.FC<{ data: DashboardData }> = ({ data }) => {
                 <span className={styles.cardTitle}>Recent Payments</span>
                 <Link href="/admin/payments" className={styles.viewAll}>View All</Link>
               </div>
-              <table className={styles.dataTable}>
-                <thead>
-                  <tr>
-                    <th>ID</th><th>Technician</th><th>Amount</th>
-                    <th>Platform Fee</th><th>Method</th><th>Status</th><th>Type</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recentPayments.length === 0 && (
-                    <tr><td colSpan={7} style={{ textAlign: "center", color: "#9ca3af", padding: 16 }}>No payments yet</td></tr>
-                  )}
-                  {recentPayments.map((p) => (
-                    <tr key={p.id}>
-                      <td><span className={styles.jobId}>{p.id}</span></td>
-                      <td>
-                        <div className={styles.personCell}>
-                          <AvatarCell name={p.technicianName} avatarUrl={null} />
-                          <span>{p.technicianName}</span>
-                        </div>
-                      </td>
-                      <td style={{ fontWeight: 600 }}>{formatDT(p.amount)}</td>
-                      <td style={{ fontWeight: 600, color: "#ef4444" }}>{formatDT(p.platformFee)}</td>
-                      <td><PayMethodBadge method={p.method} /></td>
-                      <td>
-                        <span className={`${styles.badge} ${p.status === "PAID" ? styles.badgePaid : p.status === "PENDING" ? styles.badgePending : styles.badgeCancelled}`}>
-                          {p.status}
-                        </span>
-                      </td>
-                      <td style={{ color: "#6b7280" }}>{p.type}</td>
+              <div className={styles.tableScroll}>
+                <table className={styles.dataTable}>
+                  <thead>
+                    <tr>
+                      <th>ID</th><th>Technician</th><th>Amount</th>
+                      <th>Platform Fee</th><th>Method</th><th>Status</th><th>Type</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {recentPayments.length === 0 && (
+                      <tr><td colSpan={7} style={{ textAlign: "center", color: "#9ca3af", padding: 16 }}>No payments yet</td></tr>
+                    )}
+                    {recentPayments.map((p) => (
+                      <tr key={p.id}>
+                        <td><span className={styles.jobId}>{p.id}</span></td>
+                        <td>
+                          <div className={styles.personCell}>
+                            <AvatarCell name={p.technicianName} avatarUrl={null} />
+                            <span>{p.technicianName}</span>
+                          </div>
+                        </td>
+                        <td style={{ fontWeight: 600 }}>{formatDT(p.amount)}</td>
+                        <td style={{ fontWeight: 600, color: "#ef4444" }}>{formatDT(p.platformFee)}</td>
+                        <td><PayMethodBadge method={p.method} /></td>
+                        <td>
+                          <span className={`${styles.badge} ${p.status === "PAID" ? styles.badgePaid : p.status === "PENDING" ? styles.badgePending : styles.badgeCancelled}`}>
+                            {p.status}
+                          </span>
+                        </td>
+                        <td style={{ color: "#6b7280" }}>{p.type}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             {/* Platform Summary */}
