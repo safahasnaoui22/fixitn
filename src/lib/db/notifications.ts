@@ -25,6 +25,19 @@ export async function createNotification(input: {
       requestId: input.requestId ?? null,
     },
   });
+
+  // Also send a push notification so they get it even with the app closed
+  try {
+    const { sendPushToUser } = await import("../webpush");
+    await sendPushToUser(input.userId, {
+      title: input.title,
+      body: input.body ?? undefined,
+      url: input.requestId ? `/requests/${input.requestId}` : "/notifications",
+      tag: input.type,
+    });
+  } catch {
+    // Push failure never breaks the main notification flow
+  }
 }
 
 export async function listNotifications(userId: string): Promise<Notification[]> {

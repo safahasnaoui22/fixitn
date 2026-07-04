@@ -23,6 +23,7 @@ model User {
   reviewsWritten Review[]
   requestsMade   ServiceRequest[] @relation("ClientRequests")
   technician     Technician?
+  pushSubscriptions PushSubscription[]
 }
 
 model Technician {
@@ -169,4 +170,14 @@ model Notification {
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
 }
