@@ -23,7 +23,15 @@ function mapTechWithUser(t: any, ratingAvg: number | null, ratingCount: number):
     longitude: t.longitude,
     verified: t.verified,
     galleryImages: parseStringArray(t.galleryImages),
-    planId: t.planId,
+    cinUrl: t.cinUrl ?? null,
+    diplomeUrl: t.diplomeUrl ?? null,
+    isSenior: t.isSenior ?? false,
+    seniorSince: t.seniorSince
+      ? t.seniorSince instanceof Date
+        ? t.seniorSince.toISOString()
+        : t.seniorSince
+      : null,
+    planId: t.planId ?? null,
     createdAt: t.createdAt instanceof Date ? t.createdAt.toISOString() : t.createdAt,
     fullName: t.user.fullName,
     avatarUrl: t.user.avatarUrl,
@@ -54,7 +62,9 @@ export async function getCategoryBySlug(slug: string): Promise<Category | null> 
   return c ? mapCategory(c) : null;
 }
 
-export async function listTechniciansByCategorySlug(slug: string): Promise<TechnicianWithUser[]> {
+export async function listTechniciansByCategorySlug(
+  slug: string
+): Promise<TechnicianWithUser[]> {
   const technicians = await prisma.technician.findMany({
     where: { categories: { some: { slug } } },
     include: TECH_INCLUDE,
@@ -65,27 +75,41 @@ export async function listTechniciansByCategorySlug(slug: string): Promise<Techn
       return { t, avg, count };
     })
     .sort((a, b) => {
+      // Senior Pro technicians always appear first
+      if (a.t.isSenior !== b.t.isSenior) return a.t.isSenior ? -1 : 1;
+      // Then verified
       if (a.t.verified !== b.t.verified) return a.t.verified ? -1 : 1;
+      // Then by rating
       return (b.avg ?? 0) - (a.avg ?? 0);
     })
     .map(({ t, avg, count }) => mapTechWithUser(t, avg, count));
 }
 
 export async function getTechnicianById(id: string): Promise<TechnicianWithUser | null> {
-  const t = await prisma.technician.findUnique({ where: { id }, include: TECH_INCLUDE });
+  const t = await prisma.technician.findUnique({
+    where: { id },
+    include: TECH_INCLUDE,
+  });
   if (!t) return null;
   const { avg, count } = computeRating(t.reviews);
   return mapTechWithUser(t, avg, count);
 }
 
-export async function getTechnicianByUserId(userId: string): Promise<TechnicianWithUser | null> {
-  const t = await prisma.technician.findUnique({ where: { userId }, include: TECH_INCLUDE });
+export async function getTechnicianByUserId(
+  userId: string
+): Promise<TechnicianWithUser | null> {
+  const t = await prisma.technician.findUnique({
+    where: { userId },
+    include: TECH_INCLUDE,
+  });
   if (!t) return null;
   const { avg, count } = computeRating(t.reviews);
   return mapTechWithUser(t, avg, count);
 }
 
-export async function listCategoriesForTechnician(technicianId: string): Promise<Category[]> {
+export async function listCategoriesForTechnician(
+  technicianId: string
+): Promise<Category[]> {
   const t = await prisma.technician.findUnique({
     where: { id: technicianId },
     include: { categories: { orderBy: { sortOrder: "asc" } } },
@@ -101,6 +125,8 @@ export async function createTechnicianProfile(input: {
   startingPrice?: number;
   categoryIds: string[];
   planId: string;
+  cinUrl?: string | null;
+  diplomeUrl?: string | null;
 }): Promise<Technician> {
   const t = await prisma.technician.create({
     data: {
@@ -110,6 +136,9 @@ export async function createTechnicianProfile(input: {
       yearsExperience: input.yearsExperience ?? 0,
       startingPrice: input.startingPrice ?? 0,
       galleryImages: toStringArray([]),
+      cinUrl: input.cinUrl ?? null,
+      diplomeUrl: input.diplomeUrl ?? null,
+      isSenior: false,
       planId: input.planId,
       categories: { connect: input.categoryIds.map((id) => ({ id })) },
     },
@@ -125,6 +154,10 @@ export async function createTechnicianProfile(input: {
     longitude: t.longitude,
     verified: t.verified,
     galleryImages: parseStringArray(t.galleryImages),
+    cinUrl: t.cinUrl,
+    diplomeUrl: t.diplomeUrl,
+    isSenior: t.isSenior,
+    seniorSince: t.seniorSince?.toISOString() ?? null,
     planId: t.planId,
     createdAt: t.createdAt.toISOString(),
   };
@@ -132,18 +165,45 @@ export async function createTechnicianProfile(input: {
 
 export async function updateTechnicianProfile(
   technicianId: string,
-  input: { title: string; bio: string | null; yearsExperience: number; startingPrice: number }
+  input: {
+    title: string;
+    bio: string | null;
+    yearsExperience: number;
+    startingPrice: number;
+  }
 ): Promise<void> {
-  await prisma.technician.update({ where: { id: technicianId }, data: input });
+  await prisma.technician.update({
+    where: { id: technicianId },
+    data: input,
+  });
+}
+
+export async function updateTechnicianDocuments(
+  technicianId: string,
+  input: { cinUrl?: string; diplomeUrl?: string }
+): Promise<void> {
+  await prisma.technician.update({
+    where: { id: technicianId },
+    data: {
+      ...(input.cinUrl ? { cinUrl: input.cinUrl } : {}),
+      ...(input.diplomeUrl ? { diplomeUrl: input.diplomeUrl } : {}),
+    },
+  });
 }
 
 export async function getTechnicianStats(
   technicianId: string
 ): Promise<{ jobsCompleted: number; satisfactionPct: number | null }> {
   const [jobsCompleted, solved, answered] = await Promise.all([
-    prisma.serviceRequest.count({ where: { technicianId, status: "COMPLETED" } }),
-    prisma.serviceRequest.count({ where: { technicianId, status: "COMPLETED", clientConfirmedSolved: true } }),
-    prisma.serviceRequest.count({ where: { technicianId, status: "COMPLETED", clientConfirmedSolved: { not: null } } }),
+    prisma.serviceRequest.count({
+      where: { technicianId, status: "COMPLETED" },
+    }),
+    prisma.serviceRequest.count({
+      where: { technicianId, status: "COMPLETED", clientConfirmedSolved: true },
+    }),
+    prisma.serviceRequest.count({
+      where: { technicianId, status: "COMPLETED", clientConfirmedSolved: { not: null } },
+    }),
   ]);
   return {
     jobsCompleted,

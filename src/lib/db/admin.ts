@@ -115,32 +115,64 @@ export interface AdminTechnician {
 export async function listAdminTechnicians(): Promise<AdminTechnician[]> {
   const technicians = await prisma.technician.findMany({
     include: {
-      user: { select: { fullName: true, phone: true, avatarUrl: true, city: true } },
-      plan: { select: { key: true } },
-      reviews: { select: { rating: true } },
-      _count: { select: { requestsReceived: { where: { status: "COMPLETED" } } } },
+      user: {
+        select: {
+          fullName: true,
+          phone: true,
+          avatarUrl: true,
+          city: true,
+          createdAt: true,
+        },
+      },
+      plan: {
+        select: {
+          key: true,
+        },
+      },
+      reviews: {
+        select: {
+          rating: true,
+        },
+      },
+      _count: {
+        select: {
+          requestsReceived: {
+            where: {
+              status: "COMPLETED",
+            },
+          },
+        },
+      },
     },
-    orderBy: { createdAt: "desc" },
+    orderBy: {
+      createdAt: "desc",
+    },
   });
 
   return technicians.map((t) => {
     const ratingCount = t.reviews.length;
-    const ratingAvg = ratingCount > 0 ? t.reviews.reduce((s, r) => s + r.rating, 0) / ratingCount : null;
+
+    const ratingAvg =
+      ratingCount > 0
+        ? t.reviews.reduce((sum, review) => sum + review.rating, 0) /
+          ratingCount
+        : null;
+
     return {
       id: t.id,
       userId: t.userId,
       fullName: t.user.fullName,
       phone: t.user.phone,
       avatarUrl: t.user.avatarUrl,
-      title: t.title,
       city: t.user.city,
+      title: t.title,
       verified: t.verified,
       planKey: t.plan?.key ?? null,
       startingPrice: t.startingPrice,
       ratingAvg,
       ratingCount,
       jobsCompleted: t._count.requestsReceived,
-      createdAt: t.createdAt.toISOString(),
+      createdAt: t.user.createdAt.toISOString(),
     };
   });
 }
@@ -169,34 +201,52 @@ export async function getAdminTechnicianDetail(technicianId: string) {
     }),
   ]);
 
-  return {
-    id: t.id,
-    userId: t.userId,
-    fullName: t.user.fullName,
-    phone: t.user.phone,
-    email: t.user.email,
-    avatarUrl: t.user.avatarUrl,
-    city: t.user.city,
-    title: t.title,
-    bio: t.bio,
-    yearsExperience: t.yearsExperience,
-    startingPrice: t.startingPrice,
-    verified: t.verified,
-    planKey: t.plan?.key ?? null,
-    planName: t.plan?.name ?? null,
-    commissionRate: t.plan?.commissionRate ?? null,
-    createdAt: t.user.createdAt.toISOString(),
-    categories: t.categories.map((c) => c.name),
-    recentRequests: recentRequests.map((r) => ({
-      id: r.id,
-      status: r.status,
-      createdAt: r.createdAt.toISOString(),
-      categoryName: r.category.name,
-      clientName: r.client.fullName,
-    })),
-    netEarnings: (earningsAgg._sum.amount ?? 0) - (earningsAgg._sum.platformFee ?? 0),
-    feesCollected: earningsAgg._sum.platformFee ?? 0,
-  };
+return {
+  id: t.id,
+  userId: t.userId,
+  fullName: t.user.fullName,
+  phone: t.user.phone,
+  email: t.user.email,
+  avatarUrl: t.user.avatarUrl,
+  city: t.user.city,
+  title: t.title,
+  bio: t.bio,
+  yearsExperience: t.yearsExperience,
+  startingPrice: t.startingPrice,
+
+  verified: t.verified,
+
+  isSenior: t.isSenior,
+  seniorSince: t.seniorSince
+    ? t.seniorSince.toISOString()
+    : null,
+
+  planKey: t.plan?.key ?? null,
+  planName: t.plan?.name ?? null,
+  commissionRate: t.plan?.commissionRate ?? null,
+
+  createdAt: t.user.createdAt.toISOString(),
+
+  categories: t.categories.map((c) => c.name),
+
+  recentRequests: recentRequests.map((r) => ({
+    id: r.id,
+    status: r.status,
+    createdAt: r.createdAt.toISOString(),
+    categoryName: r.category.name,
+    clientName: r.client.fullName,
+  })),
+
+  netEarnings:
+    (earningsAgg._sum.amount ?? 0) -
+    (earningsAgg._sum.platformFee ?? 0),
+
+  feesCollected:
+    earningsAgg._sum.platformFee ?? 0,
+
+  cinUrl: t.cinUrl,
+  diplomeUrl: t.diplomeUrl,
+};
 }
 
 export async function setTechnicianVerified(technicianId: string, verified: boolean): Promise<void> {
@@ -775,3 +825,6 @@ export async function getRevenueStats() {
     monthly: monthly.reverse(),
   };
 }
+
+
+

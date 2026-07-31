@@ -15,3 +15,19 @@ export async function deleteUserAction(userId: string): Promise<void> {
   await deleteUser(userId);
   redirect("/admin/users");
 }
+export async function promoteSeniorAction(
+  technicianId: string,
+  isSenior: boolean
+): Promise<void> {
+  await requireRole("ADMIN");
+  const { manuallySetSenior } = await import("@/lib/db/planConfig");
+  await manuallySetSenior(technicianId, isSenior);
+  redirect(`/admin/technicians/${technicianId}`);
+}
+
+export async function resetFaceAction(userId: string): Promise<void> {
+  await requireRole("ADMIN");
+  const { resetFaceDescriptor } = await import("@/lib/db/face");
+  await resetFaceDescriptor(userId);
+  redirect(`/admin/users/${userId}?success=face-reset`);
+}

@@ -32,9 +32,20 @@ export async function createReview(input: {
       comment: input.comment ?? null,
     },
   });
+
+  // Check Senior Pro eligibility after every new review.
+  // Runs async — never blocks the review creation itself.
+  try {
+    const { checkSeniorEligibility } = await import("../db/planConfig");
+    await checkSeniorEligibility(input.technicianId);
+  } catch {
+    // Promotion failure must never break the review flow
+  }
 }
 
-export async function getReviewByRequestId(requestId: string): Promise<{ id: string } | null> {
+export async function getReviewByRequestId(
+  requestId: string
+): Promise<{ id: string } | null> {
   const r = await prisma.review.findUnique({
     where: { requestId },
     select: { id: true },
@@ -42,7 +53,9 @@ export async function getReviewByRequestId(requestId: string): Promise<{ id: str
   return r ?? null;
 }
 
-export async function listReviewsForTechnician(technicianId: string): Promise<ReviewWithAuthor[]> {
+export async function listReviewsForTechnician(
+  technicianId: string
+): Promise<ReviewWithAuthor[]> {
   const reviews = await prisma.review.findMany({
     where: { technicianId },
     include: { author: { select: { fullName: true, avatarUrl: true } } },
@@ -53,7 +66,11 @@ export async function listReviewsForTechnician(technicianId: string): Promise<Re
 
 export async function getRatingBreakdown(
   technicianId: string
-): Promise<{ counts: Record<1 | 2 | 3 | 4 | 5, number>; avg: number | null; total: number }> {
+): Promise<{
+  counts: Record<1 | 2 | 3 | 4 | 5, number>;
+  avg: number | null;
+  total: number;
+}> {
   const [grouped, aggregate] = await Promise.all([
     prisma.review.groupBy({
       by: ["rating"],
@@ -67,7 +84,9 @@ export async function getRatingBreakdown(
     }),
   ]);
 
-  const counts: Record<1 | 2 | 3 | 4 | 5, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+  const counts: Record<1 | 2 | 3 | 4 | 5, number> = {
+    1: 0, 2: 0, 3: 0, 4: 0, 5: 0,
+  };
   for (const g of grouped) {
     counts[g.rating as 1 | 2 | 3 | 4 | 5] = g._count.rating;
   }

@@ -1,18 +1,27 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth";
 import { getTechnicianByUserId } from "@/lib/db/catalog";
-import { subscribeTechnicianToPlan } from "@/lib/db/monetization";
+import { manuallySetSenior } from "@/lib/db/planConfig";
 
-export async function subscribePlanAction(formData: FormData): Promise<void> {
+/**
+ * Senior Pro is auto-granted — technicians cannot manually subscribe.
+ * The only manual action is a voluntary downgrade back to Beginner,
+ * which removes the Senior badge and reverts the commission rate.
+ */
+export async function requestDowngradeAction(): Promise<void> {
   const session = await requireRole("TECHNICIAN");
   const technician = await getTechnicianByUserId(session.userId);
   if (!technician) redirect("/onboarding");
 
-  const planId = String(formData.get("planId") ?? "");
-  if (!planId) redirect("/plans");
+  if (!technician.isSenior) {
+    redirect("/plans"); // already on Beginner, nothing to do
+  }
 
-  await subscribeTechnicianToPlan(technician.id, planId);
-  redirect("/t/dashboard?plan=updated");
+  await manuallySetSenior(technician.id, false);
+  revalidatePath("/plans");
+  revalidatePath("/t/profile");
+  redirect("/plans");
 }

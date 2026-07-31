@@ -1,11 +1,6 @@
-// Stand-ins for what would be Prisma `enum`s if this were Postgres. Every
-// "enum-like" column in schema.prisma is a plain String for SQLite
-// compatibility — these are the single source of truth for the valid values.
-
 export const ROLES = ["CLIENT", "TECHNICIAN", "ADMIN"] as const;
 export type Role = (typeof ROLES)[number];
 
-// The happy-path order matters: it drives the JobStatusTimeline component.
 export const JOB_STATUS_FLOW = [
   "PENDING",
   "ACCEPTED",
@@ -28,7 +23,6 @@ export const JOB_STATUS_LABEL: Record<JobStatus, string> = {
   CANCELLED: "Cancelled",
 };
 
-// What a technician sees as the single next action from their current status.
 export const NEXT_STATUS: Partial<Record<JobStatus, JobStatus>> = {
   ACCEPTED: "ON_THE_WAY",
   ON_THE_WAY: "ARRIVED",
@@ -51,8 +45,15 @@ export const NOTIFICATION_TYPES = [
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 
-export const PLAN_KEYS = ["FREE", "PRO_MONTHLY", "PRO_YEARLY"] as const;
+// Two plans only — BEGINNER (auto-assigned on registration)
+// and SENIOR_PRO (auto-granted when star criteria met, never purchased)
+export const PLAN_KEYS = ["BEGINNER", "SENIOR_PRO"] as const;
 export type PlanKey = (typeof PLAN_KEYS)[number];
+
+export const PLAN_LABEL: Record<PlanKey, string> = {
+  BEGINNER: "Beginner",
+  SENIOR_PRO: "Senior Pro",
+};
 
 export const BILLING_CYCLES = ["NONE", "MONTHLY", "YEARLY"] as const;
 export type BillingCycle = (typeof BILLING_CYCLES)[number];
@@ -69,8 +70,8 @@ export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
 export const SUBSCRIPTION_STATUSES = ["ACTIVE", "EXPIRED", "CANCELLED"] as const;
 export type SubscriptionStatus = (typeof SUBSCRIPTION_STATUSES)[number];
 
-// Tunis city center — used as the distance-calculation fallback when a
-// client's browser geolocation is unavailable or denied.
-export const DEFAULT_CENTER = { latitude: 36.8065, longitude: 10.1815 };
+export const PORTFOLIO_TYPES = ["IMAGE", "VIDEO"] as const;
+export type PortfolioType = (typeof PORTFOLIO_TYPES)[number];
 
+export const DEFAULT_CENTER = { latitude: 36.8065, longitude: 10.1815 };
 export const SESSION_COOKIE = "fixitn_session";

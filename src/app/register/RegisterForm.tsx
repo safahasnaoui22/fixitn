@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Wrench, User as UserIcon } from "lucide-react";
+import { Wrench, User as UserIcon, Upload, FileCheck } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { cn } from "@/lib/utils";
@@ -12,15 +12,26 @@ import type { Category } from "@/lib/types";
 
 export function RegisterForm({ categories }: { categories: Category[] }) {
   const [role, setRole] = useState<"CLIENT" | "TECHNICIAN">("CLIENT");
+  const [cinName, setCinName] = useState<string | null>(null);
+  const [diplomeName, setDiplomeName] = useState<string | null>(null);
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
 
   return (
-    <form action={registerAction} className="flex flex-col gap-5">
+    <form
+      action={registerAction}
+      encType="multipart/form-data"
+      className="flex flex-col gap-5"
+    >
       <input type="hidden" name="role" value={role} />
 
-      {error && <p className="rounded-xl bg-danger-light px-4 py-3 text-sm text-danger">{error}</p>}
+      {error && (
+        <p className="rounded-xl bg-danger-light px-4 py-3 text-sm text-danger">
+          {error}
+        </p>
+      )}
 
+      {/* Role picker */}
       <div>
         <p className="text-sm font-medium text-ink">I am a...</p>
         <div className="mt-2 grid grid-cols-2 gap-3">
@@ -29,11 +40,21 @@ export function RegisterForm({ categories }: { categories: Category[] }) {
             onClick={() => setRole("CLIENT")}
             className={cn(
               "flex flex-col items-center gap-2 rounded-xl border-2 px-4 py-4 transition-colors",
-              role === "CLIENT" ? "border-brand-orange bg-brand-orange-light" : "border-line"
+              role === "CLIENT"
+                ? "border-brand-orange bg-brand-orange-light"
+                : "border-line"
             )}
           >
-            <UserIcon size={20} className={role === "CLIENT" ? "text-brand-orange" : "text-muted"} />
-            <span className={cn("text-sm font-semibold", role === "CLIENT" ? "text-brand-orange" : "text-ink")}>
+            <UserIcon
+              size={20}
+              className={role === "CLIENT" ? "text-brand-orange" : "text-muted"}
+            />
+            <span
+              className={cn(
+                "text-sm font-semibold",
+                role === "CLIENT" ? "text-brand-orange" : "text-ink"
+              )}
+            >
               Client
             </span>
           </button>
@@ -42,26 +63,63 @@ export function RegisterForm({ categories }: { categories: Category[] }) {
             onClick={() => setRole("TECHNICIAN")}
             className={cn(
               "flex flex-col items-center gap-2 rounded-xl border-2 px-4 py-4 transition-colors",
-              role === "TECHNICIAN" ? "border-brand-orange bg-brand-orange-light" : "border-line"
+              role === "TECHNICIAN"
+                ? "border-brand-orange bg-brand-orange-light"
+                : "border-line"
             )}
           >
-            <Wrench size={20} className={role === "TECHNICIAN" ? "text-brand-orange" : "text-muted"} />
-            <span className={cn("text-sm font-semibold", role === "TECHNICIAN" ? "text-brand-orange" : "text-ink")}>
+            <Wrench
+              size={20}
+              className={
+                role === "TECHNICIAN" ? "text-brand-orange" : "text-muted"
+              }
+            />
+            <span
+              className={cn(
+                "text-sm font-semibold",
+                role === "TECHNICIAN" ? "text-brand-orange" : "text-ink"
+              )}
+            >
               Technician
             </span>
           </button>
         </div>
       </div>
 
-      <Field label="Full name" name="fullName" placeholder="Sarra Bouazizi" required />
-      <Field label="Phone number" name="phone" type="tel" placeholder="2XXXXXXX" required />
-      <Field label="Password" name="password" type="password" placeholder="••••••••" required />
+      {/* Common fields */}
+      <Field
+        label="Full name"
+        name="fullName"
+        placeholder="Sarra Bouazizi"
+        required
+      />
+      <Field
+        label="Phone number"
+        name="phone"
+        type="tel"
+        placeholder="2XXXXXXX"
+        required
+      />
+      <Field
+        label="Password"
+        name="password"
+        type="password"
+        placeholder="••••••••"
+        required
+      />
       <Field label="City" name="city" placeholder="Tunis" />
 
+      {/* Technician-only fields */}
       {role === "TECHNICIAN" && (
         <div className="flex flex-col gap-5 rounded-2xl border border-line bg-surface-alt p-4">
           <p className="text-sm font-semibold text-ink">Technician details</p>
-          <Field label="Title" name="title" placeholder="e.g. AC Technician" required />
+
+          <Field
+            label="Professional title"
+            name="title"
+            placeholder="e.g. AC Technician"
+            required
+          />
 
           <div>
             <label htmlFor="bio" className="text-sm font-medium text-ink">
@@ -77,23 +135,129 @@ export function RegisterForm({ categories }: { categories: Category[] }) {
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Years of experience" name="yearsExperience" type="number" placeholder="5" />
-            <Field label="Starting price (DT)" name="startingPrice" type="number" placeholder="30" />
+            <Field
+              label="Years of experience"
+              name="yearsExperience"
+              type="number"
+              placeholder="5"
+            />
+            <Field
+              label="Starting price (DT)"
+              name="startingPrice"
+              type="number"
+              placeholder="30"
+            />
           </div>
 
+          {/* Service categories */}
           <div>
-            <p className="text-sm font-medium text-ink">Services you offer</p>
+            <p className="text-sm font-medium text-ink">
+              Services you offer{" "}
+              <span className="text-danger">*</span>
+            </p>
             <div className="mt-2 grid grid-cols-3 gap-2">
               {categories.map((cat) => (
                 <label
                   key={cat.id}
                   className="flex cursor-pointer flex-col items-center gap-1.5 rounded-xl border border-line bg-surface p-2 text-center has-[:checked]:border-brand-orange has-[:checked]:bg-brand-orange-light"
                 >
-                  <input type="checkbox" name="categoryIds" value={cat.id} className="sr-only" />
-                  <CategoryIcon icon={cat.icon} color={cat.color} size={16} badgeSize={32} />
-                  <span className="text-[10px] font-medium leading-tight text-ink">{cat.name}</span>
+                  <input
+                    type="checkbox"
+                    name="categoryIds"
+                    value={cat.id}
+                    className="sr-only"
+                  />
+                  <CategoryIcon
+                    icon={cat.icon}
+                    color={cat.color}
+                    size={16}
+                    badgeSize={32}
+                  />
+                  <span className="text-[10px] font-medium leading-tight text-ink">
+                    {cat.name}
+                  </span>
                 </label>
               ))}
+            </div>
+          </div>
+
+          {/* Identity documents */}
+          <div className="flex flex-col gap-3">
+            <p className="text-sm font-semibold text-ink">
+              Identity documents{" "}
+              <span className="text-danger">*</span>
+            </p>
+            <p className="text-xs text-muted -mt-1">
+              Required for account verification. Files are stored securely
+              and only visible to admins.
+            </p>
+
+            {/* CIN / Passport */}
+            <div>
+              <label className="text-sm font-medium text-ink">
+                CIN or Passport
+              </label>
+              <label className="mt-1.5 flex cursor-pointer items-center gap-3 rounded-xl border border-line bg-surface px-4 py-3 hover:border-brand-orange transition-colors">
+                <input
+                  type="file"
+                  name="cin"
+                  accept="image/jpeg,image/png,image/webp,application/pdf"
+                  required
+                  className="sr-only"
+                  onChange={(e) =>
+                    setCinName(e.target.files?.[0]?.name ?? null)
+                  }
+                />
+                {cinName ? (
+                  <>
+                    <FileCheck size={18} className="text-success shrink-0" />
+                    <span className="truncate text-sm text-ink">
+                      {cinName}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <Upload size={18} className="text-muted shrink-0" />
+                    <span className="text-sm text-muted">
+                      Upload CIN or Passport (JPG, PNG, PDF)
+                    </span>
+                  </>
+                )}
+              </label>
+            </div>
+
+            {/* Diplome / Certification */}
+            <div>
+              <label className="text-sm font-medium text-ink">
+                Diploma or Professional Certificate
+              </label>
+              <label className="mt-1.5 flex cursor-pointer items-center gap-3 rounded-xl border border-line bg-surface px-4 py-3 hover:border-brand-orange transition-colors">
+                <input
+                  type="file"
+                  name="diplome"
+                  accept="image/jpeg,image/png,image/webp,application/pdf"
+                  required
+                  className="sr-only"
+                  onChange={(e) =>
+                    setDiplomeName(e.target.files?.[0]?.name ?? null)
+                  }
+                />
+                {diplomeName ? (
+                  <>
+                    <FileCheck size={18} className="text-success shrink-0" />
+                    <span className="truncate text-sm text-ink">
+                      {diplomeName}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <Upload size={18} className="text-muted shrink-0" />
+                    <span className="text-sm text-muted">
+                      Upload diploma or certificate (JPG, PNG, PDF)
+                    </span>
+                  </>
+                )}
+              </label>
             </div>
           </div>
         </div>

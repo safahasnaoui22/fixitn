@@ -8,6 +8,7 @@ import type {
   PaymentType,
   PaymentStatus,
   SubscriptionStatus,
+  PortfolioType,
 } from "./constants";
 
 export interface User {
@@ -20,10 +21,21 @@ export interface User {
   city: string | null;
   address: string | null;
   avatarUrl: string | null;
+  faceDescriptor: string | null;
+  sessionVersion: number;
   createdAt: string;
 }
 
-export type PublicUser = Omit<User, "passwordHash">;
+export type PublicUser = Omit<User, "passwordHash" | "faceDescriptor">;
+
+export interface KnownDevice {
+  id: string;
+  userId: string;
+  deviceToken: string;
+  userAgent: string | null;
+  createdAt: string;
+  lastSeenAt: string;
+}
 
 export interface Technician {
   id: string;
@@ -36,17 +48,39 @@ export interface Technician {
   longitude: number;
   verified: boolean;
   galleryImages: string[];
+  cinUrl: string | null;
+  diplomeUrl: string | null;
+  isSenior: boolean;
+  seniorSince: string | null;
   planId: string | null;
   createdAt: string;
 }
 
-/** Technician joined with its User row + computed review stats — what most screens need. */
 export interface TechnicianWithUser extends Technician {
   fullName: string;
   avatarUrl: string | null;
   phone: string;
   ratingAvg: number | null;
   ratingCount: number;
+}
+
+export interface PortfolioItem {
+  id: string;
+  technicianId: string;
+  type: PortfolioType;
+  url: string;
+  publicId: string;
+  caption: string | null;
+  createdAt: string;
+}
+
+export interface PlanConfig {
+  id: string;
+  minTotalReviews: number;
+  minFiveStarCount: number;
+  minAverageRating: number;
+  minFourStarCount: number;
+  updatedAt: string;
 }
 
 export interface Category {
@@ -89,7 +123,6 @@ export interface ServiceRequest {
   updatedAt: string;
 }
 
-/** A request enriched with the bits the list/detail screens render directly. */
 export interface ServiceRequestWithRelations extends ServiceRequest {
   categoryName: string;
   categoryIcon: string;
@@ -176,8 +209,29 @@ export interface Notification {
   createdAt: string;
 }
 
+export interface PushSubscription {
+  id: string;
+  userId: string;
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+  createdAt: string;
+}
+
+// --- Session payloads -------------------------------------------------
+
 export interface SessionPayload {
   userId: string;
   role: Role;
   fullName: string;
+  sessionVersion: number;
+  faceSetup: boolean;      // has user registered their face?
+  deviceVerified: boolean; // is current device a known/verified device?
+}
+
+export interface PendingSessionPayload {
+  pendingUserId: string;
+  pendingFullName: string;
+  pendingRole: Role;
+  sessionVersion: number;
 }
