@@ -8,6 +8,7 @@ import {
 } from "@/lib/auth";
 import { findUserByPhone, bumpSessionVersion } from "@/lib/db/users";
 import { hasFaceDescriptor, isKnownDevice } from "@/lib/db/face";
+import { prisma } from "@/lib/db/client";
 import type { Role } from "@/lib/constants";
 
 function homeFor(role: string): string {
@@ -68,6 +69,25 @@ export async function loginAction(formData: FormData): Promise<void> {
     redirect(homeFor(user.role));
   }
 
+  // After checking hasFace and isKnownDevice, when creating the full session:
+let accountApproved: boolean | undefined = undefined;
+if (user.role === "TECHNICIAN") {
+  const tech = await prisma.technician.findUnique({
+    where: { userId: user.id },
+    select: { accountStatus: true },
+  });
+  accountApproved = tech?.accountStatus === "ACTIVE";
+}
+
+await createSession({
+  userId: user.id,
+  role: user.role as Role,
+  fullName: user.fullName,
+  sessionVersion: newVersion,
+  faceSetup: true,
+  deviceVerified: true,
+  accountApproved,
+});
   // Unknown device + face registered → pending session → /face-verify
   await createPendingSession({
     pendingUserId: user.id,

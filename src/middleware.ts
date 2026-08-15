@@ -9,28 +9,27 @@ const secret = new TextEncoder().encode(
 const SESSION_COOKIE = "fixitn_session";
 const PENDING_COOKIE = "fixitn_pending";
 
-// Always allow — static files, Next.js internals, public assets
-const ALWAYS_ALLOW_PREFIXES = [
+const ALWAYS_ALLOW = [
   "/_next",
   "/icons",
-  "/models",     // face-api model weights
-  "/api/push",   // push subscription (needs auth via its own check)
-  "/api/face",   // face API routes handle their own auth
+  "/models",
+  "/api/push",
+  "/api/face",
   "/sw.js",
   "/manifest.json",
   "/favicon.ico",
 ];
 
-// Logged-out users can visit these freely
 const PUBLIC_PREFIXES = [
   "/onboarding",
   "/login",
   "/register",
+  "/terms",
 ];
 
-// Only reachable mid-flow (specific JWT required)
 const FACE_SETUP_PATH = "/face-setup";
 const FACE_VERIFY_PATH = "/face-verify";
+const PENDING_PATH = "/t/pending";
 
 async function parseJwt(token: string): Promise<Record<string, unknown> | null> {
   try {
@@ -41,11 +40,18 @@ async function parseJwt(token: string): Promise<Record<string, unknown> | null> 
   }
 }
 
+function homeFor(role: string | undefined): string {
+  if (role === "TECHNICIAN") return "/t/dashboard";
+  if (role === "ADMIN") return "/admin";
+  if (role === "SOUS_ADMIN") return "/sous-admin";
+  return "/";
+}
+
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   // ── 1. Always allow static/system paths ────────────────────────────
-  if (ALWAYS_ALLOW_PREFIXES.some((p) => pathname.startsWith(p))) {
+  if (ALWAYS_ALLOW.some((p) => pathname.startsWith(p))) {
     return NextResponse.next();
   }
 
@@ -60,12 +66,12 @@ export async function middleware(req: NextRequest) {
   const role = session?.role as string | undefined;
   const faceSetup = session?.faceSetup as boolean | undefined;
   const deviceVerified = session?.deviceVerified as boolean | undefined;
+  const accountApproved = session?.accountApproved as boolean | undefined;
   const pendingUserId = pending?.pendingUserId as string | undefined;
 
   // ── 3. /face-verify — needs a valid pending session ────────────────
   if (pathname.startsWith(FACE_VERIFY_PATH)) {
     if (!pendingUserId) {
-      // No pending session — not mid-login, go back to login
       return NextResponse.redirect(new URL("/login", req.url));
     }
     return NextResponse.next();
@@ -76,17 +82,23 @@ export async function middleware(req: NextRequest) {
     if (!userId) {
       return NextResponse.redirect(new URL("/login", req.url));
     }
-    // If face already set up, don't let them revisit setup
     if (faceSetup) {
       return NextResponse.redirect(new URL(homeFor(role), req.url));
     }
     return NextResponse.next();
   }
 
-  // ── 5. Public routes ───────────────────────────────────────────────
+  // ── 5. /t/pending — account awaiting approval ─────────────────────
+  if (pathname.startsWith(PENDING_PATH)) {
+    if (!userId || role !== "TECHNICIAN") {
+      return NextResponse.redirect(new URL("/login", req.url));
+    }
+    return NextResponse.next();
+  }
+
+  // ── 6. Public routes ───────────────────────────────────────────────
   if (PUBLIC_PREFIXES.some((p) => pathname.startsWith(p))) {
     if (userId) {
-      // Already logged in — redirect to appropriate home
       if (!faceSetup) {
         return NextResponse.redirect(new URL(FACE_SETUP_PATH, req.url));
       }
@@ -98,24 +110,35 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // ── 6. Protected routes — must be logged in ────────────────────────
+  // ── 7. Protected — must be logged in ───────────────────────────────
   if (!userId) {
     const loginUrl = new URL("/login", req.url);
     loginUrl.searchParams.set("from", pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  // ── 7. Face not set up yet — force /face-setup ─────────────────────
+  // ── 8. Face setup gate ─────────────────────────────────────────────
   if (!faceSetup) {
     return NextResponse.redirect(new URL(FACE_SETUP_PATH, req.url));
   }
 
-  // ── 8. New/unknown device — force /face-verify ─────────────────────
+  // ── 9. Device verification gate ────────────────────────────────────
   if (!deviceVerified) {
     return NextResponse.redirect(new URL(FACE_VERIFY_PATH, req.url));
   }
 
-  // ── 9. Role-based route guards ─────────────────────────────────────
+  // ── 10. PENDING technician gate ────────────────────────────────────
+  // Block PENDING/DECLINED/ARCHIVED techs from accessing /t/* routes
+  if (
+    role === "TECHNICIAN" &&
+    pathname.startsWith("/t/") &&
+    !pathname.startsWith(PENDING_PATH) &&
+    accountApproved === false
+  ) {
+    return NextResponse.redirect(new URL(PENDING_PATH, req.url));
+  }
+
+  // ── 11. Role-based route guards ────────────────────────────────────
 
   // Technician-only routes
   if (pathname.startsWith("/t/") && role !== "TECHNICIAN") {
@@ -127,8 +150,13 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL(homeFor(role), req.url));
   }
 
-  // Client-only routes (bookings, requests, chats, profile, plans for clients)
-  const CLIENT_ONLY = ["/requests", "/chats", "/profile", "/notifications"];
+  // Sous-admin-only routes
+  if (pathname.startsWith("/sous-admin") && role !== "SOUS_ADMIN") {
+    return NextResponse.redirect(new URL(homeFor(role), req.url));
+  }
+
+  // Client-only routes (techs have their own dashboard)
+  const CLIENT_ONLY = ["/requests", "/chats", "/profile"];
   if (
     CLIENT_ONLY.some((p) => pathname.startsWith(p)) &&
     role === "TECHNICIAN"
@@ -136,17 +164,9 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL("/t/dashboard", req.url));
   }
 
-  // ── 10. All good ───────────────────────────────────────────────────
   return NextResponse.next();
 }
 
-function homeFor(role: string | undefined): string {
-  if (role === "TECHNICIAN") return "/t/dashboard";
-  if (role === "ADMIN") return "/admin";
-  return "/";
-}
-
-// Run on all routes except Next.js internals and public assets
 export const config = {
   matcher: [
     "/((?!_next/static|_next/image|favicon\\.ico|icons/|models/|sw\\.js|manifest\\.json).*)",

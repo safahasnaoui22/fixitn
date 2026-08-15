@@ -1,14 +1,16 @@
+
 generator client {
   provider = "prisma-client-js"
- 
 }
 
 datasource db {
   provider = "postgresql"
+ 
 }
 
 // --- People -----------------------------------------------------------
 
+// role: "CLIENT" | "TECHNICIAN" | "ADMIN" | "SOUS_ADMIN"
 model User {
   id              String   @id @default(cuid())
   fullName        String
@@ -19,17 +21,19 @@ model User {
   city            String?
   address         String?
   avatarUrl       String?
-  faceDescriptor  String?  // JSON-encoded number[128] — never a photo
-  sessionVersion  Int      @default(0) // increments on every login → invalidates old sessions
+  faceDescriptor  String?
+  sessionVersion  Int      @default(0)
   createdAt       DateTime @default(now())
 
-  technician       Technician?
-  requestsMade     ServiceRequest[]   @relation("ClientRequests")
-  messagesSent     Message[]
-  reviewsWritten   Review[]
-  notifications    Notification[]
-  pushSubscriptions PushSubscription[]
-  knownDevices     KnownDevice[]
+  technician              Technician?
+  requestsMade            ServiceRequest[]   @relation("ClientRequests")
+  messagesSent            Message[]
+  reviewsWritten          Review[]
+  notifications           Notification[]
+  pushSubscriptions       PushSubscription[]
+  knownDevices            KnownDevice[]
+  sentSupportMessages     SupportMessage[]   @relation("SentSupport")
+  receivedSupportMessages SupportMessage[]   @relation("ReceivedSupport")
 }
 
 model KnownDevice {
@@ -52,6 +56,20 @@ model PushSubscription {
   createdAt DateTime @default(now())
 }
 
+model SupportMessage {
+  id         String   @id @default(cuid())
+  fromUserId String
+  fromUser   User     @relation("SentSupport", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUserId   String
+  toUser     User     @relation("ReceivedSupport", fields: [toUserId], references: [id], onDelete: Cascade)
+  body       String
+  read       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+}
+
+// --- Technician -------------------------------------------------------
+
+// accountStatus: "PENDING" | "ACTIVE" | "DECLINED" | "ARCHIVED"
 model Technician {
   id              String    @id @default(cuid())
   userId          String    @unique
@@ -63,11 +81,26 @@ model Technician {
   latitude        Float     @default(36.8065)
   longitude       Float     @default(10.1815)
   verified        Boolean   @default(false)
-  galleryImages   String?   // JSON-encoded string[] — legacy, use PortfolioItem instead
-  cinUrl          String?   // Cloudinary URL — CIN or passport scan
-  diplomeUrl      String?   // Cloudinary URL — diploma or certification scan
+  galleryImages   String?
+
+  // Identity documents (Cloudinary URLs)
+  cinUrl          String?
+  diplomeUrl      String?
+
+  // Senior Pro
   isSenior        Boolean   @default(false)
   seniorSince     DateTime?
+
+  // Account approval flow
+  accountStatus   String    @default("PENDING")
+
+  // Transport / departure tracking
+  departureLatitude  Float?
+  departureLongitude Float?
+  departureAt        DateTime?
+  distanceTraveled   Float?   // km, calculated on arrival
+  transportFee       Int?     // DT × 100 (millimes) or just DT integer
+
   planId          String?
   plan            Plan?     @relation(fields: [planId], references: [id])
   createdAt       DateTime  @default(now())
@@ -81,14 +114,14 @@ model Technician {
 }
 
 model PortfolioItem {
-  id           String   @id @default(cuid())
+  id           String     @id @default(cuid())
   technicianId String
   technician   Technician @relation(fields: [technicianId], references: [id], onDelete: Cascade)
-  type         String   // "IMAGE" | "VIDEO"
-  url          String   // Cloudinary secure URL
-  publicId     String   // Cloudinary public_id (needed for deletion)
+  type         String     // "IMAGE" | "VIDEO"
+  url          String
+  publicId     String
   caption      String?
-  createdAt    DateTime @default(now())
+  createdAt    DateTime   @default(now())
 }
 
 // --- Catalog ----------------------------------------------------------
@@ -105,6 +138,8 @@ model Category {
   ratingAvg   Float?
   ratingCount Int?
   sortOrder   Int     @default(0)
+  isActive    Boolean @default(true)   // false → grayed out on home, not bookable
+  visitPrice  Int     @default(0)       // DT — prix de visite set by admin
 
   technicians Technician[]
   requests    ServiceRequest[]
@@ -132,6 +167,7 @@ model ServiceRequest {
   status                String   @default("PENDING")
   clientConfirmedSolved Boolean?
 
+  // Timestamps for each status step
   pendingAt    DateTime  @default(now())
   acceptedAt   DateTime?
   onTheWayAt   DateTime?
@@ -175,17 +211,21 @@ model Review {
 
 // --- Monetization -----------------------------------------------------
 
-// key is "BEGINNER" | "SENIOR_PRO"
+// key: "FREE" | "BEGINNER" | "PRO"
+// FREE    → limited requests, 20% commission, 10km radius
+// BEGINNER → 20 requests/mo, 15% commission, 30km radius (default on register)
+// PRO     → unlimited, 8% commission, 150km radius
 model Plan {
   id                  String  @id @default(cuid())
   key                 String  @unique
   name                String
-  price               Int
+  price               Int     // monthly price in DT (0 for FREE and BEGINNER)
   billingCycle        String  // "NONE" | "MONTHLY" | "YEARLY"
   commissionRate      Float
   maxRequestsPerMonth Int?
   priorityVisibility  Boolean @default(false)
-  features            String
+  radiusKm            Int     @default(30) // visibility radius in km
+  features            String  // JSON-encoded string[]
   badge               String?
 
   technicians   Technician[]
@@ -204,32 +244,31 @@ model Subscription {
 }
 
 model Payment {
-  id           String         @id @default(cuid())
+  id           String          @id @default(cuid())
   technicianId String
-  technician   Technician     @relation(fields: [technicianId], references: [id])
-  requestId    String?        @unique
+  technician   Technician      @relation(fields: [technicianId], references: [id])
+  requestId    String?         @unique
   request      ServiceRequest? @relation(fields: [requestId], references: [id])
   amount       Int
-  platformFee  Int            @default(0)
+  platformFee  Int             @default(0)
   method       String
-  status       String         @default("PAID")
+  status       String          @default("PAID")
   type         String
-  createdAt    DateTime       @default(now())
+  createdAt    DateTime        @default(now())
 }
 
-// --- Plan promotion config --------------------------------------------
+// --- Plan promotion config -------------------------------------------
 
-// Singleton row — only one PlanConfig row ever exists
 model PlanConfig {
-  id                 String   @id @default(cuid())
-  minTotalReviews    Int      @default(15)
-  minFiveStarCount   Int      @default(10)
-  minAverageRating   Float    @default(4.5)
-  minFourStarCount   Int      @default(8)
-  updatedAt          DateTime @updatedAt
+  id               String   @id @default(cuid())
+  minTotalReviews  Int      @default(15)
+  minFiveStarCount Int      @default(10)
+  minAverageRating Float    @default(4.5)
+  minFourStarCount Int      @default(8)
+  updatedAt        DateTime @updatedAt
 }
 
-// --- Notifications ----------------------------------------------------
+// --- Notifications ---------------------------------------------------
 
 model Notification {
   id        String   @id @default(cuid())

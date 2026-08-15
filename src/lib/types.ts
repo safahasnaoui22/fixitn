@@ -9,8 +9,8 @@ import type {
   PaymentStatus,
   SubscriptionStatus,
   PortfolioType,
+  AccountStatus,
 } from "./constants";
-
 export interface User {
   id: string;
   fullName: string;
@@ -52,6 +52,14 @@ export interface Technician {
   diplomeUrl: string | null;
   isSenior: boolean;
   seniorSince: string | null;
+  accountStatus: AccountStatus;
+
+  departureLatitude: number | null;
+  departureLongitude: number | null;
+  departureAt: string | null;
+  distanceTraveled: number | null;
+  transportFee: number | null;
+
   planId: string | null;
   createdAt: string;
 }
@@ -95,6 +103,8 @@ export interface Category {
   ratingAvg: number | null;
   ratingCount: number | null;
   sortOrder: number;
+  isActive: boolean;
+  visitPrice: number;
 }
 
 export interface ServiceRequest {
@@ -173,6 +183,7 @@ export interface Plan {
   commissionRate: number;
   maxRequestsPerMonth: number | null;
   priorityVisibility: boolean;
+  radiusKm: number;
   features: string[];
   badge: string | null;
 }
@@ -225,8 +236,9 @@ export interface SessionPayload {
   role: Role;
   fullName: string;
   sessionVersion: number;
-  faceSetup: boolean;      // has user registered their face?
-  deviceVerified: boolean; // is current device a known/verified device?
+  faceSetup: boolean;
+  deviceVerified: boolean;
+  accountApproved?: boolean; // undefined for non-technicians, true/false for technicians
 }
 
 export interface PendingSessionPayload {

@@ -150,31 +150,29 @@ export async function listAdminTechnicians(): Promise<AdminTechnician[]> {
   });
 
   return technicians.map((t) => {
-    const ratingCount = t.reviews.length;
-
-    const ratingAvg =
-      ratingCount > 0
-        ? t.reviews.reduce((sum, review) => sum + review.rating, 0) /
-          ratingCount
-        : null;
-
-    return {
-      id: t.id,
-      userId: t.userId,
-      fullName: t.user.fullName,
-      phone: t.user.phone,
-      avatarUrl: t.user.avatarUrl,
-      city: t.user.city,
-      title: t.title,
-      verified: t.verified,
-      planKey: t.plan?.key ?? null,
-      startingPrice: t.startingPrice,
-      ratingAvg,
-      ratingCount,
-      jobsCompleted: t._count.requestsReceived,
-      createdAt: t.user.createdAt.toISOString(),
-    };
-  });
+  const ratingCount = t.reviews.length;
+  const ratingAvg =
+    ratingCount > 0
+      ? t.reviews.reduce((s, r) => s + r.rating, 0) / ratingCount
+      : null;
+  return {
+    id: t.id,
+    userId: t.userId,
+    fullName: t.user.fullName,
+    phone: t.user.phone,
+    avatarUrl: t.user.avatarUrl,
+    title: t.title,
+    city: t.user.city,
+    verified: t.verified,
+    planKey: t.plan?.key ?? null,
+    startingPrice: t.startingPrice,
+    accountStatus: t.accountStatus,
+    ratingAvg,
+    ratingCount,
+    jobsCompleted: t._count.requestsReceived,
+    createdAt: t.createdAt.toISOString(),
+  };
+});
 }
 
 export async function getAdminTechnicianDetail(technicianId: string) {
@@ -213,6 +211,7 @@ return {
   bio: t.bio,
   yearsExperience: t.yearsExperience,
   startingPrice: t.startingPrice,
+
 
   verified: t.verified,
 
@@ -828,3 +827,74 @@ export async function getRevenueStats() {
 
 
 
+// ── Account approval ──────────────────────────────────────────────────
+
+export async function approveAccount(technicianId: string): Promise<void> {
+  const tech = await prisma.technician.update({
+    where: { id: technicianId },
+    data: { accountStatus: "ACTIVE" },
+    select: { userId: true },
+  });
+  const { createNotification } = await import("./notifications");
+  await createNotification({
+    userId: tech.userId,
+    type: "STATUS_UPDATE",
+    title: "✅ Account Approved!",
+    body: "Your technician account has been approved. You can now receive job requests.",
+    requestId: null,
+  });
+}
+
+export async function declineAccount(technicianId: string): Promise<void> {
+  const tech = await prisma.technician.update({
+    where: { id: technicianId },
+    data: { accountStatus: "DECLINED" },
+    select: { userId: true },
+  });
+  const { createNotification } = await import("./notifications");
+  await createNotification({
+    userId: tech.userId,
+    type: "STATUS_UPDATE",
+    title: "Account Not Approved",
+    body: "Your account was not approved. Contact support for more information.",
+    requestId: null,
+  });
+}
+
+export async function archiveAccount(technicianId: string): Promise<void> {
+  await prisma.technician.update({
+    where: { id: technicianId },
+    data: { accountStatus: "ARCHIVED" },
+  });
+}
+
+export async function listPendingTechnicians() {
+  const techs = await prisma.technician.findMany({
+    where: { accountStatus: "PENDING" },
+    include: {
+      user: {
+        select: {
+          id: true, fullName: true, phone: true,
+          avatarUrl: true, city: true, createdAt: true,
+        },
+      },
+      plan: { select: { key: true, name: true } },
+      categories: { select: { name: true } },
+    },
+    orderBy: { createdAt: "asc" },
+  });
+  return techs.map((t) => ({
+    id: t.id,
+    userId: t.user.id,
+    fullName: t.user.fullName,
+    phone: t.user.phone,
+    avatarUrl: t.user.avatarUrl,
+    city: t.user.city,
+    title: t.title,
+    cinUrl: t.cinUrl,
+    diplomeUrl: t.diplomeUrl,
+    planName: t.plan?.name ?? "Beginner",
+    categories: t.categories.map((c) => c.name),
+    createdAt: t.user.createdAt.toISOString(),
+  }));
+}

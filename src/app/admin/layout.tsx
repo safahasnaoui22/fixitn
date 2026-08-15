@@ -9,6 +9,7 @@ import {
   CreditCard,
   Star,
   LogOut,
+  UserPlus,
 } from "lucide-react";
 import { requireRole, destroySession } from "@/lib/auth";
 
@@ -22,6 +23,7 @@ const NAV = [
   { href: "/admin/plans", label: "Plans", icon: Star },
   { href: "/admin/plan-config", label: "Plan Config", icon: Star },
   { href: "/admin/categories", label: "Categories", icon: LayoutDashboard },
+  { href: "/admin/create-account", label: "Create Account", icon: UserPlus },
 ];
 
 async function adminLogout() {
@@ -57,6 +59,7 @@ export default async function AdminLayout({
               {label}
             </Link>
           ))}
+          
         </nav>
 
         <form action={adminLogout} className="p-3 shrink-0">

@@ -3,7 +3,6 @@ import { parseStringArray } from "../utils";
 import type { Plan, Payment } from "../types";
 import type { BillingCycle, PaymentMethod, PaymentStatus, PaymentType, PlanKey } from "../constants";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mapPlan(p: any): Plan {
   return {
     id: p.id,
@@ -14,6 +13,7 @@ function mapPlan(p: any): Plan {
     commissionRate: p.commissionRate,
     maxRequestsPerMonth: p.maxRequestsPerMonth,
     priorityVisibility: p.priorityVisibility,
+    radiusKm: p.radiusKm ?? 30,
     features: parseStringArray(p.features),
     badge: p.badge,
   };
