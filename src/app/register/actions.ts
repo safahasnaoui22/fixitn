@@ -94,18 +94,24 @@ export async function registerAction(formData: FormData): Promise<void> {
     let cinUrl: string;
     let diplomeUrl: string;
 
+
+
     try {
-      const [cinResult, diplomeResult] = await Promise.all([
-        uploadFile(cinFile as File, "cin"),
-        uploadFile(diplomeFile as File, "diplome"),
-      ]);
-      cinUrl = cinResult.url;
-      diplomeUrl = diplomeResult.url;
-    } catch {
-      fail(
-        "Failed to upload your documents. Please check your connection and try again."
-      );
-    }
+  const [cinResult, diplomeResult] = await Promise.all([
+    uploadFile(cinFile as File, "cin"),
+    uploadFile(diplomeFile as File, "diplome"),
+  ]);
+  cinUrl = cinResult.url;
+  diplomeUrl = diplomeResult.url;
+} catch (err: unknown) {
+  const msg = err instanceof Error ? err.message : "Unknown error";
+  console.error("[Register] Document upload error:", msg);
+  fail(
+    msg.includes("environment variables")
+      ? "Document storage is not configured. Contact support."
+      : "Failed to upload your documents. Please try again with a JPG or PNG file under 10 MB."
+  );
+}
 
     // Get Beginner plan (default for all new registrations)
     const beginnerPlan = await prisma.plan.findFirst({
