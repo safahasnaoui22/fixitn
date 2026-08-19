@@ -97,3 +97,32 @@ export async function listUserDevices(userId: string) {
     lastSeenAt: d.lastSeenAt.toISOString(),
   }));
 }
+/**
+ * Returns all stored face descriptors across all users
+ * (excluding the given userId) for uniqueness checks during registration.
+ */
+export async function getAllFaceDescriptors(
+  excludeUserId?: string
+): Promise<Array<{ userId: string; descriptor: number[] }>> {
+  const users = await prisma.user.findMany({
+    where: {
+      faceDescriptor: { not: null },
+      ...(excludeUserId ? { id: { not: excludeUserId } } : {}),
+    },
+    select: { id: true, faceDescriptor: true },
+  });
+
+  const result: Array<{ userId: string; descriptor: number[] }> = [];
+  for (const u of users) {
+    if (!u.faceDescriptor) continue;
+    try {
+      const parsed = JSON.parse(u.faceDescriptor) as number[];
+      if (Array.isArray(parsed) && parsed.length === 128) {
+        result.push({ userId: u.id, descriptor: parsed });
+      }
+    } catch {
+      // Skip corrupted descriptors
+    }
+  }
+  return result;
+}

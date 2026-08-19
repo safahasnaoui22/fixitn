@@ -29,39 +29,43 @@ export default function FaceSetupPage() {
     getOrCreateDeviceToken();
   }, []);
 
-  async function handleCapture(descriptor: number[]) {
-    setStep("saving");
-    setErrorMsg(null);
+async function handleCapture(descriptor: number[]) {
+  setStep("saving");
+  setErrorMsg(null);
 
-    try {
-      const deviceToken = getOrCreateDeviceToken();
+  try {
+    const deviceToken = getOrCreateDeviceToken();
 
-      const res = await fetch("/api/face/save", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ descriptor, deviceToken }),
-      });
+    const res = await fetch("/api/face/save", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ descriptor, deviceToken }),
+    });
 
-      const data = await res.json();
+    const data = await res.json();
 
-      if (!res.ok) {
-        throw new Error(data.error ?? "Failed to save face data");
+    if (!res.ok) {
+      // Face already registered to another account
+      if (data.code === "FACE_ALREADY_EXISTS") {
+        setErrorMsg(data.error);
+        setStep("error");
+        return;
       }
-
-      // Server re-issues the JWT with faceSetup:true + deviceVerified:true
-      // The cookie is set — now we just redirect
-      setStep("done");
-
-      // Small delay so the success state is visible
-      setTimeout(() => {
-        router.replace("/");
-        router.refresh(); // force middleware re-evaluation
-      }, 1500);
-    } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : "Something went wrong");
-      setStep("error");
+      throw new Error(data.error ?? "Failed to save face data");
     }
+
+    setStep("done");
+    setTimeout(() => {
+      router.replace("/");
+      router.refresh();
+    }, 1500);
+  } catch (err) {
+    setErrorMsg(
+      err instanceof Error ? err.message : "Something went wrong"
+    );
+    setStep("error");
   }
+}
 
   // ── Intro step ──────────────────────────────────────────────────────
   if (step === "intro") {

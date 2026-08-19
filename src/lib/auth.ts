@@ -62,7 +62,7 @@ export async function destroySession(): Promise<void> {
   jar.delete(SESSION_COOKIE);
 }
 
-// --- Pending session (face verify mid-login) ---------------------------
+// --- Pending session ---------------------------------------------------
 
 export async function createPendingSession(
   payload: PendingSessionPayload
@@ -70,7 +70,7 @@ export async function createPendingSession(
   const token = await new SignJWT({ ...payload })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
-    .setExpirationTime("15m") // short-lived — only for face verification
+    .setExpirationTime("15m")
     .sign(secret);
 
   const jar = await cookies();
@@ -102,14 +102,57 @@ export async function destroyPendingSession(): Promise<void> {
 
 // --- Guards ------------------------------------------------------------
 
+/**
+ * Requires a valid session AND verifies the sessionVersion matches the DB.
+ * This is what enforces single-device login:
+ * - User logs in on Phone B → sessionVersion incremented in DB
+ * - Phone A's JWT has the old version → version mismatch → logged out
+ */
 export async function requireUser(): Promise<SessionPayload> {
   const session = await getSession();
   if (!session) redirect("/login");
+
+  // Verify session version against DB — single device enforcement
+  try {
+    const { prisma } = await import("./db/client");
+    const user = await prisma.user.findUnique({
+      where: { id: session.userId },
+      select: { sessionVersion: true },
+    });
+
+    if (!user) {
+      // User was deleted
+      await destroySession();
+      redirect("/login");
+    }
+
+    if (user.sessionVersion !== session.sessionVersion) {
+      // Someone else logged in — invalidate this session
+      await destroySession();
+      redirect(
+        `/login?error=${encodeURIComponent(
+          "Your session was ended because you logged in from another device."
+        )}`
+      );
+    }
+  } catch (err: unknown) {
+    // If it's a redirect, rethrow it — don't swallow navigation
+    if (
+      err instanceof Error &&
+      err.message === "NEXT_REDIRECT"
+    ) {
+      throw err;
+    }
+    // For any other DB error, let the user through
+    // (better than locking everyone out on a DB hiccup)
+    console.error("[requireUser] Session version check failed:", err);
+  }
+
   return session;
 }
 
 export async function requireRole(role: Role): Promise<SessionPayload> {
-  const session = await requireUser();
+  const session = await requireUser(); // version check included
   if (session.role !== role) redirect("/");
   return session;
 }
