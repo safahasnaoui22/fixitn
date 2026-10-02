@@ -86,3 +86,46 @@ h1, h2, h3, h4, .font-heading {
 .animate-fade-up {
   animation: fade-up 0.4s ease-out both;
 }
+/* ── Dark mode overrides ───────────────────────────────────────────────────
+   Applied when <html class="dark"> is set by ThemeProvider.
+   Every CSS variable that changes between light and dark is listed here.
+   Variables that stay the same (brand-orange, etc.) are NOT repeated.
+────────────────────────────────────────────────────────────────────────── */
+
+.dark {
+  /* Surfaces */
+  --color-surface:          #0D0F1A;
+  --color-surface-alt:      #141726;
+  --color-line:             #1E2136;
+
+  /* Text */
+  --color-ink:              #F1F2F7;
+  --color-muted:            #8B92B3;
+
+  /* Brand navy becomes darker in dark mode */
+  --color-brand-navy:       #080A14;
+
+  /* Semantic light variants — tinted instead of pastel */
+  --color-brand-orange-light:  rgba(249, 115, 22, 0.15);
+  --color-brand-orange-dark:   #FB923C;
+  --color-success:             #4ADE80;
+  --color-success-light:       rgba(74, 222, 128, 0.12);
+  --color-danger:              #F87171;
+  --color-danger-light:        rgba(248, 113, 113, 0.12);
+
+  /* Star */
+  --color-star:             #FBBF24;
+}
+
+/* Smooth transition when toggling */
+html {
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Dark scrollbar */
+.dark ::-webkit-scrollbar-track {
+  background: #141726;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #1E2136;
+}

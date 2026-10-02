@@ -1,11 +1,11 @@
 {
-  "name": "FixiTN — Find a Technician",
-  "short_name": "FixiTN",
-  "description": "Book verified technicians across Tunisia",
+  "name": "Fixili — Des pros pour vos travaux",
+  "short_name": "Fixili",
+  "description": "Trouvez un technicien vérifié près de chez vous",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0F1B33",
-  "theme_color": "#0F1B33",
+  "background_color": "#0D0F1A",
+  "theme_color": "#0D0F1A",
   "orientation": "portrait-primary",
   "icons": [
     {

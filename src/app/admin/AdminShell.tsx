@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Menu, X } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export function AdminShell({
   sidebar,
@@ -12,17 +13,12 @@ export function AdminShell({
 }) {
   const [open, setOpen] = useState(false);
 
-  // Close sidebar on route change
-  useEffect(() => {
-    setOpen(false);
-  }, [children]);
-
   return (
     <div className="flex h-screen bg-surface-alt overflow-hidden">
       {/* Mobile overlay */}
       {open && (
         <div
-          className="fixed inset-0 bg-black/50 z-20 lg:hidden"
+          className="fixed inset-0 bg-black/60 z-20 lg:hidden"
           onClick={() => setOpen(false)}
         />
       )}
@@ -30,13 +26,14 @@ export function AdminShell({
       {/* Sidebar */}
       <aside
         className={`
-          fixed inset-y-0 left-0 z-30 w-56 flex flex-col border-r border-line bg-brand-navy
+          fixed inset-y-0 left-0 z-30 w-56 flex flex-col
+          bg-brand-navy border-r border-line
           transition-transform duration-300 ease-in-out
           lg:static lg:translate-x-0 lg:z-auto
           ${open ? "translate-x-0" : "-translate-x-full"}
         `}
       >
-        {/* Mobile close button */}
+        {/* Mobile close */}
         <button
           onClick={() => setOpen(false)}
           className="absolute top-4 right-4 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white lg:hidden"
@@ -56,9 +53,16 @@ export function AdminShell({
           >
             <Menu size={18} />
           </button>
-          <p className="font-heading text-base font-bold text-ink">
-            FixiTN Admin
+          <p className="font-heading text-base font-bold text-ink flex-1">
+            Fixili Admin
           </p>
+          {/* Theme toggle in mobile header */}
+          <ThemeToggle />
+        </div>
+
+        {/* Desktop top bar */}
+        <div className="hidden lg:flex items-center justify-end px-6 py-3 border-b border-line bg-surface shrink-0">
+          <ThemeToggle />
         </div>
 
         <main className="flex-1 overflow-y-auto p-4 lg:p-6">
