@@ -100,7 +100,6 @@ export function RegisterForm({ categories }: { categories: Category[] }) {
   return (
     <form
       action={registerAction}
-      encType="multipart/form-data"
       className="flex flex-col gap-5"
     >
       <input type="hidden" name="role" value={role} />
