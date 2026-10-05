@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -85,6 +85,19 @@ export function RegisterForm({ categories }: { categories: Category[] }) {
   const [showPass, setShowPass] = useState(false);
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
+
+  // `.app-shell` is a fixed-height, overflow:hidden box. When the browser focuses
+  // the file input (after the picker closes) it can still scroll that box,
+  // which leaves a big white gap and hides the form. The shell must never scroll.
+  useEffect(() => {
+    const shell = document.querySelector<HTMLElement>(".app-shell");
+    if (!shell) return;
+    const keepAtTop = () => {
+      if (shell.scrollTop !== 0) shell.scrollTop = 0;
+    };
+    shell.addEventListener("scroll", keepAtTop);
+    return () => shell.removeEventListener("scroll", keepAtTop);
+  }, []);
 
   function toggleCat(id: string) {
     setSelectedCats(prev => {
@@ -400,11 +413,13 @@ function FileUpload({
   return (
     <div>
       <label className="text-sm font-medium text-ink">{label}</label>
-      <label className="mt-1.5 flex cursor-pointer items-center gap-3 rounded-xl border border-line bg-surface px-4 py-3 hover:border-brand-orange transition-colors">
+      <label className="relative mt-1.5 flex cursor-pointer items-center gap-3 rounded-xl border border-line bg-surface px-4 py-3 hover:border-brand-orange transition-colors">
+        {/* The invisible input covers its own button, so focusing it never
+            makes the browser scroll some other part of the page. */}
         <input
           type="file" name={name} required={required}
           accept="image/jpeg,image/png,image/webp,application/pdf"
-          className="sr-only"
+          className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
           onChange={handleChange}
         />
         {doc.name
