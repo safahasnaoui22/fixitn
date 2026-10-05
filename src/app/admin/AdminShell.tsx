@@ -14,8 +14,7 @@ export function AdminShell({
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen w-full overflow-x-hidden bg-surface-alt">
-      {/* Mobile overlay */}
+    <div className="admin-shell flex min-h-screen w-full overflow-x-hidden bg-surface-alt">
       {open && (
         <div
           className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
@@ -23,7 +22,6 @@ export function AdminShell({
         />
       )}
 
-      {/* Sidebar */}
       <aside
         className={`
           fixed inset-y-0 left-0 z-50
@@ -40,7 +38,6 @@ export function AdminShell({
           ${open ? "translate-x-0" : "-translate-x-full"}
         `}
       >
-        {/* Mobile close */}
         <button
           type="button"
           onClick={() => setOpen(false)}
@@ -53,9 +50,8 @@ export function AdminShell({
         {sidebar}
       </aside>
 
-      {/* Main */}
       <div className="flex min-w-0 flex-1 flex-col">
-        {/* Mobile top bar */}
+        {/* Mobile header */}
         <div className="sticky top-0 z-20 flex shrink-0 items-center gap-3 border-b border-line bg-surface/95 px-4 py-3 backdrop-blur-md lg:hidden">
           <button
             type="button"
@@ -70,16 +66,14 @@ export function AdminShell({
             Fixili Admin
           </p>
 
-          {/* Theme toggle in mobile header */}
           <ThemeToggle />
         </div>
 
-        {/* Desktop top bar */}
+        {/* Desktop header */}
         <div className="sticky top-0 z-20 hidden h-[61px] shrink-0 items-center justify-end border-b border-line bg-surface/95 px-6 backdrop-blur-md lg:flex">
           <ThemeToggle />
         </div>
 
-        {/* Main content */}
         <main className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto">
           <div className="mx-auto w-full max-w-[1800px] px-4 py-5 sm:px-5 sm:py-6 lg:px-7 lg:py-7 xl:px-8 2xl:px-10">
             {children}

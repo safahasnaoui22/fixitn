@@ -6,7 +6,7 @@ tags:
 - git
 - hotspot
 created: 2026-10-02
-updated: 2026-10-02
+updated: 2026-10-05
 filenames:
 - src/app/admin/dashboard/Dashboard.tsx
 links: []
@@ -14,7 +14,7 @@ kind: code
 status: proposed
 superseded_by: null
 deprecated_at: null
-review_after: 2026-10-02
+review_after: 2026-10-05
 source_chat_id: null
 created_at: 2026-10-02T13:23:14.376036600+00:00
 summary: null
