@@ -6,7 +6,7 @@ import {
   getAllFaceDescriptors,
 } from "@/lib/db/face";
 
-const UNIQUENESS_THRESHOLD = 0.45; // Strict — lower = harder to spoof
+const UNIQUENESS_THRESHOLD = 0.45;
 
 function euclidean(a: number[], b: number[]): number {
   return Math.sqrt(
@@ -31,18 +31,23 @@ export async function POST(req: NextRequest) {
   const descriptor: number[] = body.descriptor;
   const deviceToken: string = body.deviceToken ?? crypto.randomUUID();
 
-  // ── Check face uniqueness across ALL existing accounts ─────────────
-  const existingDescriptors = await getAllFaceDescriptors(session.userId);
+  // ── FACE UNIQUENESS CHECK ──────────────────────────────────────────
+  // Compare incoming face against every stored descriptor.
+  // If any match (distance < threshold) → this face already has an account.
+  const existing = await getAllFaceDescriptors(session.userId);
 
-  for (const existing of existingDescriptors) {
-    const distance = euclidean(descriptor, existing.descriptor);
+  for (const stored of existing) {
+    const distance = euclidean(descriptor, stored.descriptor);
     if (distance < UNIQUENESS_THRESHOLD) {
+      console.log(
+        `[face/save] Face already exists. userId=${session.userId} matched=${stored.userId} distance=${distance.toFixed(4)}`
+      );
       return NextResponse.json(
         {
           error:
-            "This face is already registered to another account. " +
-            "Each person can only have one FixiTN account. " +
-            "If you believe this is a mistake, contact support@fixitn.tn",
+            "This face is already linked to another Fixili account. " +
+            "Each person can only have one account. " +
+            "Contact support@fixili.tn if you believe this is an error.",
           code: "FACE_ALREADY_EXISTS",
         },
         { status: 409 }
@@ -53,11 +58,11 @@ export async function POST(req: NextRequest) {
   // ── Save descriptor ────────────────────────────────────────────────
   await saveFaceDescriptor(session.userId, descriptor);
 
-  // ── Register this device ───────────────────────────────────────────
+  // ── Register device as known ───────────────────────────────────────
   const userAgent = req.headers.get("user-agent") ?? undefined;
   await saveKnownDevice(session.userId, deviceToken, userAgent);
 
-  // ── Re-issue full session JWT ──────────────────────────────────────
+  // ── Re-issue JWT with faceSetup:true + deviceVerified:true ─────────
   await createSession({
     userId: session.userId,
     role: session.role,

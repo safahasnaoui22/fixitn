@@ -1,6 +1,6 @@
 import { prisma } from "./client";
 
-// --- Face descriptor ---------------------------------------------------
+// ── Face descriptor ────────────────────────────────────────────────────
 
 export async function saveFaceDescriptor(
   userId: string,
@@ -40,11 +40,40 @@ export async function resetFaceDescriptor(userId: string): Promise<void> {
     where: { id: userId },
     data: { faceDescriptor: null },
   });
-  // Also wipe all known devices — they must re-verify next login
   await prisma.knownDevice.deleteMany({ where: { userId } });
 }
 
-// --- Known devices -----------------------------------------------------
+/**
+ * Returns ALL stored face descriptors EXCEPT the given userId.
+ * Used by /api/face/save to block one person from creating multiple accounts.
+ */
+export async function getAllFaceDescriptors(
+  excludeUserId?: string
+): Promise<Array<{ userId: string; descriptor: number[] }>> {
+  const users = await prisma.user.findMany({
+    where: {
+      faceDescriptor: { not: null },
+      ...(excludeUserId ? { id: { not: excludeUserId } } : {}),
+    },
+    select: { id: true, faceDescriptor: true },
+  });
+
+  const result: Array<{ userId: string; descriptor: number[] }> = [];
+  for (const u of users) {
+    if (!u.faceDescriptor) continue;
+    try {
+      const parsed = JSON.parse(u.faceDescriptor) as number[];
+      if (Array.isArray(parsed) && parsed.length === 128) {
+        result.push({ userId: u.id, descriptor: parsed });
+      }
+    } catch {
+      // skip corrupted descriptors
+    }
+  }
+  return result;
+}
+
+// ── Known devices ──────────────────────────────────────────────────────
 
 export async function saveKnownDevice(
   userId: string,
@@ -53,16 +82,8 @@ export async function saveKnownDevice(
 ): Promise<void> {
   await prisma.knownDevice.upsert({
     where: { deviceToken },
-    update: {
-      userId,
-      lastSeenAt: new Date(),
-      userAgent: userAgent ?? null,
-    },
-    create: {
-      userId,
-      deviceToken,
-      userAgent: userAgent ?? null,
-    },
+    update: { userId, lastSeenAt: new Date(), userAgent: userAgent ?? null },
+    create: { userId, deviceToken, userAgent: userAgent ?? null },
   });
 }
 
@@ -70,6 +91,7 @@ export async function isKnownDevice(
   userId: string,
   deviceToken: string
 ): Promise<boolean> {
+  if (!deviceToken) return false;
   const device = await prisma.knownDevice.findFirst({
     where: { userId, deviceToken },
   });
@@ -96,33 +118,4 @@ export async function listUserDevices(userId: string) {
     createdAt: d.createdAt.toISOString(),
     lastSeenAt: d.lastSeenAt.toISOString(),
   }));
-}
-/**
- * Returns all stored face descriptors across all users
- * (excluding the given userId) for uniqueness checks during registration.
- */
-export async function getAllFaceDescriptors(
-  excludeUserId?: string
-): Promise<Array<{ userId: string; descriptor: number[] }>> {
-  const users = await prisma.user.findMany({
-    where: {
-      faceDescriptor: { not: null },
-      ...(excludeUserId ? { id: { not: excludeUserId } } : {}),
-    },
-    select: { id: true, faceDescriptor: true },
-  });
-
-  const result: Array<{ userId: string; descriptor: number[] }> = [];
-  for (const u of users) {
-    if (!u.faceDescriptor) continue;
-    try {
-      const parsed = JSON.parse(u.faceDescriptor) as number[];
-      if (Array.isArray(parsed) && parsed.length === 128) {
-        result.push({ userId: u.id, descriptor: parsed });
-      }
-    } catch {
-      // Skip corrupted descriptors
-    }
-  }
-  return result;
 }
