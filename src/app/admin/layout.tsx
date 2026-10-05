@@ -10,6 +10,7 @@ import {
   Star,
   LogOut,
   UserPlus,
+  MessageCircle,
 } from "lucide-react";
 import { requireRole, destroySession } from "@/lib/auth";
 import { AdminShell } from "./AdminShell";
@@ -30,6 +31,8 @@ const NAV = [
     label: "Technicians",
     icon: Wrench,
   },
+  // Add to the NAV array:
+{ href: "/admin/support", label: "Support", icon: MessageCircle },
   {
     href: "/admin/requests",
     label: "Requests",

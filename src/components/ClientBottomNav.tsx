@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Home, ClipboardList, MessageCircle,
-  Bell, User, LogOut, X, Sun, Moon,
+  Bell, User, LogOut, X, Sun, Moon, HeadphonesIcon,
 } from "lucide-react";
 import { useState } from "react";
 import { useTheme } from "./ThemeProvider";
@@ -19,7 +19,7 @@ const TABS = [
 
 export function ClientBottomNav() {
   const pathname = usePathname();
-  const router   = useRouter();
+  const router = useRouter();
   const { theme, toggle } = useTheme();
   const [showProfile, setShowProfile] = useState(false);
 
@@ -31,7 +31,6 @@ export function ClientBottomNav() {
 
   return (
     <>
-      {/* Profile sheet overlay */}
       {showProfile && (
         <div
           className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
@@ -39,9 +38,8 @@ export function ClientBottomNav() {
         />
       )}
 
-      {/* Profile bottom sheet */}
       {showProfile && (
-        <div className="fixed bottom-0 inset-x-0 z-50 rounded-t-3xl border-t border-line bg-surface pb-safe shadow-2xl">
+        <div className="fixed bottom-0 inset-x-0 z-50 rounded-t-3xl border-t border-line bg-surface shadow-2xl">
           <div className="flex items-center justify-between px-5 py-4 border-b border-line">
             <p className="font-heading text-base font-semibold text-ink">
               Mon compte
@@ -55,7 +53,7 @@ export function ClientBottomNav() {
           </div>
 
           <div className="px-5 py-4 flex flex-col gap-3">
-            {/* Theme toggle row */}
+            {/* Theme toggle */}
             <button
               onClick={toggle}
               className="flex items-center justify-between rounded-2xl border border-line bg-surface-alt px-4 py-3.5"
@@ -80,16 +78,31 @@ export function ClientBottomNav() {
               </div>
             </button>
 
-            {/* Profile link */}
+            {/* Profile */}
             <Link
               href="/profile"
               onClick={() => setShowProfile(false)}
               className="flex items-center gap-3 rounded-2xl border border-line bg-surface-alt px-4 py-3.5"
             >
               <User size={18} className="text-muted" />
-              <span className="text-sm font-medium text-ink">
-                Mon profil
-              </span>
+              <span className="text-sm font-medium text-ink">Mon profil</span>
+            </Link>
+
+            {/* Support chat */}
+            <Link
+              href="/support"
+              onClick={() => setShowProfile(false)}
+              className="flex items-center gap-3 rounded-2xl border border-brand-orange/20 bg-brand-orange-light px-4 py-3.5"
+            >
+              <HeadphonesIcon size={18} className="text-brand-orange" />
+              <div>
+                <p className="text-sm font-semibold text-brand-orange">
+                  Contacter le support
+                </p>
+                <p className="text-[10px] text-muted">
+                  Signalez un problème ou posez une question
+                </p>
+              </div>
             </Link>
 
             {/* Logout */}
@@ -103,15 +116,12 @@ export function ClientBottomNav() {
               </span>
             </button>
           </div>
-
-          {/* Bottom safe area spacer */}
-          <div className="h-4" />
+          <div className="h-6" />
         </div>
       )}
 
-      {/* Bottom nav bar */}
       <nav className="fixed bottom-0 inset-x-0 z-30 border-t border-line bg-surface">
-        <div className="flex items-center justify-around px-2 py-2 pb-safe">
+        <div className="flex items-center justify-around px-2 py-2">
           {TABS.map(({ href, icon: Icon, label }) => {
             const active =
               href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -124,7 +134,6 @@ export function ClientBottomNav() {
                 <Icon
                   size={22}
                   className={cn(
-                    "transition-colors",
                     active ? "text-brand-orange" : "text-muted"
                   )}
                   strokeWidth={active ? 2.5 : 2}
@@ -139,7 +148,6 @@ export function ClientBottomNav() {
             );
           })}
 
-          {/* Profile/Menu button */}
           <button
             onClick={() => setShowProfile(true)}
             className="flex flex-col items-center gap-0.5 min-w-[52px] py-1"
@@ -147,7 +155,6 @@ export function ClientBottomNav() {
             <User
               size={22}
               className={cn(
-                "transition-colors",
                 showProfile ? "text-brand-orange" : "text-muted"
               )}
               strokeWidth={showProfile ? 2.5 : 2}

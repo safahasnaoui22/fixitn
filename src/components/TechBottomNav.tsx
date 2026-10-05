@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard, ClipboardList, Wallet,
   User, LogOut, X, Sun, Moon,
+  HeadphonesIcon,
 } from "lucide-react";
 import { useState } from "react";
 import { useTheme } from "./ThemeProvider";
@@ -94,7 +95,21 @@ export function TechBottomNav() {
                 Mon portfolio
               </span>
             </Link>
-
+<Link
+  href="/support"
+  onClick={() => setShowProfile(false)}
+  className="flex items-center gap-3 rounded-2xl border border-brand-orange/20 bg-brand-orange-light px-4 py-3.5"
+>
+  <HeadphonesIcon size={18} className="text-brand-orange" />
+  <div>
+    <p className="text-sm font-semibold text-brand-orange">
+      Contacter le support
+    </p>
+    <p className="text-[10px] text-muted">
+      Signalez un problème ou posez une question
+    </p>
+  </div>
+</Link>
             <button
               onClick={handleLogout}
               className="flex w-full items-center gap-3 rounded-2xl bg-danger-light px-4 py-3.5"
