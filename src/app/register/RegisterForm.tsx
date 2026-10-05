@@ -11,10 +11,75 @@ import { Button } from "@/components/ui/Button";
 import { registerAction } from "./actions";
 import type { Category } from "@/lib/types";
 
+// Two documents are sent in ONE request. Hosting platforms (Vercel: 4.5 MB)
+// reject bigger bodies, which used to blank the page. Keep each file small.
+const MAX_DOC_BYTES = 1.8 * 1024 * 1024;
+
+type DocState = { name: string | null; error: string | null };
+const EMPTY_DOC: DocState = { name: null, error: null };
+
+function canvasToBlob(canvas: HTMLCanvasElement, quality: number): Promise<Blob | null> {
+  return new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", quality));
+}
+
+/** Validates a document and shrinks big photos so the upload stays small. */
+async function prepareDocument(file: File): Promise<File> {
+  if (file.type === "application/pdf") {
+    if (file.size > MAX_DOC_BYTES) {
+      throw new Error(
+        "Ce PDF dépasse 1,8 Mo. Envoyez plutôt une photo (JPG ou PNG) ou un PDF plus léger."
+      );
+    }
+    return file;
+  }
+
+  if (!file.type.startsWith("image/")) {
+    throw new Error("Format non supporté. Utilisez JPG, PNG ou PDF.");
+  }
+  if (file.size <= MAX_DOC_BYTES) return file;
+
+  let bitmap: ImageBitmap;
+  try {
+    bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+  } catch {
+    throw new Error("Impossible de lire cette image. Essayez un autre fichier.");
+  }
+
+  const steps = [
+    { max: 1800, quality: 0.8 },
+    { max: 1400, quality: 0.7 },
+    { max: 1100, quality: 0.6 },
+  ];
+
+  for (const { max, quality } of steps) {
+    const scale = Math.min(1, max / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) break;
+    ctx.fillStyle = "#ffffff"; // PNG transparency would turn black in a JPEG
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+
+    const blob = await canvasToBlob(canvas, quality);
+    if (blob && blob.size <= MAX_DOC_BYTES) {
+      bitmap.close();
+      return new File([blob], file.name.replace(/\.[^.]+$/, "") + ".jpg", {
+        type: "image/jpeg",
+      });
+    }
+  }
+
+  bitmap.close();
+  throw new Error("Image trop lourde. Prenez une photo de moindre qualité et réessayez.");
+}
+
 export function RegisterForm({ categories }: { categories: Category[] }) {
   const [role, setRole] = useState<"CLIENT" | "TECHNICIAN">("CLIENT");
-  const [cinName, setCinName] = useState<string | null>(null);
-  const [diplomeName, setDiplomeName] = useState<string | null>(null);
+  const [cin, setCin] = useState<DocState>(EMPTY_DOC);
+  const [diplome, setDiplome] = useState<DocState>(EMPTY_DOC);
   const [agreed, setAgreed] = useState(false);
   const [selectedCats, setSelectedCats] = useState<Set<string>>(new Set());
   const [showPass, setShowPass] = useState(false);
@@ -47,7 +112,7 @@ export function RegisterForm({ categories }: { categories: Category[] }) {
 
       {error && (
         <p className="rounded-xl bg-danger-light px-4 py-3 text-sm text-danger">
-          {decodeURIComponent(error)}
+          {safeDecode(error)}
         </p>
       )}
 
@@ -182,24 +247,25 @@ export function RegisterForm({ categories }: { categories: Category[] }) {
           <div className="flex flex-col gap-3">
             <div>
               <p className="text-sm font-semibold text-ink">
-                Documents d'identité <span className="text-danger">*</span>
+                Documents d&apos;identité <span className="text-danger">*</span>
               </p>
               <p className="text-xs text-muted mt-0.5">
-                Requis pour la vérification. Visible uniquement par l'administration.
+                Requis pour la vérification. Visible uniquement par l&apos;administration.
+                Maximum 1,8 Mo par fichier (les grandes photos sont réduites automatiquement).
               </p>
             </div>
             <FileUpload
               name="cin"
               label="CIN ou Passeport"
-              fileName={cinName}
-              onFileChange={setCinName}
+              doc={cin}
+              onChange={setCin}
               required
             />
             <FileUpload
               name="diplome"
               label="Diplôme ou Certificat professionnel"
-              fileName={diplomeName}
-              onFileChange={setDiplomeName}
+              doc={diplome}
+              onChange={setDiplome}
               required
             />
           </div>
@@ -211,7 +277,7 @@ export function RegisterForm({ categories }: { categories: Category[] }) {
         <div className="flex items-start gap-3 mb-3">
           <ShieldCheck size={18} className="text-brand-orange shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-semibold text-ink">Conditions d'utilisation</p>
+            <p className="text-sm font-semibold text-ink">Conditions d&apos;utilisation</p>
             <p className="text-xs text-muted mt-0.5">
               {role === "TECHNICIAN"
                 ? "En créant un compte technicien, vous acceptez les frais de commission, les conditions d'approbation et les règles de la plateforme."
@@ -249,9 +315,9 @@ export function RegisterForm({ categories }: { categories: Category[] }) {
             </div>
           </div>
           <span className="text-sm text-ink leading-relaxed">
-            J'ai lu et j'accepte les{" "}
+            J&apos;ai lu et j&apos;accepte les{" "}
             <Link href={termsHref} target="_blank" className="font-semibold text-brand-orange">
-              Conditions d'utilisation
+              Conditions d&apos;utilisation
             </Link>
           </span>
         </label>
@@ -277,6 +343,15 @@ export function RegisterForm({ categories }: { categories: Category[] }) {
   );
 }
 
+/** decodeURIComponent throws on a malformed % sequence — never let that blank the page. */
+function safeDecode(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
 function Field({
   label, name, type = "text", placeholder, required,
 }: {
@@ -292,11 +367,37 @@ function Field({
 }
 
 function FileUpload({
-  name, label, fileName, onFileChange, required,
+  name, label, doc, onChange, required,
 }: {
-  name: string; label: string; fileName: string | null;
-  onFileChange: (n: string | null) => void; required?: boolean;
+  name: string; label: string; doc: DocState;
+  onChange: (next: DocState) => void; required?: boolean;
 }) {
+  async function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const input = e.currentTarget; // capture before the first await
+    const file = input.files?.[0];
+    if (!file) {
+      onChange(EMPTY_DOC);
+      return;
+    }
+
+    try {
+      const ready = await prepareDocument(file);
+      if (ready !== file) {
+        // Swap the original photo for the shrunken one inside the real <input>
+        const transfer = new DataTransfer();
+        transfer.items.add(ready);
+        input.files = transfer.files;
+      }
+      onChange({ name: ready.name, error: null });
+    } catch (err) {
+      input.value = "";
+      onChange({
+        name: null,
+        error: err instanceof Error ? err.message : "Fichier invalide.",
+      });
+    }
+  }
+
   return (
     <div>
       <label className="text-sm font-medium text-ink">{label}</label>
@@ -305,13 +406,14 @@ function FileUpload({
           type="file" name={name} required={required}
           accept="image/jpeg,image/png,image/webp,application/pdf"
           className="sr-only"
-          onChange={e => onFileChange(e.target.files?.[0]?.name ?? null)}
+          onChange={handleChange}
         />
-        {fileName
-          ? <><FileCheck size={18} className="text-success shrink-0" /><span className="truncate text-sm text-ink">{fileName}</span></>
+        {doc.name
+          ? <><FileCheck size={18} className="text-success shrink-0" /><span className="truncate text-sm text-ink">{doc.name}</span></>
           : <><Upload size={18} className="text-muted shrink-0" /><span className="text-sm text-muted">Importer {label} (JPG, PNG, PDF)</span></>
         }
       </label>
+      {doc.error && <p className="mt-1 text-xs text-danger">{doc.error}</p>}
     </div>
   );
 }

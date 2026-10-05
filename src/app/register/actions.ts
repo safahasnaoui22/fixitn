@@ -71,12 +71,12 @@ export async function registerAction(formData: FormData): Promise<void> {
       fail("Please upload your diploma or professional certificate.");
     }
 
-    const MAX_DOC_SIZE = 10 * 1024 * 1024; // 10 MB
+    const MAX_DOC_SIZE = 2 * 1024 * 1024; // 2 MB (two files share one request; hosts cap the body at ~4.5 MB)
     if ((cinFile as File).size > MAX_DOC_SIZE) {
-      fail("CIN file is too large. Maximum size is 10 MB.");
+      fail("CIN file is too large. Maximum size is 2 MB.");
     }
     if ((diplomeFile as File).size > MAX_DOC_SIZE) {
-      fail("Diploma file is too large. Maximum size is 10 MB.");
+      fail("Diploma file is too large. Maximum size is 2 MB.");
     }
 
     const ACCEPTED_TYPES = [
@@ -109,7 +109,7 @@ export async function registerAction(formData: FormData): Promise<void> {
   fail(
     msg.includes("environment variables")
       ? "Document storage is not configured. Contact support."
-      : "Failed to upload your documents. Please try again with a JPG or PNG file under 10 MB."
+      : "Failed to upload your documents. Please try again with a JPG or PNG file under 2 MB."
   );
 }
 
