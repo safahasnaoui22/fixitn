@@ -92,29 +92,64 @@ h1, h2, h3, h4, .font-heading {
    Variables that stay the same (brand-orange, etc.) are NOT repeated.
 ────────────────────────────────────────────────────────────────────────── */
 
+/* ── Dark mode ─────────────────────────────────────────────────────── */
 .dark {
-  /* Surfaces */
-  --color-surface:          #0D0F1A;
-  --color-surface-alt:      #141726;
-  --color-line:             #1E2136;
+  color-scheme: dark;
 
-  /* Text */
-  --color-ink:              #F1F2F7;
-  --color-muted:            #8B92B3;
+  --color-surface:              #111318;
+  --color-surface-alt:          #1A1D27;
+  --color-line:                 #252836;
+  --color-ink:                  #EDEEF5;
+  --color-muted:                #7B82A0;
+  --color-brand-navy:           #090B14;
 
-  /* Brand navy becomes darker in dark mode */
-  --color-brand-navy:       #080A14;
+  --color-brand-orange-light:   rgba(249,115,22,0.18);
+  --color-brand-orange-dark:    #FB923C;
 
-  /* Semantic light variants — tinted instead of pastel */
-  --color-brand-orange-light:  rgba(249, 115, 22, 0.15);
-  --color-brand-orange-dark:   #FB923C;
-  --color-success:             #4ADE80;
-  --color-success-light:       rgba(74, 222, 128, 0.12);
-  --color-danger:              #F87171;
-  --color-danger-light:        rgba(248, 113, 113, 0.12);
+  --color-success:              #4ADE80;
+  --color-success-light:        rgba(74,222,128,0.12);
+  --color-danger:               #F87171;
+  --color-danger-light:         rgba(248,113,113,0.12);
+  --color-star:                 #FBBF24;
+}
 
-  /* Star */
-  --color-star:             #FBBF24;
+/* Dark mode card borders get a subtle glow */
+.dark .rounded-2xl.border {
+  border-color: var(--color-line);
+}
+
+/* Inputs in dark mode */
+.dark input,
+.dark textarea,
+.dark select {
+  background-color: var(--color-surface-alt);
+  color: var(--color-ink);
+  border-color: var(--color-line);
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: var(--color-muted);
+}
+
+/* Bottom nav in dark mode */
+.dark nav {
+  border-color: var(--color-line);
+}
+
+/* Tables in dark mode */
+.dark table th {
+  color: var(--color-muted);
+}
+
+/* Smooth transition */
+*, *::before, *::after {
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.1s ease;
+}
+
+/* Don't animate transforms (breaks animations) */
+.animate-spin, .animate-pulse, .animate-bounce {
+  transition: none !important;
 }
 
 /* Smooth transition when toggling */
