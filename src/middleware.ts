@@ -157,9 +157,13 @@ export async function middleware(req: NextRequest) {
   }
 
   // Client-only routes (techs have their own dashboard)
-  const CLIENT_ONLY = ["/requests", "/chats", "/profile"];
+  // NOTE: /requests/<id> (job detail + chat) stays open to technicians: that
+  // page is where they Accept / Decline / follow the job progress. The page
+  // itself checks that the user is the client or the technician of the job.
+  const isRequestsList = pathname === "/requests" || pathname === "/requests/";
+  const CLIENT_ONLY = ["/chats", "/profile"];
   if (
-    CLIENT_ONLY.some((p) => pathname.startsWith(p)) &&
+    (isRequestsList || CLIENT_ONLY.some((p) => pathname.startsWith(p))) &&
     role === "TECHNICIAN"
   ) {
     return NextResponse.redirect(new URL("/t/dashboard", req.url));

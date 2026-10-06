@@ -29,20 +29,32 @@ function haversineKm(
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+async function requireJobTechnician(requestId: string): Promise<boolean> {
+  const session = await requireUser();
+  const req = await getRequestById(requestId);
+  return !!req && req.technicianUserId === session.userId;
+}
+
+async function requireJobClient(requestId: string): Promise<boolean> {
+  const session = await requireUser();
+  const req = await getRequestById(requestId);
+  return !!req && req.clientId === session.userId;
+}
+
 export async function acceptAction(requestId: string): Promise<void> {
-  await requireUser();
+  if (!(await requireJobTechnician(requestId))) return;
   await acceptRequest(requestId);
   redirect(`/requests/${requestId}`);
 }
 
 export async function declineAction(requestId: string): Promise<void> {
-  await requireUser();
+  if (!(await requireJobTechnician(requestId))) return;
   await declineRequest(requestId);
   redirect(`/requests/${requestId}`);
 }
 
 export async function cancelAction(requestId: string): Promise<void> {
-  await requireUser();
+  if (!(await requireJobClient(requestId))) return;
   await cancelRequest(requestId);
   redirect(`/requests/${requestId}`);
 }
@@ -130,7 +142,7 @@ export async function confirmSolvedAction(
   requestId: string,
   solved: boolean
 ): Promise<void> {
-  await requireUser();
+  if (!(await requireJobClient(requestId))) return;
   await confirmSolved(requestId, solved);
   redirect(`/requests/${requestId}`);
 }
