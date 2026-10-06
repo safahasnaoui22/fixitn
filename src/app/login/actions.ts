@@ -9,6 +9,7 @@ import {
 import { findUserByPhone, bumpSessionVersion } from "@/lib/db/users";
 import { hasFaceDescriptor, isKnownDevice } from "@/lib/db/face";
 import { prisma } from "@/lib/db/client";
+import { isTechnicianApproved } from "@/lib/db/technicianApproval";
 import type { Role } from "@/lib/constants";
 
 function homeFor(role: string): string {
@@ -55,7 +56,10 @@ export async function loginAction(formData: FormData): Promise<void> {
       sessionVersion: newVersion,
       faceSetup: false,
       deviceVerified: false,
-      accountApproved: user.role === "TECHNICIAN" ? false : true,
+      accountApproved:
+        user.role === "TECHNICIAN"
+          ? await isTechnicianApproved(user.id)
+          : true,
     });
     redirect("/face-setup");
   }

@@ -6,6 +6,8 @@ import {
   getAllFaceDescriptors,
 } from "@/lib/db/face";
 
+import { isTechnicianApproved } from "@/lib/db/technicianApproval";
+
 const UNIQUENESS_THRESHOLD = 0.45;
 
 function euclidean(a: number[], b: number[]): number {
@@ -79,7 +81,10 @@ export async function POST(req: NextRequest) {
     sessionVersion: session.sessionVersion ?? 0,
     faceSetup: true,
     deviceVerified: true,
-    accountApproved: session.accountApproved,
+    accountApproved:
+      session.role === "TECHNICIAN"
+        ? await isTechnicianApproved(session.userId)
+        : true,
   });
 
   return NextResponse.json({ ok: true, deviceToken });

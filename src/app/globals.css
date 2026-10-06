@@ -173,3 +173,26 @@ html {
   box-shadow: none;
   overflow: hidden;
 }
+/* =========================================================
+   ADMIN PANEL
+   The normal FixiTN app uses a 480px mobile shell.
+   Admin uses the full browser width.
+   ========================================================= */
+
+.app-shell:has(.admin-shell) {
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  height: 100dvh;
+  margin: 0;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: hidden;
+}
+
+/* Prevent flex/grid children from forcing horizontal overflow */
+.admin-shell,
+.admin-shell main,
+.admin-shell main > div {
+  min-width: 0;
+}

@@ -7,6 +7,8 @@ import {
 import { getFaceDescriptor, saveKnownDevice } from "@/lib/db/face";
 import { findUserById } from "@/lib/db/users";
 
+import { isTechnicianApproved } from "@/lib/db/technicianApproval";
+
 const THRESHOLD = 0.5;
 
 function euclidean(a: number[], b: number[]): number {
@@ -84,7 +86,9 @@ export async function POST(req: NextRequest) {
     faceSetup: true,
     deviceVerified: true,
     accountApproved:
-      user.role === "TECHNICIAN" ? undefined : true,
+      user.role === "TECHNICIAN"
+        ? await isTechnicianApproved(user.id)
+        : true,
   });
 
   return NextResponse.json({

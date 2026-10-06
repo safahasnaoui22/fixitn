@@ -1,6 +1,18 @@
 import { prisma } from "./client";
 import { createNotification } from "./notifications";
 
+/**
+ * Real approval state from the database (never trust a stale session value).
+ * Returns true for non-technicians is the caller's job; this only checks technicians.
+ */
+export async function isTechnicianApproved(userId: string): Promise<boolean> {
+  const tech = await prisma.technician.findUnique({
+    where: { userId },
+    select: { accountStatus: true },
+  });
+  return tech?.accountStatus === "ACTIVE";
+}
+
 export async function approveTechnician(technicianId: string): Promise<void> {
   const tech = await prisma.technician.update({
     where: { id: technicianId },
