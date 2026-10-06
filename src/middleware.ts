@@ -15,6 +15,7 @@ const ALWAYS_ALLOW = [
   "/models",
   "/api/push",
   "/api/face",
+  "/api/technician/status",
   "/sw.js",
   "/manifest.json",
   "/favicon.ico",

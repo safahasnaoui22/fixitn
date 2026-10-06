@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Clock, LogOut, MessageCircle } from "lucide-react";
 import { getSession, destroySession } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { ApprovalWatcher } from "./ApprovalWatcher";
 
 async function logoutAction() {
   "use server";
@@ -15,6 +16,7 @@ export default async function TechPendingPage() {
 
   return (
     <div className="app-content flex flex-col">
+      <ApprovalWatcher />
       <div className="flex flex-1 flex-col items-center justify-center px-6 py-10 text-center gap-6">
         <div className="flex h-20 w-20 items-center justify-center rounded-full bg-amber-50">
           <Clock size={40} className="text-amber-500" />
