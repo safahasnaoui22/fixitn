@@ -14,70 +14,64 @@ export function AdminShell({
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="admin-shell flex min-h-screen w-full overflow-x-hidden bg-surface-alt">
+    <div className="flex h-dvh w-full bg-surface-alt overflow-hidden">
+      {/* Mobile overlay */}
       {open && (
         <div
-          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
+          className="fixed inset-0 bg-black/60 z-20 lg:hidden"
           onClick={() => setOpen(false)}
         />
       )}
 
+      {/* Sidebar */}
       <aside
+        // Close the mobile drawer after tapping any link inside it
+        onClick={(e) => {
+          if ((e.target as HTMLElement).closest("a")) setOpen(false);
+        }}
         className={`
-          fixed inset-y-0 left-0 z-50
-          flex w-56 shrink-0 flex-col
-          border-r border-line bg-brand-navy
+          fixed inset-y-0 left-0 z-30 w-56 flex flex-col
+          bg-brand-navy border-r border-line
           transition-transform duration-300 ease-in-out
-
-          lg:sticky
-          lg:top-0
-          lg:h-screen
-          lg:translate-x-0
-          lg:z-30
-
+          lg:static lg:translate-x-0 lg:z-auto
           ${open ? "translate-x-0" : "-translate-x-full"}
         `}
       >
+        {/* Mobile close */}
         <button
-          type="button"
           onClick={() => setOpen(false)}
-          className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 lg:hidden"
-          aria-label="Close navigation"
+          className="absolute top-4 right-4 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white lg:hidden"
         >
           <X size={16} />
         </button>
-
         {sidebar}
       </aside>
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        {/* Mobile header */}
-        <div className="sticky top-0 z-20 flex shrink-0 items-center gap-3 border-b border-line bg-surface/95 px-4 py-3 backdrop-blur-md lg:hidden">
+      {/* Main */}
+      <div className="flex flex-1 flex-col overflow-hidden min-w-0">
+        {/* Mobile top bar */}
+        <div className="flex items-center gap-3 border-b border-line bg-surface px-4 py-3 lg:hidden shrink-0">
           <button
-            type="button"
             onClick={() => setOpen(true)}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-navy text-white shadow-sm"
-            aria-label="Open navigation"
+            className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-navy text-white"
           >
             <Menu size={18} />
           </button>
-
-          <p className="min-w-0 flex-1 truncate font-heading text-base font-bold text-ink">
+          <p className="font-heading text-base font-bold text-ink flex-1">
             Fixili Admin
           </p>
-
+          {/* Theme toggle in mobile header */}
           <ThemeToggle />
         </div>
 
-        {/* Desktop header */}
-        <div className="sticky top-0 z-20 hidden h-[61px] shrink-0 items-center justify-end border-b border-line bg-surface/95 px-6 backdrop-blur-md lg:flex">
+        {/* Desktop top bar */}
+        <div className="hidden lg:flex items-center justify-end px-6 py-3 border-b border-line bg-surface shrink-0">
           <ThemeToggle />
         </div>
 
-        <main className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto">
-          <div className="mx-auto w-full max-w-[1800px] px-4 py-5 sm:px-5 sm:py-6 lg:px-7 lg:py-7 xl:px-8 2xl:px-10">
-            {children}
-          </div>
+        <main className="flex-1 overflow-y-auto p-4 sm:p-5 lg:p-6 xl:p-8">
+          {/* Cap the width on very large monitors so content stays readable */}
+          <div className="mx-auto w-full max-w-[1600px]">{children}</div>
         </main>
       </div>
     </div>

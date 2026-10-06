@@ -1,7 +1,8 @@
-
-import { config } from "dotenv";
-config({ path: ".env" });
+// IMPORTANT: this must stay the FIRST import. It loads .env before
+// src/lib/db/client.ts is evaluated (that file reads DATABASE_URL on import).
+import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 import { createUser } from "../src/lib/db/users";
 import { createTechnicianProfile } from "../src/lib/db/catalog";
 import {
@@ -17,7 +18,11 @@ import {
 import { createReview } from "../src/lib/db/reviews";
 import { toStringArray } from "../src/lib/utils";
 
-const prisma = new PrismaClient();
+// Prisma 7 needs a driver adapter (same as src/lib/db/client.ts).
+const prisma = new PrismaClient({
+  adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
+});
+
 const PASSWORD = "password123";
 
 const HOW_IT_WORKS = [
@@ -35,6 +40,24 @@ const daysAgo = (n: number) => new Date(Date.now() - n * 86400000);
 
 async function main() {
   console.log("🌱 Seeding...");
+
+  // ── Safety guard ─────────────────────────────────────────────────────
+  // The seed only inserts, so running it on a database that already has data
+  // would crash halfway. To start over:  npx prisma db push --force-reset
+  const [userCount, planCount] = await Promise.all([
+    prisma.user.count(),
+    prisma.plan.count(),
+  ]);
+  if (userCount > 0 || planCount > 0) {
+    console.error(
+      "❌ The database is not empty. Seed it only when it is empty.\n" +
+        "   To wipe it first:  npx prisma db push --force-reset"
+    );
+    process.exit(1);
+  }
+
+  // SEED_DEMO=false → only plans, categories and the admin (use this for production)
+  const seedDemo = process.env.SEED_DEMO !== "false";
 
   // ── Plans ────────────────────────────────────────────────────────────
   // FREE: very limited, high commission, small radius
@@ -156,304 +179,328 @@ async function main() {
     categoryIdBySlug[slug] = cat.id;
   }
 
-  // ── Technicians ──────────────────────────────────────────────────────
-  const techDefs = [
-    {
-      name: "Ahmed Ben Salah", phone: "20000001", title: "AC Technician",
-      bio: "8 years fixing AC units across Greater Tunis.",
-      years: 8, price: 35, city: "Tunis", lat: 36.8065, lng: 10.1815,
-      plan: "PRO", verified: true, isSenior: true,
-      cats: ["air-conditioner", "refrigerator"],
-    },
-    {
-      name: "Yassine Kriaa", phone: "20000002", title: "Plumber",
-      bio: "Plumbing and light carpentry. Same-day visits.",
-      years: 5, price: 25, city: "Sousse", lat: 35.8256, lng: 10.6369,
-      plan: "BEGINNER", verified: true, isSenior: false,
-      cats: ["plumber", "carpenter"],
-    },
-    {
-      name: "Mohamed Ali", phone: "20000003", title: "Electrician",
-      bio: "Licensed electrician, 12 years experience.",
-      years: 12, price: 30, city: "Tunis", lat: 36.8189, lng: 10.1658,
-      plan: "PRO", verified: true, isSenior: true,
-      cats: ["electrician", "satellite"],
-    },
-    {
-      name: "Walid Mhiri", phone: "20000004", title: "Refrigeration Specialist",
-      bio: "Fridge and washing machine repairs.",
-      years: 6, price: 28, city: "Monastir", lat: 35.778, lng: 10.8262,
-      plan: "BEGINNER", verified: false, isSenior: false,
-      cats: ["refrigerator", "washing-machine"],
-    },
-    {
-      name: "Hichem Ayari", phone: "20000005", title: "Multi Services",
-      bio: "15 years as a generalist — carpentry, painting, locks.",
-      years: 15, price: 40, city: "Sfax", lat: 34.7406, lng: 10.7603,
-      plan: "PRO", verified: true, isSenior: true,
-      cats: ["carpenter", "painter", "locksmith"],
-    },
-    {
-      name: "Nizar Gharbi", phone: "20000006", title: "Locksmith",
-      bio: "Lockouts and rekeying, available evenings.",
-      years: 4, price: 20, city: "Tunis", lat: 36.7962, lng: 10.1911,
-      plan: "FREE", verified: false, isSenior: false,
-      cats: ["locksmith", "electrician"],
-    },
-    {
-      name: "Karim Jaziri", phone: "20000007", title: "TV & Electronics Repair",
-      bio: "TV, satellite, and home electronics.",
-      years: 7, price: 22, city: "Tunis", lat: 36.85, lng: 10.2167,
-      plan: "BEGINNER", verified: true, isSenior: false,
-      cats: ["tv-repair", "satellite"],
-    },
-    {
-      name: "Sami Trabelsi", phone: "20000008", title: "Cleaning & Home Services",
-      bio: "Deep cleaning and small home jobs.",
-      years: 3, price: 18, city: "Ariana", lat: 36.8665, lng: 10.1647,
-      plan: "FREE", verified: false, isSenior: false,
-      cats: ["cleaning", "painter", "washing-machine"],
-    },
-    {
-      name: "Adel Bouazizi", phone: "20000009", title: "Solar Energy Installer",
-      bio: "Solar panel installs and electrical work.",
-      years: 9, price: 50, city: "Sousse", lat: 35.8328, lng: 10.6412,
-      plan: "PRO", verified: true, isSenior: true,
-      cats: ["solar-panels", "electrician"],
-    },
-  ];
+  // ── Admin account ────────────────────────────────────────────────────
+  // Set ADMIN_PHONE and ADMIN_PASSWORD in .env (no password is hard-coded here).
+  // The admin must still do the face scan on first login.
+  const adminPhone = process.env.ADMIN_PHONE?.trim();
+  const adminPassword = process.env.ADMIN_PASSWORD ?? "";
+  if (adminPhone && adminPassword.length >= 8) {
+    await createUser({
+      fullName: process.env.ADMIN_NAME?.trim() || "Admin",
+      phone: adminPhone,
+      password: adminPassword,
+      role: "ADMIN",
+    });
+    console.log(`   Admin created: ${adminPhone}`);
+  } else {
+    console.warn(
+      "⚠️  No admin created. Add ADMIN_PHONE and ADMIN_PASSWORD (min 8 chars) to .env and seed again."
+    );
+  }
 
-  const technicianIdByPhone: Record<string, string> = {};
+  if (seedDemo) {
+    // ── Technicians ──────────────────────────────────────────────────────
+    const techDefs = [
+      {
+        name: "Ahmed Ben Salah", phone: "20000001", title: "AC Technician",
+        bio: "8 years fixing AC units across Greater Tunis.",
+        years: 8, price: 35, city: "Tunis", lat: 36.8065, lng: 10.1815,
+        plan: "PRO", verified: true, isSenior: true,
+        cats: ["air-conditioner", "refrigerator"],
+      },
+      {
+        name: "Yassine Kriaa", phone: "20000002", title: "Plumber",
+        bio: "Plumbing and light carpentry. Same-day visits.",
+        years: 5, price: 25, city: "Sousse", lat: 35.8256, lng: 10.6369,
+        plan: "BEGINNER", verified: true, isSenior: false,
+        cats: ["plumber", "carpenter"],
+      },
+      {
+        name: "Mohamed Ali", phone: "20000003", title: "Electrician",
+        bio: "Licensed electrician, 12 years experience.",
+        years: 12, price: 30, city: "Tunis", lat: 36.8189, lng: 10.1658,
+        plan: "PRO", verified: true, isSenior: true,
+        cats: ["electrician", "satellite"],
+      },
+      {
+        name: "Walid Mhiri", phone: "20000004", title: "Refrigeration Specialist",
+        bio: "Fridge and washing machine repairs.",
+        years: 6, price: 28, city: "Monastir", lat: 35.778, lng: 10.8262,
+        plan: "BEGINNER", verified: false, isSenior: false,
+        cats: ["refrigerator", "washing-machine"],
+      },
+      {
+        name: "Hichem Ayari", phone: "20000005", title: "Multi Services",
+        bio: "15 years as a generalist — carpentry, painting, locks.",
+        years: 15, price: 40, city: "Sfax", lat: 34.7406, lng: 10.7603,
+        plan: "PRO", verified: true, isSenior: true,
+        cats: ["carpenter", "painter", "locksmith"],
+      },
+      {
+        name: "Nizar Gharbi", phone: "20000006", title: "Locksmith",
+        bio: "Lockouts and rekeying, available evenings.",
+        years: 4, price: 20, city: "Tunis", lat: 36.7962, lng: 10.1911,
+        plan: "FREE", verified: false, isSenior: false,
+        cats: ["locksmith", "electrician"],
+      },
+      {
+        name: "Karim Jaziri", phone: "20000007", title: "TV & Electronics Repair",
+        bio: "TV, satellite, and home electronics.",
+        years: 7, price: 22, city: "Tunis", lat: 36.85, lng: 10.2167,
+        plan: "BEGINNER", verified: true, isSenior: false,
+        cats: ["tv-repair", "satellite"],
+      },
+      {
+        name: "Sami Trabelsi", phone: "20000008", title: "Cleaning & Home Services",
+        bio: "Deep cleaning and small home jobs.",
+        years: 3, price: 18, city: "Ariana", lat: 36.8665, lng: 10.1647,
+        plan: "FREE", verified: false, isSenior: false,
+        cats: ["cleaning", "painter", "washing-machine"],
+      },
+      {
+        name: "Adel Bouazizi", phone: "20000009", title: "Solar Energy Installer",
+        bio: "Solar panel installs and electrical work.",
+        years: 9, price: 50, city: "Sousse", lat: 35.8328, lng: 10.6412,
+        plan: "PRO", verified: true, isSenior: true,
+        cats: ["solar-panels", "electrician"],
+      },
+    ];
 
-  for (const t of techDefs) {
-    const user = await createUser({
-      fullName: t.name, phone: t.phone, password: PASSWORD,
-      role: "TECHNICIAN", city: t.city,
+    const technicianIdByPhone: Record<string, string> = {};
+
+    for (const t of techDefs) {
+      const user = await createUser({
+        fullName: t.name, phone: t.phone, password: PASSWORD,
+        role: "TECHNICIAN", city: t.city,
+      });
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { avatarUrl: avatar(t.phone) },
+      });
+
+      const planId = planIdByKey[t.plan];
+
+      const profile = await createTechnicianProfile({
+        userId: user.id,
+        title: t.title,
+        bio: t.bio,
+        yearsExperience: t.years,
+        startingPrice: t.price,
+        categoryIds: t.cats.map((c) => categoryIdBySlug[c]),
+        planId,
+      });
+
+      await prisma.technician.update({
+        where: { id: profile.id },
+        data: {
+          latitude: t.lat,
+          longitude: t.lng,
+          verified: t.verified,
+          isSenior: t.isSenior,
+          seniorSince: t.isSenior ? daysAgo(30) : null,
+          accountStatus: "ACTIVE", // seed data is pre-approved
+        },
+      });
+
+      await prisma.subscription.create({
+        data: { technicianId: profile.id, planId, status: "ACTIVE" },
+      });
+
+      technicianIdByPhone[t.phone] = profile.id;
+    }
+
+    // ── Clients ──────────────────────────────────────────────────────────
+    const sarra = await createUser({
+      fullName: "Sarra Bouazizi", phone: "30000001", password: PASSWORD,
+      role: "CLIENT", city: "Tunis", address: "12 Rue de Marseille, Tunis",
     });
     await prisma.user.update({
-      where: { id: user.id },
-      data: { avatarUrl: avatar(t.phone) },
+      where: { id: sarra.id },
+      data: { avatarUrl: avatar("30000001") },
     });
 
-    const planId = planIdByKey[t.plan];
-
-    const profile = await createTechnicianProfile({
-      userId: user.id,
-      title: t.title,
-      bio: t.bio,
-      yearsExperience: t.years,
-      startingPrice: t.price,
-      categoryIds: t.cats.map((c) => categoryIdBySlug[c]),
-      planId,
+    const khaled = await createUser({
+      fullName: "Khaled Mansour", phone: "30000002", password: PASSWORD,
+      role: "CLIENT", city: "Sousse", address: "5 Avenue Hedi Chaker, Sousse",
+    });
+    await prisma.user.update({
+      where: { id: khaled.id },
+      data: { avatarUrl: avatar("30000002") },
     });
 
-    await prisma.technician.update({
-      where: { id: profile.id },
+    // ── Service requests ─────────────────────────────────────────────────
+
+    // A: completed + solved + reviewed
+    const reqA = await createServiceRequest({
+      clientId: sarra.id, technicianId: technicianIdByPhone["20000001"],
+      categoryId: categoryIdBySlug["air-conditioner"],
+      fullName: sarra.fullName, phone: sarra.phone, address: sarra.address!,
+      latitude: 36.81, longitude: 10.19,
+      description: "AC unit is leaking water and not cooling well.", photos: [],
+    });
+    await acceptRequest(reqA);
+    await advanceStatus(reqA, "ON_THE_WAY");
+    await advanceStatus(reqA, "ARRIVED");
+    await advanceStatus(reqA, "IN_PROGRESS");
+    await markCompleted(reqA);
+    await confirmSolved(reqA, true);
+    await createReview({
+      requestId: reqA, technicianId: technicianIdByPhone["20000001"],
+      authorId: sarra.id, rating: 5, comment: "Excellent and fast!",
+    });
+    const d3 = daysAgo(3);
+    await prisma.serviceRequest.update({
+      where: { id: reqA },
       data: {
-        latitude: t.lat,
-        longitude: t.lng,
-        verified: t.verified,
-        isSenior: t.isSenior,
-        seniorSince: t.isSenior ? daysAgo(30) : null,
-        accountStatus: "ACTIVE", // seed data is pre-approved
+        pendingAt: d3, acceptedAt: d3, onTheWayAt: d3,
+        arrivedAt: d3, inProgressAt: d3, completedAt: d3, createdAt: d3,
       },
     });
 
-    await prisma.subscription.create({
-      data: { technicianId: profile.id, planId, status: "ACTIVE" },
+    // B: accepted + chat
+    const reqB = await createServiceRequest({
+      clientId: sarra.id, technicianId: technicianIdByPhone["20000003"],
+      categoryId: categoryIdBySlug["electrician"],
+      fullName: sarra.fullName, phone: sarra.phone, address: sarra.address!,
+      latitude: 36.81, longitude: 10.19,
+      description: "Two outlets stopped working after a breaker trip.", photos: [],
+    });
+    await acceptRequest(reqB);
+    await createMessage({
+      requestId: reqB, senderId: sarra.id, body: "Hi! Are you free this afternoon?",
+    });
+    const mohamedTech = await prisma.technician.findUnique({
+      where: { id: technicianIdByPhone["20000003"] }, select: { userId: true },
+    });
+    await createMessage({
+      requestId: reqB, senderId: mohamedTech!.userId, body: "Yes, I can come by around 4pm.",
     });
 
-    technicianIdByPhone[t.phone] = profile.id;
+    // C: pending
+    await createServiceRequest({
+      clientId: khaled.id, technicianId: technicianIdByPhone["20000002"],
+      categoryId: categoryIdBySlug["plumber"],
+      fullName: khaled.fullName, phone: khaled.phone, address: khaled.address!,
+      latitude: 35.83, longitude: 10.64,
+      description: "Kitchen sink is clogged and draining slowly.", photos: [],
+    });
+
+    // D: completed + reviewed
+    const reqD = await createServiceRequest({
+      clientId: khaled.id, technicianId: technicianIdByPhone["20000005"],
+      categoryId: categoryIdBySlug["carpenter"],
+      fullName: khaled.fullName, phone: khaled.phone, address: khaled.address!,
+      latitude: 35.83, longitude: 10.64,
+      description: "Bedroom door won't close, hinge seems bent.", photos: [],
+    });
+    await acceptRequest(reqD);
+    await advanceStatus(reqD, "ON_THE_WAY");
+    await advanceStatus(reqD, "ARRIVED");
+    await advanceStatus(reqD, "IN_PROGRESS");
+    await markCompleted(reqD);
+    await confirmSolved(reqD, true);
+    await createReview({
+      requestId: reqD, technicianId: technicianIdByPhone["20000005"],
+      authorId: khaled.id, rating: 4, comment: "Good work, a bit late but solid result.",
+    });
+    await prisma.serviceRequest.update({
+      where: { id: reqD }, data: { createdAt: daysAgo(1) },
+    });
+
+    // E: declined
+    const reqE = await createServiceRequest({
+      clientId: sarra.id, technicianId: technicianIdByPhone["20000004"],
+      categoryId: categoryIdBySlug["refrigerator"],
+      fullName: sarra.fullName, phone: sarra.phone, address: sarra.address!,
+      latitude: 36.81, longitude: 10.19,
+      description: "Fridge making a loud noise and not cooling.", photos: [],
+    });
+    await declineRequest(reqE);
+
+    // F: on the way + chat
+    const reqF = await createServiceRequest({
+      clientId: khaled.id, technicianId: technicianIdByPhone["20000007"],
+      categoryId: categoryIdBySlug["tv-repair"],
+      fullName: khaled.fullName, phone: khaled.phone, address: khaled.address!,
+      latitude: 35.83, longitude: 10.64,
+      description: "TV turns on but screen stays black, sound works fine.", photos: [],
+    });
+    await acceptRequest(reqF);
+    await advanceStatus(reqF, "ON_THE_WAY");
+    await createMessage({
+      requestId: reqF, senderId: khaled.id,
+      body: "I'm on the 3rd floor, buzzer is broken so call me.",
+    });
+
+    // G: completed + not solved
+    const reqG = await createServiceRequest({
+      clientId: sarra.id, technicianId: technicianIdByPhone["20000008"],
+      categoryId: categoryIdBySlug["cleaning"],
+      fullName: sarra.fullName, phone: sarra.phone, address: sarra.address!,
+      latitude: 36.81, longitude: 10.19,
+      description: "Deep clean for a 3-bedroom apartment.", photos: [],
+    });
+    await acceptRequest(reqG);
+    await advanceStatus(reqG, "ON_THE_WAY");
+    await advanceStatus(reqG, "ARRIVED");
+    await advanceStatus(reqG, "IN_PROGRESS");
+    await markCompleted(reqG);
+    await confirmSolved(reqG, false);
+
+    // H: completed + reviewed (today)
+    const reqH = await createServiceRequest({
+      clientId: khaled.id, technicianId: technicianIdByPhone["20000009"],
+      categoryId: categoryIdBySlug["solar-panels"],
+      fullName: khaled.fullName, phone: khaled.phone, address: khaled.address!,
+      latitude: 35.83, longitude: 10.64,
+      description: "Quote and install for a small rooftop solar setup.", photos: [],
+    });
+    await acceptRequest(reqH);
+    await advanceStatus(reqH, "ON_THE_WAY");
+    await advanceStatus(reqH, "ARRIVED");
+    await advanceStatus(reqH, "IN_PROGRESS");
+    await markCompleted(reqH);
+    await confirmSolved(reqH, true);
+    await createReview({
+      requestId: reqH, technicianId: technicianIdByPhone["20000009"],
+      authorId: khaled.id, rating: 5, comment: "Professional from quote to install.",
+    });
+
+    // I: in progress
+    const reqI = await createServiceRequest({
+      clientId: sarra.id, technicianId: technicianIdByPhone["20000006"],
+      categoryId: categoryIdBySlug["locksmith"],
+      fullName: sarra.fullName, phone: sarra.phone, address: sarra.address!,
+      latitude: 36.81, longitude: 10.19,
+      description: "Locked out, need door opened and lock replaced.", photos: [],
+    });
+    await acceptRequest(reqI);
+    await advanceStatus(reqI, "ON_THE_WAY");
+    await advanceStatus(reqI, "ARRIVED");
+    await advanceStatus(reqI, "IN_PROGRESS");
+
+    // J: cancelled
+    const reqJ = await createServiceRequest({
+      clientId: khaled.id, technicianId: technicianIdByPhone["20000002"],
+      categoryId: categoryIdBySlug["plumber"],
+      fullName: khaled.fullName, phone: khaled.phone, address: khaled.address!,
+      latitude: 35.83, longitude: 10.64,
+      description: "Water heater not producing hot water.", photos: [],
+    });
+    await cancelRequest(reqJ);
+
   }
-
-  // ── Clients ──────────────────────────────────────────────────────────
-  const sarra = await createUser({
-    fullName: "Sarra Bouazizi", phone: "30000001", password: PASSWORD,
-    role: "CLIENT", city: "Tunis", address: "12 Rue de Marseille, Tunis",
-  });
-  await prisma.user.update({
-    where: { id: sarra.id },
-    data: { avatarUrl: avatar("30000001") },
-  });
-
-  const khaled = await createUser({
-    fullName: "Khaled Mansour", phone: "30000002", password: PASSWORD,
-    role: "CLIENT", city: "Sousse", address: "5 Avenue Hedi Chaker, Sousse",
-  });
-  await prisma.user.update({
-    where: { id: khaled.id },
-    data: { avatarUrl: avatar("30000002") },
-  });
-
-  // ── Service requests ─────────────────────────────────────────────────
-
-  // A: completed + solved + reviewed
-  const reqA = await createServiceRequest({
-    clientId: sarra.id, technicianId: technicianIdByPhone["20000001"],
-    categoryId: categoryIdBySlug["air-conditioner"],
-    fullName: sarra.fullName, phone: sarra.phone, address: sarra.address!,
-    latitude: 36.81, longitude: 10.19,
-    description: "AC unit is leaking water and not cooling well.", photos: [],
-  });
-  await acceptRequest(reqA);
-  await advanceStatus(reqA, "ON_THE_WAY");
-  await advanceStatus(reqA, "ARRIVED");
-  await advanceStatus(reqA, "IN_PROGRESS");
-  await markCompleted(reqA);
-  await confirmSolved(reqA, true);
-  await createReview({
-    requestId: reqA, technicianId: technicianIdByPhone["20000001"],
-    authorId: sarra.id, rating: 5, comment: "Excellent and fast!",
-  });
-  const d3 = daysAgo(3);
-  await prisma.serviceRequest.update({
-    where: { id: reqA },
-    data: {
-      pendingAt: d3, acceptedAt: d3, onTheWayAt: d3,
-      arrivedAt: d3, inProgressAt: d3, completedAt: d3, createdAt: d3,
-    },
-  });
-
-  // B: accepted + chat
-  const reqB = await createServiceRequest({
-    clientId: sarra.id, technicianId: technicianIdByPhone["20000003"],
-    categoryId: categoryIdBySlug["electrician"],
-    fullName: sarra.fullName, phone: sarra.phone, address: sarra.address!,
-    latitude: 36.81, longitude: 10.19,
-    description: "Two outlets stopped working after a breaker trip.", photos: [],
-  });
-  await acceptRequest(reqB);
-  await createMessage({
-    requestId: reqB, senderId: sarra.id, body: "Hi! Are you free this afternoon?",
-  });
-  const mohamedTech = await prisma.technician.findUnique({
-    where: { id: technicianIdByPhone["20000003"] }, select: { userId: true },
-  });
-  await createMessage({
-    requestId: reqB, senderId: mohamedTech!.userId, body: "Yes, I can come by around 4pm.",
-  });
-
-  // C: pending
-  await createServiceRequest({
-    clientId: khaled.id, technicianId: technicianIdByPhone["20000002"],
-    categoryId: categoryIdBySlug["plumber"],
-    fullName: khaled.fullName, phone: khaled.phone, address: khaled.address!,
-    latitude: 35.83, longitude: 10.64,
-    description: "Kitchen sink is clogged and draining slowly.", photos: [],
-  });
-
-  // D: completed + reviewed
-  const reqD = await createServiceRequest({
-    clientId: khaled.id, technicianId: technicianIdByPhone["20000005"],
-    categoryId: categoryIdBySlug["carpenter"],
-    fullName: khaled.fullName, phone: khaled.phone, address: khaled.address!,
-    latitude: 35.83, longitude: 10.64,
-    description: "Bedroom door won't close, hinge seems bent.", photos: [],
-  });
-  await acceptRequest(reqD);
-  await advanceStatus(reqD, "ON_THE_WAY");
-  await advanceStatus(reqD, "ARRIVED");
-  await advanceStatus(reqD, "IN_PROGRESS");
-  await markCompleted(reqD);
-  await confirmSolved(reqD, true);
-  await createReview({
-    requestId: reqD, technicianId: technicianIdByPhone["20000005"],
-    authorId: khaled.id, rating: 4, comment: "Good work, a bit late but solid result.",
-  });
-  await prisma.serviceRequest.update({
-    where: { id: reqD }, data: { createdAt: daysAgo(1) },
-  });
-
-  // E: declined
-  const reqE = await createServiceRequest({
-    clientId: sarra.id, technicianId: technicianIdByPhone["20000004"],
-    categoryId: categoryIdBySlug["refrigerator"],
-    fullName: sarra.fullName, phone: sarra.phone, address: sarra.address!,
-    latitude: 36.81, longitude: 10.19,
-    description: "Fridge making a loud noise and not cooling.", photos: [],
-  });
-  await declineRequest(reqE);
-
-  // F: on the way + chat
-  const reqF = await createServiceRequest({
-    clientId: khaled.id, technicianId: technicianIdByPhone["20000007"],
-    categoryId: categoryIdBySlug["tv-repair"],
-    fullName: khaled.fullName, phone: khaled.phone, address: khaled.address!,
-    latitude: 35.83, longitude: 10.64,
-    description: "TV turns on but screen stays black, sound works fine.", photos: [],
-  });
-  await acceptRequest(reqF);
-  await advanceStatus(reqF, "ON_THE_WAY");
-  await createMessage({
-    requestId: reqF, senderId: khaled.id,
-    body: "I'm on the 3rd floor, buzzer is broken so call me.",
-  });
-
-  // G: completed + not solved
-  const reqG = await createServiceRequest({
-    clientId: sarra.id, technicianId: technicianIdByPhone["20000008"],
-    categoryId: categoryIdBySlug["cleaning"],
-    fullName: sarra.fullName, phone: sarra.phone, address: sarra.address!,
-    latitude: 36.81, longitude: 10.19,
-    description: "Deep clean for a 3-bedroom apartment.", photos: [],
-  });
-  await acceptRequest(reqG);
-  await advanceStatus(reqG, "ON_THE_WAY");
-  await advanceStatus(reqG, "ARRIVED");
-  await advanceStatus(reqG, "IN_PROGRESS");
-  await markCompleted(reqG);
-  await confirmSolved(reqG, false);
-
-  // H: completed + reviewed (today)
-  const reqH = await createServiceRequest({
-    clientId: khaled.id, technicianId: technicianIdByPhone["20000009"],
-    categoryId: categoryIdBySlug["solar-panels"],
-    fullName: khaled.fullName, phone: khaled.phone, address: khaled.address!,
-    latitude: 35.83, longitude: 10.64,
-    description: "Quote and install for a small rooftop solar setup.", photos: [],
-  });
-  await acceptRequest(reqH);
-  await advanceStatus(reqH, "ON_THE_WAY");
-  await advanceStatus(reqH, "ARRIVED");
-  await advanceStatus(reqH, "IN_PROGRESS");
-  await markCompleted(reqH);
-  await confirmSolved(reqH, true);
-  await createReview({
-    requestId: reqH, technicianId: technicianIdByPhone["20000009"],
-    authorId: khaled.id, rating: 5, comment: "Professional from quote to install.",
-  });
-
-  // I: in progress
-  const reqI = await createServiceRequest({
-    clientId: sarra.id, technicianId: technicianIdByPhone["20000006"],
-    categoryId: categoryIdBySlug["locksmith"],
-    fullName: sarra.fullName, phone: sarra.phone, address: sarra.address!,
-    latitude: 36.81, longitude: 10.19,
-    description: "Locked out, need door opened and lock replaced.", photos: [],
-  });
-  await acceptRequest(reqI);
-  await advanceStatus(reqI, "ON_THE_WAY");
-  await advanceStatus(reqI, "ARRIVED");
-  await advanceStatus(reqI, "IN_PROGRESS");
-
-  // J: cancelled
-  const reqJ = await createServiceRequest({
-    clientId: khaled.id, technicianId: technicianIdByPhone["20000002"],
-    categoryId: categoryIdBySlug["plumber"],
-    fullName: khaled.fullName, phone: khaled.phone, address: khaled.address!,
-    latitude: 35.83, longitude: 10.64,
-    description: "Water heater not producing hot water.", photos: [],
-  });
-  await cancelRequest(reqJ);
 
   console.log("✅ Seed complete:");
   console.log("   3 plans: FREE / BEGINNER / PRO");
   console.log("   1 PlanConfig (Senior Pro criteria)");
   console.log("   12 categories (all active, with visit prices)");
-  console.log("   9 technicians (4 PRO+Senior, 3 BEGINNER, 2 FREE)");
-  console.log("   2 clients, 10 service requests");
-  console.log("   Login: 20000001–20000009 (techs), 30000001–30000002 (clients)");
-  console.log("   Password: password123");
+  if (seedDemo) {
+    console.log("   9 technicians (4 PRO+Senior, 3 BEGINNER, 2 FREE)");
+    console.log("   2 clients, 10 service requests");
+    console.log("   Demo logins: 20000001–20000009 (techs), 30000001–30000002 (clients)");
+    console.log("   Demo password: password123  ← never use demo data in production");
+  }
 }
 
 main()

@@ -3,13 +3,18 @@
 
 import { usePathname } from "next/navigation";
 
+/**
+ * Wraps every page in the phone-proportioned frame (`.app-shell`, max 480px)
+ * EXCEPT the admin panel, which has its own sidebar + content layout and
+ * needs the full browser width on laptops and desktops.
+ */
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isDashboard = pathname?.startsWith("/dashboard");
+  const isAdmin = pathname === "/admin" || pathname?.startsWith("/admin/");
 
-  if (isDashboard) {
-    return <>{children}</>; // no phone-frame div at all
+  if (isAdmin) {
+    return <div className="w-full">{children}</div>;
   }
 
-  return <div className="app-shell-3">{children}</div>;
+  return <div className="app-shell">{children}</div>;
 }

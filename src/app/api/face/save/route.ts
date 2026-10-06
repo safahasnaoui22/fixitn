@@ -34,7 +34,16 @@ export async function POST(req: NextRequest) {
   // ── FACE UNIQUENESS CHECK ──────────────────────────────────────────
   // Compare incoming face against every stored descriptor.
   // If any match (distance < threshold) → this face already has an account.
-  const existing = await getAllFaceDescriptors(session.userId);
+  // DEV ONLY: lets one person (e.g. the developer) register the same face on
+  // several test accounts. Needs BOTH a non-production build AND the env flag,
+  // so it can never switch on by accident on Vercel.
+  const skipUniqueness =
+    process.env.NODE_ENV !== "production" &&
+    process.env.ALLOW_DUPLICATE_FACES === "true";
+
+  const existing = skipUniqueness
+    ? []
+    : await getAllFaceDescriptors(session.userId);
 
   for (const stored of existing) {
     const distance = euclidean(descriptor, stored.descriptor);
