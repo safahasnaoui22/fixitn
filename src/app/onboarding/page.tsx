@@ -32,14 +32,14 @@ export default function OnboardingPage() {
       <div className="relative z-10 flex items-start justify-start px-5 pt-14">
         <Link
           href="/login"
-          className="flex h-8 w-8 items-center justify-center rounded-full"
+          className="flex h-9 w-9 items-center justify-center rounded-full"
           style={{
-            background: "rgba(249,115,22,0.2)",
-            border: "1.5px solid rgba(249,115,22,0.5)",
+            background: "rgba(249,115,22,0.25)",
+            border: "1.5px solid #F97316",
           }}
           aria-label="Skip"
         >
-          <X size={14} color="#F97316" strokeWidth={2.5} />
+          <X size={18} color="#F97316" strokeWidth={3} />
         </Link>
       </div>
 
@@ -49,24 +49,13 @@ export default function OnboardingPage() {
         {/* fixili wordmark */}
         <div className="mb-5 text-center">
           <h1
-            className="font-heading font-black leading-none tracking-tight"
+            className="font-heading font-black leading-none tracking-tight text-white"
             style={{
               fontSize: "clamp(64px, 20vw, 88px)",
               letterSpacing: "-0.03em",
             }}
           >
-            {/* f */}
-            <span style={{ color: "#ffffff" }}>f</span>
-            {/* i — orange dot handled by the letter shape */}
-            <span style={{ color: "#F97316" }}>i</span>
-            {/* x */}
-            <span style={{ color: "#ffffff" }}>x</span>
-            {/* i */}
-            <span style={{ color: "#F97316" }}>i</span>
-            {/* l */}
-            <span style={{ color: "#ffffff" }}>l</span>
-            {/* i */}
-            <span style={{ color: "#F97316" }}>i</span>
+            fi<span style={{ color: "#F97316" }}>x</span>ili
           </h1>
         </div>
 
@@ -82,7 +71,7 @@ export default function OnboardingPage() {
         </p>
 
         {/* Service icons */}
-        <div className="mb-10 flex items-center justify-center gap-7">
+        <div className="mb-12 flex items-center justify-center gap-7">
           {[
             { icon: Droplets, label: "Plomberie" },
             { icon: Zap,      label: "Électricité" },
@@ -101,7 +90,7 @@ export default function OnboardingPage() {
         </div>
 
         {/* CTA buttons */}
-        <div className="w-full max-w-[320px] flex flex-col gap-3">
+        <div className="mt-8 w-full max-w-[320px] flex flex-col gap-3">
           {/* Primary — Commencer */}
           <Link
             href="/register"
