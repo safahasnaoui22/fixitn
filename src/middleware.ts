@@ -19,6 +19,7 @@ const ALWAYS_ALLOW = [
   "/sw.js",
   "/manifest.json",
   "/favicon.ico",
+   "/fixili-background.jpeg",
 ];
 
 const PUBLIC_PREFIXES = [
@@ -50,6 +51,12 @@ function homeFor(role: string | undefined): string {
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+  // Allow static assets
+if (
+  /\.(?:jpg|jpeg|png|gif|webp|svg|ico|avif|woff|woff2|ttf|otf)$/i.test(pathname)
+) {
+  return NextResponse.next();
+}
 
   // ── 1. Always allow static/system paths ────────────────────────────
   if (ALWAYS_ALLOW.some((p) => pathname.startsWith(p))) {
