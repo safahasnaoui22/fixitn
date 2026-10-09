@@ -17,7 +17,7 @@ const TABS = [
   { href: "/notifications", icon: Bell,          label: "Alertes" },
 ];
 
-export function ClientBottomNav() {
+export function ClientBottomNav({ dark = false }: { dark?: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
   const { theme, toggle } = useTheme();
@@ -120,7 +120,14 @@ export function ClientBottomNav() {
         </div>
       )}
 
-      <nav className="fixed bottom-0 inset-x-0 z-30 border-t border-line bg-surface">
+      <nav
+        className={cn(
+          "z-30 border-t",
+          dark
+            ? "relative shrink-0 border-white/10 bg-[#070B1A]"
+            : "fixed bottom-0 inset-x-0 border-line bg-surface"
+        )}
+      >
         <div className="flex items-center justify-around px-2 py-2">
           {TABS.map(({ href, icon: Icon, label }) => {
             const active =
@@ -134,13 +141,13 @@ export function ClientBottomNav() {
                 <Icon
                   size={22}
                   className={cn(
-                    active ? "text-brand-orange" : "text-muted"
+                    active ? "text-brand-orange" : dark ? "text-white/45" : "text-muted"
                   )}
                   strokeWidth={active ? 2.5 : 2}
                 />
                 <span className={cn(
                   "text-[10px] font-medium",
-                  active ? "text-brand-orange" : "text-muted"
+                  active ? "text-brand-orange" : dark ? "text-white/45" : "text-muted"
                 )}>
                   {label}
                 </span>
@@ -155,13 +162,13 @@ export function ClientBottomNav() {
             <User
               size={22}
               className={cn(
-                showProfile ? "text-brand-orange" : "text-muted"
+                showProfile ? "text-brand-orange" : dark ? "text-white/45" : "text-muted"
               )}
               strokeWidth={showProfile ? 2.5 : 2}
             />
             <span className={cn(
               "text-[10px] font-medium",
-              showProfile ? "text-brand-orange" : "text-muted"
+              showProfile ? "text-brand-orange" : dark ? "text-white/45" : "text-muted"
             )}>
               Profil
             </span>
