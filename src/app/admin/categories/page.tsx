@@ -6,7 +6,7 @@ import {
 import { prisma } from "@/lib/db/client";
 import { Button } from "@/components/ui/Button";
 import { CategoryIcon } from "@/components/CategoryIcon";
-import { formatDT } from "@/lib/utils";
+import { formatDT, parseStringArray } from "@/lib/utils";
 import {
   createCategoryAction,
   updateCategoryAction,
@@ -89,6 +89,14 @@ export default async function AdminCategoriesPage({
 
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
+                    {cat.imageUrl && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={cat.imageUrl}
+                        alt=""
+                        className="h-[30px] w-[30px] rounded-lg object-cover"
+                      />
+                    )}
                     <CategoryIcon
                       icon={cat.icon}
                       color={cat.isActive ? cat.color : "#9ca3af"}
@@ -297,6 +305,67 @@ export default async function AdminCategoriesPage({
               name="description"
               defaultValue={editing?.description ?? ""}
               placeholder="Short description for clients"
+              className="mt-1.5 w-full rounded-xl border border-line px-4 py-2.5 text-sm outline-none focus:border-brand-orange"
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-ink">
+              Category image
+              <span className="ml-1 font-normal text-muted">
+                (shown on the category page instead of the icon — JPG/PNG/WEBP, max 4 MB)
+              </span>
+            </label>
+            {editing?.imageUrl && (
+              <div className="mt-2 flex items-center gap-3">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={editing.imageUrl}
+                  alt=""
+                  className="h-20 w-32 rounded-xl object-cover"
+                />
+                <label className="flex items-center gap-2 text-xs text-muted">
+                  <input type="checkbox" name="removeImage" />
+                  Remove current image
+                </label>
+              </div>
+            )}
+            <input
+              name="image"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="mt-1.5 w-full rounded-xl border border-line px-4 py-2 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-brand-orange-light file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-brand-orange"
+            />
+            {editing?.imageUrl && (
+              <p className="mt-1 text-[11px] text-muted">
+                Choose a new file to replace the current image.
+              </p>
+            )}
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-ink">
+              How it works
+              <span className="ml-1 font-normal text-muted">(one step per line)</span>
+            </label>
+            <textarea
+              name="howItWorks"
+              rows={5}
+              defaultValue={parseStringArray(editing?.howItWorks).join("\n")}
+              placeholder={"Tell us what's wrong\nPick a verified technician near you\nTrack them in real time"}
+              className="mt-1.5 w-full rounded-xl border border-line px-4 py-2.5 text-sm outline-none focus:border-brand-orange"
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-ink">
+              Video link <span className="font-normal text-muted">(optional)</span>
+            </label>
+            <input
+              name="videoUrl"
+              type="url"
+              defaultValue={editing?.videoUrl ?? ""}
+              placeholder="https://..."
               className="mt-1.5 w-full rounded-xl border border-line px-4 py-2.5 text-sm outline-none focus:border-brand-orange"
             />
           </div>

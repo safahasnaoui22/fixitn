@@ -39,7 +39,7 @@ export default async function CategoryDetailPage({
         <div className="px-5 pb-6">
           {/* Image (instead of the icon) with the rating at the top right */}
           <CategoryHero
-            slug={category.slug}
+            imageUrl={category.imageUrl}
             name={category.name}
             icon={category.icon}
             color={category.color}

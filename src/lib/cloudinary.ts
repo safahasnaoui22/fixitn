@@ -10,6 +10,7 @@ export type UploadFolder =
   | "cin"
   | "diplome"
   | "avatars"
+  | "categories"
   | "portfolio/images"
   | "portfolio/videos";
 

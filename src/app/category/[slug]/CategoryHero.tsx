@@ -5,7 +5,7 @@ import { Star } from "lucide-react";
 import { CategoryIcon } from "@/components/CategoryIcon";
 
 interface Props {
-  slug: string;
+  imageUrl: string | null;
   name: string;
   icon: string;
   color: string;
@@ -15,18 +15,18 @@ interface Props {
 
 /**
  * Hero image of a category.
- * Looks for  /public/categories/<slug>.jpg  (e.g. public/categories/electrician.jpg).
- * If the image does not exist yet, shows a gradient with the big icon instead.
+ * Shows the image the admin uploaded for this category (Admin → Categories).
+ * Without an image (or if it fails to load) it shows a gradient with the big icon.
  */
-export function CategoryHero({ slug, name, icon, color, ratingAvg, ratingCount }: Props) {
+export function CategoryHero({ imageUrl, name, icon, color, ratingAvg, ratingCount }: Props) {
   const [failed, setFailed] = useState(false);
 
   return (
     <div className="relative h-48 w-full overflow-hidden rounded-3xl bg-[#141E40]">
-      {!failed ? (
+      {imageUrl && !failed ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={`/categories/${slug}.jpg`}
+          src={imageUrl}
           alt={name}
           onError={() => setFailed(true)}
           className="h-full w-full object-cover"

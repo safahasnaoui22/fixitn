@@ -22,6 +22,7 @@ function haversineKm(
 function mapCategory(c: {
   id: string; slug: string; name: string; icon: string; color: string;
   description: string | null; howItWorks: string | null; videoUrl: string | null;
+  imageUrl: string | null;
   ratingAvg: number | null; ratingCount: number | null; sortOrder: number;
   isActive: boolean; visitPrice: number;
 }): Category {

@@ -100,6 +100,7 @@ export interface Category {
   description: string | null;
   howItWorks: string[];
   videoUrl: string | null;
+  imageUrl: string | null;
   ratingAvg: number | null;
   ratingCount: number | null;
   sortOrder: number;

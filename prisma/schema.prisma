@@ -135,6 +135,7 @@ model Category {
   description String?
   howItWorks  String?
   videoUrl    String?
+  imageUrl    String?                   // hero image shown on /category/<slug> (Cloudinary URL)
   ratingAvg   Float?
   ratingCount Int?
   sortOrder   Int     @default(0)
