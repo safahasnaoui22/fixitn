@@ -3,6 +3,7 @@ import { ArrowLeft, MapPin } from "lucide-react";
 import Link from "next/link";
 import { getCategoryBySlug, listTechniciansByCategorySlug } from "@/lib/db/catalog";
 import { CategoryIcon } from "@/components/CategoryIcon";
+import { DARK_BLACK_BG, NAVY_TILE } from "@/lib/theme";
 import { TechnicianList } from "./TechnicianList";
 
 export default async function TechnicianListPage({
@@ -28,12 +29,14 @@ export default async function TechnicianListPage({
   );
 
   return (
-    <div className="app-content no-scrollbar">
+    <div className="app-content no-scrollbar" style={{ background: DARK_BLACK_BG }}>
       {/* Header */}
-      <div className="flex items-center gap-3 border-b border-line px-5 py-4">
+      <div className="flex items-center gap-3 border-b border-white/10 px-5 py-4">
         <Link
           href={`/category/${slug}`}
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-alt"
+          aria-label="Retour"
+          style={{ backgroundColor: NAVY_TILE }}
+          className="flex h-9 w-9 items-center justify-center rounded-full text-white"
         >
           <ArrowLeft size={18} />
         </Link>
@@ -43,8 +46,9 @@ export default async function TechnicianListPage({
             color={category.color}
             size={16}
             badgeSize={32}
+            variant="navy"
           />
-          <p className="font-heading text-base font-semibold text-ink truncate">
+          <p className="font-heading text-base font-semibold text-white truncate">
             {category.name} Technicians
           </p>
         </div>
@@ -52,7 +56,7 @@ export default async function TechnicianListPage({
 
       {/* Location notice */}
       {clientLat && clientLng && (
-        <div className="flex items-center gap-2 bg-success-light px-5 py-2.5 border-b border-line">
+        <div className="flex items-center gap-2 bg-success/15 px-5 py-2.5 border-b border-white/10">
           <MapPin size={13} className="text-success shrink-0" />
           <p className="text-xs font-medium text-success">
             Showing technicians within your plan&apos;s visibility radius

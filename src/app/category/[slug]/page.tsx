@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, PlayCircle, Zap, ShieldCheck, ThumbsUp } from "lucide-react";
 import { getCategoryBySlug } from "@/lib/db/catalog";
 import { Button } from "@/components/ui/Button";
-import { DARK_BG, NAVY_ROW } from "@/lib/theme";
+import { DARK_BG, NAVY_ROW, NAVY_TILE, NAV_BG } from "@/lib/theme";
 import { CategoryHero } from "./CategoryHero";
 
 const PERKS = [
@@ -29,30 +29,26 @@ export default async function CategoryDetailPage({
           <Link
             href="/"
             aria-label="Retour"
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-[#1A2650] text-white"
+            style={{ backgroundColor: NAVY_TILE }}
+            className="flex h-9 w-9 items-center justify-center rounded-full text-white"
           >
             <ArrowLeft size={18} />
           </Link>
           <p className="font-heading text-base font-semibold text-white">{category.name}</p>
         </div>
 
-        <div className="px-5 pb-6">
-          {/* Image (instead of the icon) with the rating at the top right */}
-          <CategoryHero
-            imageUrl={category.imageUrl}
-            name={category.name}
-            icon={category.icon}
-            color={category.color}
-            ratingAvg={category.ratingAvg}
-            ratingCount={category.ratingCount}
-          />
+        {/* Full-width image with title + description over its shadow */}
+        <CategoryHero
+          imageUrl={category.imageUrl}
+          name={category.name}
+          description={category.description}
+          icon={category.icon}
+          color={category.color}
+          ratingAvg={category.ratingAvg}
+          ratingCount={category.ratingCount}
+        />
 
-          {/* Name + description */}
-          <p className="mt-5 font-heading text-2xl font-bold text-white">{category.name}</p>
-          {category.description && (
-            <p className="mt-2 text-[15px] leading-relaxed text-white/65">{category.description}</p>
-          )}
-
+        <div className="px-5 pb-6 pt-4">
           {/* 3 small cards */}
           <div className="mt-5 grid grid-cols-3 gap-3">
             {PERKS.map(({ icon: Icon, label }) => (
@@ -97,7 +93,10 @@ export default async function CategoryDetailPage({
         </div>
       </div>
 
-      <div className="shrink-0 border-t border-white/10 bg-[#070B1A]/90 px-5 py-4 backdrop-blur">
+      <div
+        className="shrink-0 border-t border-white/10 px-5 py-4"
+        style={{ backgroundColor: NAV_BG }}
+      >
         <Link href={`/category/${category.slug}/technicians`}>
           <Button fullWidth size="lg">
             Find a Technician

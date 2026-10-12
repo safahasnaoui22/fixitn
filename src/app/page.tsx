@@ -7,7 +7,7 @@ import { unreadNotificationCount } from "@/lib/db/notifications";
 import { Avatar } from "@/components/ui/Avatar";
 import { ClientBottomNav } from "@/components/ClientBottomNav";
 import { CategoryGrid } from "./CategoryGrid";
-import { DARK_BG } from "@/lib/theme";
+import { DARK_BG, NAVY_TILE } from "@/lib/theme";
 
 export default async function HomePage() {
   const session = await getSession();
@@ -41,7 +41,8 @@ export default async function HomePage() {
             <Link
               href="/notifications"
               aria-label="Notifications"
-              className="relative flex h-10 w-10 items-center justify-center rounded-full bg-[#1A2650] text-white/80"
+              style={{ backgroundColor: NAVY_TILE }}
+              className="relative flex h-10 w-10 items-center justify-center rounded-full text-white/80"
             >
               <Bell size={18} />
               {unread > 0 && (
@@ -50,12 +51,17 @@ export default async function HomePage() {
                 </span>
               )}
             </Link>
-            <Link href="/profile" aria-label="Mon profil">
+            <Link
+              href="/profile"
+              aria-label="Mon profil"
+              className="rounded-full"
+              style={{ backgroundColor: NAVY_TILE }}
+            >
               <Avatar
                 src={null}
                 name={session.fullName}
                 size={40}
-                className="!bg-[#1A2650]"
+                className="!bg-transparent"
               />
             </Link>
           </div>

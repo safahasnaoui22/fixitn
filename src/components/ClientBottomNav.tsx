@@ -9,6 +9,7 @@ import {
 import { useState } from "react";
 import { useTheme } from "./ThemeProvider";
 import { cn } from "@/lib/utils";
+import { NAV_BG } from "@/lib/theme";
 
 const TABS = [
   { href: "/",              icon: Home,          label: "Accueil" },
@@ -121,10 +122,11 @@ export function ClientBottomNav({ dark = false }: { dark?: boolean }) {
       )}
 
       <nav
+        style={dark ? { backgroundColor: NAV_BG } : undefined}
         className={cn(
           "z-30 border-t",
           dark
-            ? "relative shrink-0 border-white/10 bg-[#070B1A]"
+            ? "relative shrink-0 border-white/10"
             : "fixed bottom-0 inset-x-0 border-line bg-surface"
         )}
       >

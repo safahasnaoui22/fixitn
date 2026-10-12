@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/Button";
 import { registerAction } from "./actions";
 import type { Category } from "@/lib/types";
+import { AUTH_INPUT } from "@/lib/theme";
 
 // Two documents are sent in ONE request.
 // Vercel request body limit is 4.5 MB.
@@ -228,14 +229,14 @@ export function RegisterForm({
 
       {/* Error */}
       {error && (
-        <p className="rounded-xl bg-danger-light px-4 py-3 text-sm text-danger">
+        <p className="rounded-xl bg-danger/20 px-4 py-3 text-sm text-red-200">
           {safeDecode(error)}
         </p>
       )}
 
       {/* Role picker */}
       <div>
-        <p className="mb-2 text-sm font-medium text-ink">
+        <p className="mb-2 text-sm font-medium text-white">
           Je suis...
         </p>
 
@@ -251,8 +252,8 @@ export function RegisterForm({
                 }}
                 className={`flex flex-col items-center gap-2 rounded-xl border-2 px-4 py-4 transition-colors ${
                   role === r
-                    ? "border-brand-orange bg-brand-orange-light"
-                    : "border-line bg-surface"
+                    ? "border-brand-orange bg-brand-orange/15"
+                    : "border-white/40 bg-black/30"
                 }`}
               >
                 {r === "CLIENT" ? (
@@ -261,7 +262,7 @@ export function RegisterForm({
                     className={
                       role === r
                         ? "text-brand-orange"
-                        : "text-muted"
+                        : "text-white/60"
                     }
                   />
                 ) : (
@@ -270,7 +271,7 @@ export function RegisterForm({
                     className={
                       role === r
                         ? "text-brand-orange"
-                        : "text-muted"
+                        : "text-white/60"
                     }
                   />
                 )}
@@ -279,7 +280,7 @@ export function RegisterForm({
                   className={`text-sm font-semibold ${
                     role === r
                       ? "text-brand-orange"
-                      : "text-ink"
+                      : "text-white"
                   }`}
                 >
                   {r === "CLIENT"
@@ -312,7 +313,7 @@ export function RegisterForm({
       <div>
         <label
           htmlFor="password"
-          className="text-sm font-medium text-ink"
+          className="text-sm font-medium text-white"
         >
           Mot de passe
         </label>
@@ -324,13 +325,13 @@ export function RegisterForm({
             type={showPass ? "text" : "password"}
             required
             placeholder="Min. 6 caractères"
-            className="w-full rounded-xl border border-line px-4 py-3 pr-11 text-[15px] outline-none focus:border-brand-orange"
+            className={`${AUTH_INPUT} pr-11`}
           />
 
           <button
             type="button"
             onClick={() => setShowPass(!showPass)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60"
           >
             {showPass ? (
               <EyeOff size={18} />
@@ -349,8 +350,8 @@ export function RegisterForm({
 
       {/* Technician-only */}
       {role === "TECHNICIAN" && (
-        <div className="flex flex-col gap-4 rounded-2xl border border-line bg-surface-alt p-4">
-          <p className="text-sm font-semibold text-ink">
+        <div className="flex flex-col gap-4 rounded-2xl border border-white/15 bg-black/35 p-4 backdrop-blur-sm">
+          <p className="text-sm font-semibold text-white">
             Détails technicien
           </p>
 
@@ -365,7 +366,7 @@ export function RegisterForm({
           <div>
             <label
               htmlFor="bio"
-              className="text-sm font-medium text-ink"
+              className="text-sm font-medium text-white"
             >
               Bio
             </label>
@@ -375,7 +376,7 @@ export function RegisterForm({
               name="bio"
               rows={3}
               placeholder="Présentez-vous aux clients..."
-              className="mt-1.5 w-full rounded-xl border border-line px-4 py-3 text-[15px] outline-none focus:border-brand-orange"
+              className={`mt-1.5 ${AUTH_INPUT}`}
             />
           </div>
 
@@ -398,13 +399,13 @@ export function RegisterForm({
 
           {/* Categories */}
           <div>
-            <p className="mb-2 text-sm font-medium text-ink">
+            <p className="mb-2 text-sm font-medium text-white">
               Services proposés{" "}
-              <span className="text-danger">*</span>
+              <span className="text-red-400">*</span>
             </p>
 
             {categories.length === 0 ? (
-              <p className="text-xs text-muted">
+              <p className="text-xs text-white/60">
                 Aucune catégorie disponible.
               </p>
             ) : (
@@ -422,8 +423,8 @@ export function RegisterForm({
                       }
                       className={`flex items-center gap-2 rounded-xl border-2 px-3 py-2.5 text-left transition-colors ${
                         selected
-                          ? "border-brand-orange bg-brand-orange-light"
-                          : "border-line bg-surface"
+                          ? "border-brand-orange bg-brand-orange/15"
+                          : "border-white/40 bg-black/30"
                       }`}
                     >
                       <span
@@ -437,7 +438,7 @@ export function RegisterForm({
                         className={`text-xs font-medium leading-tight ${
                           selected
                             ? "text-brand-orange"
-                            : "text-ink"
+                            : "text-white"
                         }`}
                       >
                         {cat.name}
@@ -449,7 +450,7 @@ export function RegisterForm({
             )}
 
             {selectedCats.size === 0 && (
-              <p className="mt-1 text-xs text-amber-600">
+              <p className="mt-1 text-xs text-amber-400">
                 Sélectionnez au moins un service.
               </p>
             )}
@@ -458,12 +459,12 @@ export function RegisterForm({
           {/* Documents */}
           <div className="flex flex-col gap-3">
             <div>
-              <p className="text-sm font-semibold text-ink">
+              <p className="text-sm font-semibold text-white">
                 Documents d&apos;identité{" "}
-                <span className="text-danger">*</span>
+                <span className="text-red-400">*</span>
               </p>
 
-              <p className="mt-0.5 text-xs text-muted">
+              <p className="mt-0.5 text-xs text-white/60">
                 Requis pour la vérification. Visible
                 uniquement par l&apos;administration.
                 Maximum 1,8 Mo par fichier (les grandes
@@ -491,7 +492,7 @@ export function RegisterForm({
       )}
 
       {/* Terms */}
-      <div className="rounded-2xl border border-line bg-surface p-4">
+      <div className="rounded-2xl border border-white/15 bg-black/35 p-4 backdrop-blur-sm">
         <div className="mb-3 flex items-start gap-3">
           <ShieldCheck
             size={18}
@@ -499,11 +500,11 @@ export function RegisterForm({
           />
 
           <div>
-            <p className="text-sm font-semibold text-ink">
+            <p className="text-sm font-semibold text-white">
               Conditions d&apos;utilisation
             </p>
 
-            <p className="mt-0.5 text-xs text-muted">
+            <p className="mt-0.5 text-xs text-white/60">
               {role === "TECHNICIAN"
                 ? "En créant un compte technicien, vous acceptez les frais de commission, les conditions d'approbation et les règles de la plateforme."
                 : "En créant un compte client, vous acceptez de payer les frais de visite et de transport pour chaque prestation."}
@@ -535,7 +536,7 @@ export function RegisterForm({
               className={`flex h-5 w-5 items-center justify-center rounded-md border-2 transition-colors ${
                 agreed
                   ? "border-brand-orange bg-brand-orange"
-                  : "border-line bg-surface"
+                  : "border-white/40 bg-black/30"
               }`}
             >
               {agreed && (
@@ -554,7 +555,7 @@ export function RegisterForm({
             </div>
           </div>
 
-          <span className="text-sm leading-relaxed text-ink">
+          <span className="text-sm leading-relaxed text-white">
             J&apos;ai lu et j&apos;accepte les{" "}
             <Link
               href={termsHref}
@@ -567,7 +568,7 @@ export function RegisterForm({
         </label>
 
         {!agreed && (
-          <p className="mt-2 text-xs text-amber-600">
+          <p className="mt-2 text-xs text-amber-400">
             Vous devez accepter les conditions avant de
             créer un compte.
           </p>
@@ -584,7 +585,7 @@ export function RegisterForm({
         Créer mon compte
       </Button>
 
-      <p className="text-center text-sm text-muted">
+      <p className="text-center text-sm text-white/60">
         Déjà inscrit ?{" "}
         <Link
           href="/login"
@@ -625,7 +626,7 @@ function Field({
     <div>
       <label
         htmlFor={name}
-        className="text-sm font-medium text-ink"
+        className="text-sm font-medium text-white"
       >
         {label}
       </label>
@@ -636,7 +637,7 @@ function Field({
         type={type}
         required={required}
         placeholder={placeholder}
-        className="mt-1.5 w-full rounded-xl border border-line px-4 py-3 text-[15px] outline-none focus:border-brand-orange"
+        className={`mt-1.5 ${AUTH_INPUT}`}
       />
     </div>
   );
@@ -703,7 +704,7 @@ function FileUpload({
       {/* Label is now connected directly to the input */}
       <label
         htmlFor={name}
-        className="text-sm font-medium text-ink"
+        className="text-sm font-medium text-white"
       >
         {label}
       </label>
@@ -720,12 +721,12 @@ function FileUpload({
         required={required}
         accept="image/jpeg,image/png,image/webp,application/pdf"
         onChange={handleChange}
-        className="mt-1.5 block w-full cursor-pointer rounded-xl border border-line bg-surface px-4 py-3 text-sm text-ink file:mr-4 file:cursor-pointer file:rounded-lg file:border-0 file:bg-brand-orange file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:border-brand-orange"
+        className="mt-1.5 block w-full cursor-pointer rounded-xl border border-white bg-black/30 px-4 py-3 text-sm text-white file:mr-4 file:cursor-pointer file:rounded-lg file:border-0 file:bg-brand-orange file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:border-brand-orange"
       />
 
       {/* Selected file */}
       {doc.name && (
-        <p className="mt-1 flex items-center gap-2 text-xs text-success">
+        <p className="mt-1 flex items-center gap-2 text-xs text-emerald-400">
           <FileCheck size={15} />
           <span className="truncate">
             {doc.name}
@@ -735,7 +736,7 @@ function FileUpload({
 
       {/* Error */}
       {doc.error && (
-        <p className="mt-1 text-xs text-danger">
+        <p className="mt-1 text-xs text-red-300">
           {doc.error}
         </p>
       )}

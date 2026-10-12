@@ -3,10 +3,12 @@
 import { useState } from "react";
 import { Star } from "lucide-react";
 import { CategoryIcon } from "@/components/CategoryIcon";
+import { NAVY_ROW, HERO_FADE } from "@/lib/theme";
 
 interface Props {
   imageUrl: string | null;
   name: string;
+  description: string | null;
   icon: string;
   color: string;
   ratingAvg: number | null;
@@ -14,15 +16,27 @@ interface Props {
 }
 
 /**
- * Hero image of a category.
- * Shows the image the admin uploaded for this category (Admin → Categories).
- * Without an image (or if it fails to load) it shows a gradient with the big icon.
+ * Full-width hero (no side padding). The image fades into the page background
+ * with a soft shadow, and the category name + description sit on top of that
+ * shadow, so there is no gap between the picture and the text.
+ * Without an image (or if it fails to load) a gradient with the big icon is shown.
  */
-export function CategoryHero({ imageUrl, name, icon, color, ratingAvg, ratingCount }: Props) {
+export function CategoryHero({
+  imageUrl,
+  name,
+  description,
+  icon,
+  color,
+  ratingAvg,
+  ratingCount,
+}: Props) {
   const [failed, setFailed] = useState(false);
 
   return (
-    <div className="relative h-48 w-full overflow-hidden rounded-3xl bg-[#141E40]">
+    <div
+      className="relative h-72 w-full overflow-hidden"
+      style={{ backgroundColor: NAVY_ROW }}
+    >
       {imageUrl && !failed ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
@@ -33,26 +47,40 @@ export function CategoryHero({ imageUrl, name, icon, color, ratingAvg, ratingCou
         />
       ) : (
         <div
-          className="flex h-full w-full items-center justify-center"
+          className="flex h-full w-full items-start justify-center pt-12"
           style={{
-            background: `linear-gradient(135deg, ${color}55 0%, #141E40 100%)`,
+            background: `linear-gradient(135deg, ${color}55 0%, ${NAVY_ROW} 100%)`,
           }}
         >
           <CategoryIcon icon={icon} color="#ffffff" size={56} badgeSize={104} className="bg-white/10" />
         </div>
       )}
 
-      {/* soft dark fade so the rating stays readable on any photo */}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/45 via-transparent to-black/25" />
+      {/* Shadow: light at the top, darker towards the bottom where the text sits */}
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            `linear-gradient(to bottom, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0) 28%, ${HERO_FADE}c7 68%, ${HERO_FADE} 100%)`,
+        }}
+      />
 
       {/* Rating — top right */}
       {ratingAvg != null && (
-        <div className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-black/55 px-2.5 py-1 text-xs backdrop-blur-sm">
+        <div className="absolute right-4 top-4 flex items-center gap-1 rounded-full bg-black/55 px-2.5 py-1 text-xs backdrop-blur-sm">
           <Star size={13} className="fill-star text-star" />
           <span className="font-semibold text-white">{ratingAvg.toFixed(1)}</span>
           <span className="text-white/70">({ratingCount ?? 0})</span>
         </div>
       )}
+
+      {/* Title + description on top of the shadow */}
+      <div className="absolute inset-x-0 bottom-0 px-5 pb-4">
+        <p className="font-heading text-2xl font-bold text-white">{name}</p>
+        {description && (
+          <p className="mt-1.5 text-[15px] leading-relaxed text-white/80">{description}</p>
+        )}
+      </div>
     </div>
   );
 }

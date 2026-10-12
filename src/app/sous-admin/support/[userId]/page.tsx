@@ -37,7 +37,7 @@ export default async function SousAdminSupportChatPage({
   };
 
   return (
-    <div className="flex flex-col h-full max-w-2xl" style={{ height: "calc(100vh - 48px)" }}>
+    <div className="flex h-[calc(100dvh-7rem)] w-full max-w-2xl flex-col lg:h-[calc(100dvh-10rem)] xl:h-[calc(100dvh-11rem)]">
       {/* Header */}
       <div className="flex items-center gap-3 border-b border-line px-4 py-3 shrink-0 bg-surface rounded-t-2xl">
         <Link

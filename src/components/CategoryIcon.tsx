@@ -15,6 +15,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { NAVY_TILE, ORANGE, ORANGE_TILE } from "@/lib/theme";
 
 // Keys match the `icon` string stored on each seeded Category row.
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -53,10 +54,10 @@ export function CategoryIcon({ icon, color, size = 22, badgeSize = 48, className
         style={{
           width: badgeSize,
           height: badgeSize,
-          backgroundColor: navy ? "#1A2650" : "rgba(249,115,22,0.13)",
+          backgroundColor: navy ? NAVY_TILE : ORANGE_TILE,
         }}
       >
-        <Icon size={size} color={navy ? "#FFFFFF" : "#F97316"} strokeWidth={1.8} />
+        <Icon size={size} color={navy ? "#FFFFFF" : ORANGE} strokeWidth={1.8} />
       </div>
     );
   }

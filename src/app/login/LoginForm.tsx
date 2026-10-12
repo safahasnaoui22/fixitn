@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { loginAction } from "./actions";
+import { AUTH_INPUT } from "@/lib/theme";
 
 const DEVICE_TOKEN_KEY = "fixitn_device";
 
@@ -31,13 +32,13 @@ export function LoginForm() {
       <input type="hidden" name="deviceToken" value={deviceToken} />
 
       {error && (
-        <p className="rounded-xl bg-danger-light px-4 py-3 text-sm text-danger">
+        <p className="rounded-xl bg-danger/20 px-4 py-3 text-sm text-red-200">
           {error}
         </p>
       )}
 
       <div>
-        <label htmlFor="phone" className="text-sm font-medium text-ink">
+        <label htmlFor="phone" className="text-sm font-medium text-white">
           Phone number
         </label>
         <input
@@ -46,12 +47,12 @@ export function LoginForm() {
           type="tel"
           required
           placeholder="2XXXXXXX"
-          className="mt-1.5 w-full rounded-xl border border-line px-4 py-3 text-[15px] outline-none focus:border-brand-orange"
+          className={`mt-1.5 ${AUTH_INPUT}`}
         />
       </div>
 
       <div>
-        <label htmlFor="password" className="text-sm font-medium text-ink">
+        <label htmlFor="password" className="text-sm font-medium text-white">
           Password
         </label>
         <input
@@ -60,7 +61,7 @@ export function LoginForm() {
           type="password"
           required
           placeholder="••••••••"
-          className="mt-1.5 w-full rounded-xl border border-line px-4 py-3 text-[15px] outline-none focus:border-brand-orange"
+          className={`mt-1.5 ${AUTH_INPUT}`}
         />
       </div>
 
@@ -68,7 +69,7 @@ export function LoginForm() {
         Log In
       </Button>
 
-      <p className="text-center text-sm text-muted">
+      <p className="text-center text-sm text-white/70">
         Don&apos;t have an account?{" "}
         <Link href="/register" className="font-semibold text-brand-orange">
           Sign up

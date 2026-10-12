@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Search, ChevronRight, MoreHorizontal, X } from "lucide-react";
 import { CategoryIcon } from "@/components/CategoryIcon";
-import { NAVY_ROW } from "@/lib/theme";
+import { NAVY_ROW, NAVY_TILE } from "@/lib/theme";
 import type { Category } from "@/lib/types";
 
 const POPULAR_COUNT = 4;
@@ -113,7 +113,7 @@ export function CategoryGrid({ categories }: { categories: Category[] }) {
           >
             <div
               className="flex items-center justify-center rounded-2xl"
-              style={{ width: 64, height: 64, backgroundColor: "#1A2650" }}
+              style={{ width: 64, height: 64, backgroundColor: NAVY_TILE }}
             >
               <MoreHorizontal size={26} color="#FFFFFF" strokeWidth={1.8} />
             </div>

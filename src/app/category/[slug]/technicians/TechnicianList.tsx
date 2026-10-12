@@ -11,6 +11,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { SeniorBadge } from "@/components/SeniorBadge";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { formatDT, cn } from "@/lib/utils";
+import { NAVY_ROW, NAVY_TILE } from "@/lib/theme";
 import type { TechnicianWithUser, Category } from "@/lib/types";
 
 // Haversine distance (same as server-side, for display only)
@@ -110,16 +111,19 @@ export function TechnicianList({
 
       {/* Visit price banner */}
       {category.visitPrice > 0 && (
-        <div className="flex items-center justify-between rounded-2xl border border-line bg-surface-alt px-4 py-3">
+        <div
+          className="flex items-center justify-between rounded-2xl px-4 py-3"
+          style={{ backgroundColor: NAVY_ROW }}
+        >
           <div>
-            <p className="text-xs text-muted">Visit fee (prix de visite)</p>
-            <p className="font-heading text-lg font-bold text-ink">
+            <p className="text-xs text-white/60">Visit fee (prix de visite)</p>
+            <p className="font-heading text-lg font-bold text-white">
               {formatDT(category.visitPrice)}
             </p>
           </div>
           <div className="text-right">
-            <p className="text-xs text-muted">+ Transport</p>
-            <p className="text-sm font-semibold text-ink">1 DT / km</p>
+            <p className="text-xs text-white/60">+ Transport</p>
+            <p className="text-sm font-semibold text-white">1 DT / km</p>
           </div>
         </div>
       )}
@@ -129,11 +133,12 @@ export function TechnicianList({
         <button
           onClick={handleLocate}
           disabled={locating}
+          style={clientLat ? undefined : { backgroundColor: NAVY_TILE }}
           className={cn(
-            "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors border",
+            "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors",
             clientLat
-              ? "border-success bg-success-light text-success"
-              : "border-line bg-surface text-muted hover:text-ink hover:border-brand-orange"
+              ? "bg-success/15 text-success"
+              : "text-white/75 hover:text-white"
           )}
         >
           {locating ? (
@@ -150,11 +155,12 @@ export function TechnicianList({
               key={opt.value}
               onClick={() => setSort(opt.value)}
               disabled={opt.value === "distance" && !clientLat}
+              style={sort === opt.value ? undefined : { backgroundColor: NAVY_TILE }}
               className={cn(
-                "rounded-full px-3 py-1.5 text-xs font-medium border transition-colors",
+                "rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
                 sort === opt.value
-                  ? "bg-brand-navy text-white border-brand-navy"
-                  : "bg-surface border-line text-muted hover:text-ink disabled:opacity-40 disabled:cursor-not-allowed"
+                  ? "bg-brand-orange text-white"
+                  : "text-white/75 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed"
               )}
             >
               {opt.label}
@@ -165,16 +171,16 @@ export function TechnicianList({
 
       {/* Location error */}
       {locError && (
-        <p className="rounded-xl bg-danger-light px-3 py-2 text-xs text-danger">
+        <p className="rounded-xl bg-danger/15 px-3 py-2 text-xs text-danger">
           {locError}
         </p>
       )}
 
       {/* Count */}
       <div className="flex items-center gap-1.5">
-        <Users size={14} className="text-muted" />
-        <p className="text-sm text-muted">
-          <span className="font-semibold text-ink">{sorted.length}</span>
+        <Users size={14} className="text-white/60" />
+        <p className="text-sm text-white/60">
+          <span className="font-semibold text-white">{sorted.length}</span>
           {" "}technician{sorted.length !== 1 ? "s" : ""} available
           {clientLat ? " nearby" : ""}
         </p>
@@ -183,18 +189,22 @@ export function TechnicianList({
       {/* Empty */}
       {sorted.length === 0 && (
         <div className="flex flex-col items-center gap-3 py-12 text-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-surface-alt">
+          <div
+            className="flex h-16 w-16 items-center justify-center rounded-full"
+            style={{ backgroundColor: NAVY_ROW }}
+          >
             <CategoryIcon
               icon={category.icon}
               color={category.color}
               size={24}
               badgeSize={52}
+              variant="navy"
             />
           </div>
-          <p className="font-heading text-base font-semibold text-ink">
+          <p className="font-heading text-base font-semibold text-white">
             No technicians found
           </p>
-          <p className="text-sm text-muted max-w-xs">
+          <p className="text-sm text-white/60 max-w-xs">
             {clientLat
               ? "No technicians available in your area. Try expanding the search or come back later."
               : "No technicians registered for this category yet."}
@@ -214,7 +224,8 @@ export function TechnicianList({
             <Link
               key={tech.id}
               href={`/technician/${tech.id}?category=${category.slug}`}
-              className="flex flex-col gap-3 rounded-2xl border border-line bg-surface p-4 transition-all active:scale-[0.98] hover:border-brand-orange/30 hover:shadow-sm"
+              style={{ backgroundColor: NAVY_ROW }}
+              className="flex flex-col gap-3 rounded-2xl p-4 transition-all active:scale-[0.98]"
             >
               {/* Top row */}
               <div className="flex items-start gap-3">
@@ -225,7 +236,7 @@ export function TechnicianList({
                 />
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
-                    <p className="font-heading text-sm font-bold text-ink truncate">
+                    <p className="font-heading text-sm font-bold text-white truncate">
                       {tech.fullName}
                     </p>
                     {tech.isSenior && <SeniorBadge size="sm" />}
@@ -233,7 +244,7 @@ export function TechnicianList({
                       <ShieldCheck size={14} className="text-success shrink-0" />
                     )}
                   </div>
-                  <p className="text-xs text-muted">{tech.title}</p>
+                  <p className="text-xs text-white/60">{tech.title}</p>
 
                   {/* Rating */}
                   {tech.ratingAvg != null && (
@@ -242,10 +253,10 @@ export function TechnicianList({
                         size={12}
                         className="fill-star text-star shrink-0"
                       />
-                      <span className="text-xs font-semibold text-ink">
+                      <span className="text-xs font-semibold text-white">
                         {tech.ratingAvg.toFixed(1)}
                       </span>
-                      <span className="text-xs text-muted">
+                      <span className="text-xs text-white/60">
                         ({tech.ratingCount})
                       </span>
                     </div>
@@ -255,15 +266,15 @@ export function TechnicianList({
                 {/* Right: price + distance */}
                 <div className="flex flex-col items-end gap-1 shrink-0">
                   <div className="text-right">
-                    <p className="text-[10px] text-muted">Starting from</p>
-                    <p className="font-heading text-sm font-bold text-ink">
+                    <p className="text-[10px] text-white/60">Starting from</p>
+                    <p className="font-heading text-sm font-bold text-white">
                       {formatDT(tech.startingPrice)}
                     </p>
                   </div>
                   {distanceKm != null && (
                     <div className="flex items-center gap-0.5">
-                      <MapPin size={10} className="text-muted" />
-                      <span className="text-[10px] text-muted">
+                      <MapPin size={10} className="text-white/60" />
+                      <span className="text-[10px] text-white/60">
                         {distanceKm < 1
                           ? `${Math.round(distanceKm * 1000)} m`
                           : `${distanceKm.toFixed(1)} km`}
@@ -274,19 +285,19 @@ export function TechnicianList({
               </div>
 
               {/* Bottom row: experience + visit price */}
-              <div className="flex items-center gap-3 border-t border-line pt-3">
+              <div className="flex items-center gap-3 border-t border-white/10 pt-3">
                 <div className="flex items-center gap-1.5">
-                  <Clock size={12} className="text-muted shrink-0" />
-                  <span className="text-xs text-muted">
+                  <Clock size={12} className="text-white/60 shrink-0" />
+                  <span className="text-xs text-white/60">
                     {tech.yearsExperience} yr{tech.yearsExperience !== 1 ? "s" : ""} experience
                   </span>
                 </div>
 
                 {category.visitPrice > 0 && (
                   <>
-                    <div className="h-3 w-px bg-line" />
+                    <div className="h-3 w-px bg-white/15" />
                     <div className="flex items-center gap-1">
-                      <span className="text-xs text-muted">Visit fee:</span>
+                      <span className="text-xs text-white/60">Visit fee:</span>
                       <span className="text-xs font-semibold text-brand-orange">
                         {formatDT(category.visitPrice)}
                       </span>
@@ -296,10 +307,10 @@ export function TechnicianList({
 
                 {distanceKm != null && (
                   <>
-                    <div className="h-3 w-px bg-line" />
+                    <div className="h-3 w-px bg-white/15" />
                     <div className="flex items-center gap-1">
-                      <span className="text-xs text-muted">Transport:</span>
-                      <span className="text-xs font-semibold text-ink">
+                      <span className="text-xs text-white/60">Transport:</span>
+                      <span className="text-xs font-semibold text-white">
                         ~{formatDT(Math.round(distanceKm))}
                       </span>
                     </div>

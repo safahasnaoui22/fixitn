@@ -7,9 +7,12 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 export function AdminShell({
   sidebar,
   children,
+  title = "Fixili Admin",
 }: {
   sidebar: React.ReactNode;
   children: React.ReactNode;
+  /** Text shown in the mobile top bar (e.g. "Fixili Sous-Admin"). */
+  title?: string;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -70,7 +73,7 @@ export function AdminShell({
           </button>
 
           <p className="min-w-0 flex-1 truncate font-heading text-base font-bold text-ink">
-            Fixili Admin
+            {title}
           </p>
 
           <ThemeToggle />
