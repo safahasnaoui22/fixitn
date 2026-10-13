@@ -8,6 +8,7 @@ import { StarRating } from "@/components/ui/StarRating";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { Button } from "@/components/ui/Button";
 import { formatDT, formatRelativeTime } from "@/lib/utils";
+import { DARK_BG, NAVY_ROW, NAVY_TILE, NAV_BG } from "@/lib/theme";
 
 export default async function TechnicianProfilePage({
   params,
@@ -32,12 +33,18 @@ export default async function TechnicianProfilePage({
   const requestHref = `/technician/${id}/request${effectiveSlug ? `?category=${effectiveSlug}` : ""}`;
 
   return (
-    <div className="app-content">
-      <div className="flex items-center gap-3 border-b border-line px-5 py-4">
-        <Link href="/" className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-alt">
+    <div className="flex min-h-0 flex-1 flex-col" style={{ background: DARK_BG }}>
+      <div className="app-content no-scrollbar">
+      <div className="flex items-center gap-3 border-b border-white/10 px-5 py-4">
+        <Link
+          href={effectiveSlug ? `/category/${effectiveSlug}/technicians` : "/"}
+          aria-label="Retour"
+          className="flex h-9 w-9 items-center justify-center rounded-full text-white"
+          style={{ backgroundColor: NAVY_TILE }}
+        >
           <ArrowLeft size={18} />
         </Link>
-        <p className="font-heading text-base font-semibold text-ink">Technician Profile</p>
+        <p className="font-heading text-base font-semibold text-white">Technician Profile</p>
       </div>
 
       <div className="px-5 py-6">
@@ -45,19 +52,19 @@ export default async function TechnicianProfilePage({
           <Avatar src={technician.avatarUrl} name={technician.fullName} size={72} />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
-              <p className="truncate font-heading text-lg font-bold text-ink">{technician.fullName}</p>
+              <p className="truncate font-heading text-lg font-bold text-white">{technician.fullName}</p>
               {technician.verified && (
-                <span className="rounded-full bg-success-light px-1.5 py-0.5 text-[10px] font-bold text-success">
+                <span className="rounded-full bg-success/15 px-1.5 py-0.5 text-[10px] font-bold text-emerald-400">
                   Verified
                 </span>
               )}
             </div>
-            <p className="text-sm text-muted">{technician.title}</p>
+            <p className="text-sm text-white/60">{technician.title}</p>
             {technician.ratingAvg != null && (
               <div className="mt-1 flex items-center gap-1">
                 <Star size={14} className="fill-star text-star" />
-                <span className="text-sm font-semibold text-ink">{technician.ratingAvg.toFixed(1)}</span>
-                <span className="text-xs text-muted">({technician.ratingCount})</span>
+                <span className="text-sm font-semibold text-white">{technician.ratingAvg.toFixed(1)}</span>
+                <span className="text-xs text-white/60">({technician.ratingCount})</span>
               </div>
             )}
           </div>
@@ -73,18 +80,19 @@ export default async function TechnicianProfilePage({
           <StatBox icon={Star} label="Years exp." value={String(technician.yearsExperience)} />
         </div>
 
-        {technician.bio && <p className="mt-5 text-[15px] leading-relaxed text-muted">{technician.bio}</p>}
+        {technician.bio && <p className="mt-5 text-[15px] leading-relaxed text-white/60">{technician.bio}</p>}
 
         {categories.length > 0 && (
           <div className="mt-6">
-            <p className="font-heading text-sm font-semibold text-ink">Services</p>
+            <p className="font-heading text-sm font-semibold text-white">Services</p>
             <div className="mt-2 flex flex-wrap gap-2">
               {categories.map((cat) => (
                 <span
                   key={cat.id}
-                  className="flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 text-xs font-medium text-ink"
+                  className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-white"
+                  style={{ backgroundColor: NAVY_ROW }}
                 >
-                  <CategoryIcon icon={cat.icon} color={cat.color} size={12} badgeSize={20} />
+                  <CategoryIcon icon={cat.icon} color={cat.color} size={12} badgeSize={20} variant="dark" />
                   {cat.name}
                 </span>
               ))}
@@ -94,7 +102,7 @@ export default async function TechnicianProfilePage({
 
         {technician.galleryImages.length > 0 && (
           <div className="mt-6">
-            <p className="font-heading text-sm font-semibold text-ink">Work gallery</p>
+            <p className="font-heading text-sm font-semibold text-white">Work gallery</p>
             <div className="mt-2 grid grid-cols-2 gap-2">
               {technician.galleryImages.map((src, i) => (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -106,11 +114,11 @@ export default async function TechnicianProfilePage({
 
         <div className="mt-6">
           <div className="flex items-center justify-between">
-            <p className="font-heading text-sm font-semibold text-ink">Reviews ({ratingBreakdown.total})</p>
+            <p className="font-heading text-sm font-semibold text-white">Reviews ({ratingBreakdown.total})</p>
             {ratingBreakdown.avg != null && (
               <div className="flex items-center gap-1">
                 <Star size={14} className="fill-star text-star" />
-                <span className="text-sm font-semibold text-ink">{ratingBreakdown.avg.toFixed(1)}</span>
+                <span className="text-sm font-semibold text-white">{ratingBreakdown.avg.toFixed(1)}</span>
               </div>
             )}
           </div>
@@ -120,23 +128,27 @@ export default async function TechnicianProfilePage({
                 <Avatar src={review.authorAvatarUrl} name={review.authorFullName} size={36} />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="truncate text-sm font-semibold text-ink">{review.authorFullName}</p>
-                    <span className="shrink-0 text-xs text-muted">{formatRelativeTime(review.createdAt)}</span>
+                    <p className="truncate text-sm font-semibold text-white">{review.authorFullName}</p>
+                    <span className="shrink-0 text-xs text-white/60">{formatRelativeTime(review.createdAt)}</span>
                   </div>
                   <StarRating value={review.rating} size={13} className="mt-0.5" />
-                  {review.comment && <p className="mt-1 text-sm text-muted">{review.comment}</p>}
+                  {review.comment && <p className="mt-1 text-sm text-white/60">{review.comment}</p>}
                 </div>
               </div>
             ))}
-            {reviews.length === 0 && <p className="text-sm text-muted">No reviews yet.</p>}
+            {reviews.length === 0 && <p className="text-sm text-white/60">No reviews yet.</p>}
           </div>
         </div>
       </div>
+      </div>
 
-      <div className="sticky bottom-0 flex items-center justify-between gap-4 border-t border-line bg-surface px-5 py-4">
+      <div
+        className="flex shrink-0 items-center justify-between gap-4 border-t border-white/10 px-5 py-4"
+        style={{ backgroundColor: NAV_BG }}
+      >
         <div>
-          <p className="text-xs text-muted">Starting at</p>
-          <p className="font-heading text-lg font-bold text-ink">{formatDT(technician.startingPrice)}</p>
+          <p className="text-xs text-white/60">Starting at</p>
+          <p className="font-heading text-lg font-bold text-white">{formatDT(technician.startingPrice)}</p>
         </div>
         <Link href={requestHref} className="flex-1">
           <Button fullWidth size="lg">
@@ -150,10 +162,13 @@ export default async function TechnicianProfilePage({
 
 function StatBox({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: string }) {
   return (
-    <div className="flex flex-col items-center gap-1 rounded-2xl border border-line bg-surface-alt py-3 text-center">
+    <div
+      className="flex flex-col items-center gap-1 rounded-2xl py-3 text-center"
+      style={{ backgroundColor: NAVY_ROW }}
+    >
       <Icon size={18} className="text-brand-orange" />
-      <p className="font-heading text-base font-bold text-ink">{value}</p>
-      <p className="text-[10px] text-muted">{label}</p>
+      <p className="font-heading text-base font-bold text-white">{value}</p>
+      <p className="text-[10px] text-white/60">{label}</p>
     </div>
   );
 }

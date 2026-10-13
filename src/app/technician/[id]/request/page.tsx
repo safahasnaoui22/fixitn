@@ -6,6 +6,7 @@ import { requireUser } from "@/lib/auth";
 import { getTechnicianById, getCategoryBySlug, listCategoriesForTechnician } from "@/lib/db/catalog";
 import { getPublicUserById } from "@/lib/db/users";
 import { RequestForm } from "./RequestForm";
+import { DARK_BG, NAVY_TILE } from "@/lib/theme";
 
 export default async function RequestServicePage({
   params,
@@ -31,32 +32,35 @@ export default async function RequestServicePage({
   const user = await getPublicUserById(session.userId);
 
   return (
-    <div className="app-content">
-      <div className="flex items-center gap-3 border-b border-line px-5 py-4">
-        <Link
-          href={`/technician/${id}`}
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-alt"
-        >
-          <ArrowLeft size={18} />
-        </Link>
-        <div>
-          <p className="font-heading text-base font-semibold text-ink">Request Service</p>
-          <p className="text-xs text-muted">
-            {technician.fullName} · {resolvedCategory.name}
-          </p>
+    <div className="flex min-h-0 flex-1 flex-col" style={{ background: DARK_BG }}>
+      <div className="app-content no-scrollbar">
+        <div className="flex items-center gap-3 border-b border-white/10 px-5 py-4">
+          <Link
+            href={`/technician/${id}?category=${resolvedCategory.slug}`}
+            className="flex h-9 w-9 items-center justify-center rounded-full text-white"
+            style={{ backgroundColor: NAVY_TILE }}
+          >
+            <ArrowLeft size={18} />
+          </Link>
+          <div>
+            <p className="font-heading text-base font-semibold text-white">Request Service</p>
+            <p className="text-xs text-white/60">
+              {technician.fullName} · {resolvedCategory.name}
+            </p>
+          </div>
         </div>
-      </div>
 
-      <div className="px-5 py-6">
-        <Suspense fallback={null}>
-          <RequestForm
-            technicianId={technician.id}
-            categoryId={resolvedCategory.id}
-            defaultFullName={user?.fullName ?? ""}
-            defaultPhone={user?.phone ?? ""}
-            defaultAddress={user?.address ?? ""}
-          />
-        </Suspense>
+        <div className="px-5 py-6">
+          <Suspense fallback={null}>
+            <RequestForm
+              technicianId={technician.id}
+              categoryId={resolvedCategory.id}
+              defaultFullName={user?.fullName ?? ""}
+              defaultPhone={user?.phone ?? ""}
+              defaultAddress={user?.address ?? ""}
+            />
+          </Suspense>
+        </div>
       </div>
     </div>
   );

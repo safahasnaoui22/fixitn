@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Camera } from "lucide-react";
-import { Button } from "@/components/ui/Button";
+import { NAVY_ROW, NAVY_TILE, ORANGE } from "@/lib/theme";
 import { requestServiceAction } from "./actions";
 
 interface RequestFormProps {
@@ -55,14 +55,14 @@ export function RequestForm({
         </>
       )}
 
-      {error && <p className="rounded-xl bg-danger-light px-4 py-3 text-sm text-danger">{error}</p>}
+      {error && <p className="rounded-xl bg-red-500/15 px-4 py-3 text-sm text-red-300">{error}</p>}
 
       <Field label="Full name" name="fullName" defaultValue={defaultFullName} required />
       <Field label="Phone number" name="phone" type="tel" defaultValue={defaultPhone} required />
       <Field label="Address" name="address" defaultValue={defaultAddress} required />
 
       <div>
-        <label htmlFor="description" className="text-sm font-medium text-ink">
+        <label htmlFor="description" className="text-sm font-medium text-white">
           Describe the problem
         </label>
         <textarea
@@ -71,12 +71,13 @@ export function RequestForm({
           rows={4}
           required
           placeholder="What's wrong? The more detail, the better the technician can prepare..."
-          className="mt-1.5 w-full rounded-xl border border-line px-4 py-3 text-[15px] outline-none focus:border-brand-orange"
+          className="mt-1.5 w-full rounded-xl border border-white/10 px-4 py-3 text-[15px] text-white placeholder:text-white/40 outline-none focus:border-brand-orange"
+          style={{ backgroundColor: NAVY_ROW }}
         />
       </div>
 
       <div>
-        <p className="text-sm font-medium text-ink">Photos (optional)</p>
+        <p className="text-sm font-medium text-white">Photos (optional)</p>
         <div className="mt-2 flex flex-wrap gap-2">
           {previews.map((src, i) => (
             // eslint-disable-next-line @next/next/no-img-element
@@ -85,7 +86,8 @@ export function RequestForm({
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="flex h-20 w-20 flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-line text-muted"
+            className="flex h-20 w-20 flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-white/25 text-white/60"
+            style={{ backgroundColor: NAVY_TILE }}
           >
             <Camera size={20} />
             <span className="text-[10px]">Add</span>
@@ -102,9 +104,13 @@ export function RequestForm({
         />
       </div>
 
-      <Button type="submit" size="lg" fullWidth className="mt-2">
+      <button
+        type="submit"
+        className="mt-2 w-full rounded-xl py-3.5 text-[15px] font-semibold text-white"
+        style={{ backgroundColor: ORANGE }}
+      >
         Send Request
-      </Button>
+      </button>
     </form>
   );
 }
@@ -124,7 +130,7 @@ function Field({
 }) {
   return (
     <div>
-      <label htmlFor={name} className="text-sm font-medium text-ink">
+      <label htmlFor={name} className="text-sm font-medium text-white">
         {label}
       </label>
       <input
@@ -133,7 +139,8 @@ function Field({
         type={type}
         defaultValue={defaultValue}
         required={required}
-        className="mt-1.5 w-full rounded-xl border border-line px-4 py-3 text-[15px] outline-none focus:border-brand-orange"
+        className="mt-1.5 w-full rounded-xl border border-white/10 px-4 py-3 text-[15px] text-white placeholder:text-white/40 outline-none focus:border-brand-orange"
+          style={{ backgroundColor: NAVY_ROW }}
       />
     </div>
   );
