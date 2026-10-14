@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import { getSession } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { findUserById } from "@/lib/db/users";
 import {
   listSupportMessages,
@@ -16,8 +16,7 @@ export default async function SousAdminSupportChatPage({
 }: {
   params: Promise<{ userId: string }>;
 }) {
-  const session = await getSession();
-  if (!session || session.role !== "SOUS_ADMIN") redirect("/login");
+  const session = await requirePermission("support");
 
   const { userId } = await params;
 

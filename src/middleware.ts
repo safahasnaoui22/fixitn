@@ -5,6 +5,10 @@ const secret = new TextEncoder().encode(
   process.env.SESSION_SECRET ??
     "dev-only-secret-change-this-before-deploying-to-production-please"
 );
+const ADMIN_ONLY_PREFIXES = [
+  "/admin/create-account", "/admin/plan-config", "/admin/team",
+  "/admin/activity", "/admin/messages", "/admin/support",
+];
 
 const SESSION_COOKIE = "fixitn_session";
 const PENDING_COOKIE = "fixitn_pending";
@@ -153,10 +157,11 @@ if (
     return NextResponse.redirect(new URL(homeFor(role), req.url));
   }
 
-  // Admin-only routes
-  if (pathname.startsWith("/admin") && role !== "ADMIN") {
-    return NextResponse.redirect(new URL(homeFor(role), req.url));
-  }
+ if (pathname.startsWith("/admin")) {
+  const adminOnly = ADMIN_ONLY_PREFIXES.some((p) => pathname.startsWith(p));
+  const allowed = role === "ADMIN" || (role === "SOUS_ADMIN" && !adminOnly);
+  if (!allowed) return NextResponse.redirect(new URL(homeFor(role), req.url));
+}
 
   // Sous-admin-only routes
   if (pathname.startsWith("/sous-admin") && role !== "SOUS_ADMIN") {

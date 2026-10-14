@@ -1,3 +1,6 @@
+import { ModifiedBy } from "@/components/ModifiedBy";
+import { getLastChanges } from "@/lib/db/audit";
+import { requirePermission } from "@/lib/auth";
 import Link from "next/link";
 import {
   ChevronUp, ChevronDown, Trash2,
@@ -34,6 +37,8 @@ export default async function AdminCategoriesPage({
 }: {
   searchParams: Promise<{ edit?: string; error?: string }>;
 }) {
+  const session = await requirePermission("categories");
+  const isAdmin = session.role === "ADMIN";
   const { edit, error } = await searchParams;
 
   const categories = await prisma.category.findMany({
@@ -42,6 +47,7 @@ export default async function AdminCategoriesPage({
     },
     orderBy: { sortOrder: "asc" },
   });
+  const lastChanges = await getLastChanges("category", categories.map((c) => c.id));
 
   const editing = edit ? categories.find((c) => c.id === edit) : null;
 
@@ -108,6 +114,7 @@ export default async function AdminCategoriesPage({
                       <p className="text-[10px] text-muted font-mono">
                         {cat.slug}
                       </p>
+                      <ModifiedBy change={lastChanges.get(cat.id)} />
                     </div>
                   </div>
                 </td>
@@ -187,14 +194,16 @@ export default async function AdminCategoriesPage({
                     >
                       <Edit size={14} />
                     </Link>
-                    <form action={deleteCategoryAction.bind(null, cat.id)}>
-                      <button
-                        type="submit"
-                        className="flex h-7 w-7 items-center justify-center rounded-lg hover:bg-danger-light text-danger transition-colors"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </form>
+                    {isAdmin && (
+                      <form action={deleteCategoryAction.bind(null, cat.id)}>
+                        <button
+                          type="submit"
+                          className="flex h-7 w-7 items-center justify-center rounded-lg hover:bg-danger-light text-danger transition-colors"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </form>
+                    )}
                   </div>
                 </td>
               </tr>

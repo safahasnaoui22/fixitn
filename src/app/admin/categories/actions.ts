@@ -2,7 +2,8 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { requireRole } from "@/lib/auth";
+import { requireRole, requirePermission } from "@/lib/auth";
+import { logAudit } from "@/lib/db/audit";
 import { prisma } from "@/lib/db/client";
 import { uploadFile } from "@/lib/cloudinary";
 import { toStringArray } from "@/lib/utils";
@@ -43,7 +44,7 @@ function fail(message: string): never {
 }
 
 export async function createCategoryAction(formData: FormData): Promise<void> {
-  await requireRole("ADMIN");
+  const actor = await requirePermission("categories");
 
   const name = String(formData.get("name") ?? "").trim();
   const icon = String(formData.get("icon") ?? "").trim();
@@ -75,7 +76,7 @@ export async function createCategoryAction(formData: FormData): Promise<void> {
     fail(`A category with the slug "${slug}" already exists.`);
   }
 
-  await prisma.category.create({
+  const created = await prisma.category.create({
     data: {
       slug,
       name,
@@ -91,13 +92,20 @@ export async function createCategoryAction(formData: FormData): Promise<void> {
     },
   });
 
+  await logAudit(actor, {
+    action: "category.create",
+    entityType: "category",
+    entityId: created.id,
+    summary: `Created category ${name}`,
+  });
+
   revalidatePath("/admin/categories");
   revalidatePath("/");
   redirect("/admin/categories");
 }
 
 export async function updateCategoryAction(formData: FormData): Promise<void> {
-  await requireRole("ADMIN");
+  const actor = await requirePermission("categories");
 
   const id = String(formData.get("id") ?? "");
   const name = String(formData.get("name") ?? "").trim();
@@ -131,6 +139,13 @@ export async function updateCategoryAction(formData: FormData): Promise<void> {
     },
   });
 
+  await logAudit(actor, {
+    action: "category.update",
+    entityType: "category",
+    entityId: id,
+    summary: `Edited category ${name}`,
+  });
+
   revalidatePath("/admin/categories");
   revalidatePath("/");
   revalidatePath("/category", "layout");
@@ -141,11 +156,18 @@ export async function toggleCategoryActiveAction(
   id: string,
   isActive: boolean
 ): Promise<void> {
-  await requireRole("ADMIN");
+  const actor = await requirePermission("categories");
 
-  await prisma.category.update({
+  const cat = await prisma.category.update({
     where: { id },
     data: { isActive },
+    select: { name: true },
+  });
+  await logAudit(actor, {
+    action: "category.toggle",
+    entityType: "category",
+    entityId: id,
+    summary: `${isActive ? "Showed" : "Hid"} category ${cat.name}`,
   });
 
   revalidatePath("/admin/categories");
@@ -156,13 +178,20 @@ export async function updateVisitPriceAction(
   id: string,
   formData: FormData
 ): Promise<void> {
-  await requireRole("ADMIN");
+  const actor = await requirePermission("categories");
 
   const visitPrice = Number(formData.get("visitPrice") ?? 0);
 
-  await prisma.category.update({
+  const cat = await prisma.category.update({
     where: { id },
     data: { visitPrice },
+    select: { name: true },
+  });
+  await logAudit(actor, {
+    action: "category.visitPrice",
+    entityType: "category",
+    entityId: id,
+    summary: `Set visit price of ${cat.name} to ${visitPrice} DT`,
   });
 
   revalidatePath("/admin/categories");
@@ -173,7 +202,7 @@ export async function reorderCategoryAction(
   id: string,
   direction: "up" | "down"
 ): Promise<void> {
-  await requireRole("ADMIN");
+  await requirePermission("categories");
 
   const all = await prisma.category.findMany({
     orderBy: { sortOrder: "asc" },

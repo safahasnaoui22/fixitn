@@ -1,3 +1,6 @@
+import { ModifiedBy } from "@/components/ModifiedBy";
+import { getLastChanges } from "@/lib/db/audit";
+import { requirePermission } from "@/lib/auth";
 import Link from "next/link";
 import {
   Wrench, ShieldCheck, CheckCircle2,
@@ -37,6 +40,7 @@ export default async function AdminTechniciansPage({
 }: {
   searchParams: Promise<{ status?: string }>;
 }) {
+  await requirePermission("technicians");
   const { status = "ALL" } = await searchParams;
   const activeStatus = status as AccountStatus | "ALL";
 
@@ -60,6 +64,7 @@ export default async function AdminTechniciansPage({
     prisma.plan.findMany({ orderBy: { price: "asc" } }),
     prisma.technician.groupBy({ by: ["accountStatus"], _count: true }),
   ]);
+  const lastChanges = await getLastChanges("technician", technicians.map((t) => t.id));
 
   const countMap = Object.fromEntries(
     counts.map((c) => [c.accountStatus, c._count])
@@ -175,6 +180,7 @@ export default async function AdminTechniciansPage({
                       </span>
                       <span>{formatDate(tech.user.createdAt.toISOString())}</span>
                     </div>
+                    <ModifiedBy change={lastChanges.get(tech.id)} />
                   </div>
 
                   {/* Status badge */}

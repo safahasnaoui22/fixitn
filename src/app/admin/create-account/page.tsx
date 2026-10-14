@@ -85,7 +85,7 @@ export default async function AdminCreateAccountPage({
           </div>
           <div className="flex items-start gap-2">
             <span className="font-semibold text-ink shrink-0">SOUS_ADMIN</span>
-            <span>Can approve/decline technicians and handle support chat. No job access.</span>
+            <span>Gets only the functions you tick in “Team & Access” (default: technicians + support). Every change is recorded.</span>
           </div>
           <div className="flex items-start gap-2">
             <span className="font-semibold text-ink shrink-0">ADMIN</span>

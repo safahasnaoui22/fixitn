@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getSession } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { sendSupportMessage } from "@/lib/db/supportChat";
 import { createNotification } from "@/lib/db/notifications";
@@ -11,8 +11,7 @@ export async function sendSupportMessageAction(
   toUserId: string,
   formData: FormData
 ): Promise<void> {
-  const session = await getSession();
-  if (!session || session.role !== "SOUS_ADMIN") redirect("/login");
+  const session = await requirePermission("support");
 
   const body = String(formData.get("body") ?? "").trim();
   if (!body) return;

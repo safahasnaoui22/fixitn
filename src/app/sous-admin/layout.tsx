@@ -1,82 +1,9 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import {
-  LayoutDashboard,
-  Wrench,
-  MessageCircle,
-  LogOut,
-} from "lucide-react";
-import { getSession, destroySession } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
+import { prisma } from "@/lib/db/client";
 import { getUnreadSupportCount } from "@/lib/db/supportChat";
 import { AdminShell } from "@/app/admin/AdminShell";
-
-const NAV = [
-  {
-    href: "/sous-admin",
-    label: "Dashboard",
-    icon: LayoutDashboard,
-  },
-  {
-    href: "/sous-admin/technicians",
-    label: "Technicians",
-    icon: Wrench,
-  },
-  {
-    href: "/sous-admin/support",
-    label: "Support",
-    icon: MessageCircle,
-    badge: true,
-  },
-];
-
-async function sousAdminLogout() {
-  "use server";
-  await destroySession();
-  redirect("/login");
-}
-
-function Sidebar({ unreadCount }: { unreadCount: number }) {
-  return (
-    <div className="flex h-full min-h-0 flex-col">
-      {/* Logo (extra top margin on phones so it does not touch the close button) */}
-      <div className="mt-8 shrink-0 px-5 py-6 lg:mt-0">
-        <p className="font-heading text-lg font-bold text-white">FixiTN</p>
-        <p className="text-xs text-white/50">Sous-Admin Panel</p>
-      </div>
-
-      <nav className="no-scrollbar flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-3">
-        {NAV.map(({ href, label, icon: Icon, badge }) => (
-          <Link
-            key={href}
-            href={href}
-            className="flex shrink-0 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-white/70 transition-colors hover:bg-white/10 hover:text-white"
-          >
-            <Icon size={16} className="shrink-0" />
-            <span className="flex-1 truncate">{label}</span>
-            {badge && unreadCount > 0 && (
-              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-orange px-1 text-[10px] font-bold text-white">
-                {unreadCount > 9 ? "9+" : unreadCount}
-              </span>
-            )}
-          </Link>
-        ))}
-      </nav>
-
-      <form
-        action={sousAdminLogout}
-        className="shrink-0 border-t border-white/10 p-3"
-      >
-        <button
-          type="submit"
-          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-white/50 transition-colors hover:bg-white/10 hover:text-white"
-        >
-          <LogOut size={16} className="shrink-0" />
-          Log Out
-        </button>
-      </form>
-    </div>
-  );
-}
+import { AdminSidebar } from "@/app/admin/AdminSidebar";
 
 export default async function SousAdminLayout({
   children,
@@ -87,12 +14,24 @@ export default async function SousAdminLayout({
   if (!session) redirect("/login");
   if (session.role !== "SOUS_ADMIN") redirect("/");
 
-  const unreadCount = await getUnreadSupportCount(session.userId);
+  const [user, unreadCount] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: session.userId },
+      select: { permissions: true },
+    }),
+    getUnreadSupportCount(session.userId),
+  ]);
 
   return (
     <AdminShell
       title="Fixili Sous-Admin"
-      sidebar={<Sidebar unreadCount={unreadCount} />}
+      sidebar={
+        <AdminSidebar
+          role="SOUS_ADMIN"
+          permissions={user?.permissions ?? []}
+          unreadCount={unreadCount}
+        />
+      }
     >
       {children}
     </AdminShell>

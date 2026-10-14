@@ -1,10 +1,12 @@
+import { ModifiedBy } from "@/components/ModifiedBy";
+import { getLastChanges } from "@/lib/db/audit";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
   CheckCircle2, XCircle, Archive,
   ShieldCheck, FileText, ExternalLink,
 } from "lucide-react";
-import { getSession } from "@/lib/auth";
+import { requirePermission } from "@/lib/auth";
 import { prisma } from "@/lib/db/client";
 import { Avatar } from "@/components/ui/Avatar";
 import { SeniorBadge } from "@/components/SeniorBadge";
@@ -39,8 +41,7 @@ export default async function SousAdminTechniciansPage({
 }: {
   searchParams: Promise<{ status?: string }>;
 }) {
-  const session = await getSession();
-  if (!session || session.role !== "SOUS_ADMIN") redirect("/login");
+  const session = await requirePermission("technicians");
 
   const { status = "PENDING" } = await searchParams;
   const activeStatus = status as AccountStatus | "ALL";
@@ -65,6 +66,7 @@ export default async function SousAdminTechniciansPage({
 
   // Get all plans for the plan selector
   const plans = await prisma.plan.findMany({ orderBy: { price: "asc" } });
+  const lastChanges = await getLastChanges("technician", technicians.map((t) => t.id));
 
   // Count per status for tab badges
   const counts = await prisma.technician.groupBy({
@@ -175,6 +177,7 @@ export default async function SousAdminTechniciansPage({
                     <p className="text-xs text-muted mt-0.5">
                       Registered {formatDate(tech.user.createdAt.toISOString())}
                     </p>
+                    <ModifiedBy change={lastChanges.get(tech.id)} />
                   </div>
 
                   {/* Status badge */}

@@ -1,3 +1,4 @@
+import { requirePermission } from "@/lib/auth";
 import Link from "next/link";
 import { Users, Phone, MapPin, Briefcase, ChevronRight, ArrowUpRight, Wrench, UserCircle2 } from "lucide-react";
 import { listAdminUsers } from "@/lib/db/admin";
@@ -31,6 +32,7 @@ export default async function AdminUsersPage({
 }: {
   searchParams: Promise<{ role?: string }>;
 }) {
+  await requirePermission("users");
   const { role } = await searchParams;
   const users = await listAdminUsers(role);
 

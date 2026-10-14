@@ -1,3 +1,6 @@
+import { ModifiedBy } from "@/components/ModifiedBy";
+import { getLastChanges } from "@/lib/db/audit";
+import { requirePermission } from "@/lib/auth";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -28,10 +31,13 @@ export default async function AdminUserDetailPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ success?: string }>;
 }) {
+  const session = await requirePermission("users");
+  const isAdmin = session.role === "ADMIN";
   const { id } = await params;
   const { success } = await searchParams;
 
   const user = await getAdminUserDetail(id);
+  const lastChange = (await getLastChanges("user", [id])).get(id);
   if (!user) notFound();
 
   const [faceRegistered, devices] = await Promise.all([
@@ -60,6 +66,7 @@ export default async function AdminUserDetailPage({
             User Detail
           </h1>
           <p className="text-xs text-muted font-mono">{id.slice(0, 20)}...</p>
+          <ModifiedBy change={lastChange} />
         </div>
       </div>
 
@@ -257,7 +264,8 @@ export default async function AdminUserDetailPage({
         )}
       </div>
 
-      {/* Danger zone */}
+      {/* Danger zone (admin only) */}
+      {isAdmin && (
       <div className="rounded-2xl border border-danger-light bg-danger-light/30 p-5">
         <p className="font-heading text-sm font-semibold text-danger mb-1">
           Danger Zone
@@ -274,6 +282,7 @@ export default async function AdminUserDetailPage({
           </Button>
         </form>
       </div>
+      )}
     </div>
   );
 }

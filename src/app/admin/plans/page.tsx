@@ -1,3 +1,6 @@
+import { ModifiedBy } from "@/components/ModifiedBy";
+import { getLastChanges } from "@/lib/db/audit";
+import { requirePermission } from "@/lib/auth";
 import { Crown, Users, CheckCircle2 } from "lucide-react";
 import { listAdminPlans } from "@/lib/db/admin";
 import { parseStringArray } from "@/lib/utils";
@@ -10,8 +13,10 @@ export default async function AdminPlansPage({
 }: {
   searchParams: Promise<{ success?: string }>;
 }) {
+  await requirePermission("plans");
   const { success } = await searchParams;
   const plans = await listAdminPlans();
+  const lastChanges = await getLastChanges("plan", plans.map((pl) => pl.id));
 
   return (
     <div className="flex flex-col gap-6">
@@ -57,7 +62,9 @@ export default async function AdminPlansPage({
               </span>
             </div>
 
-            <form action={updatePlanAction} className="flex flex-col gap-4">
+            <ModifiedBy change={lastChanges.get(plan.id)} />
+
+            <form action={updatePlanAction} className="mt-3 flex flex-col gap-4">
               <input type="hidden" name="id" value={plan.id} />
 
               <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">

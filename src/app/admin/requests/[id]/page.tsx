@@ -1,3 +1,4 @@
+import { requirePermission } from "@/lib/auth";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, CheckCircle2, XCircle } from "lucide-react";
@@ -15,6 +16,7 @@ export default async function AdminRequestDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await requirePermission("requests");
   const { id } = await params;
   const req = await getAdminRequestDetail(id);
   if (!req) notFound();

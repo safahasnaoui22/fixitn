@@ -1,3 +1,6 @@
+import { ModifiedBy } from "@/components/ModifiedBy";
+import { getLastChanges } from "@/lib/db/audit";
+import { requirePermission } from "@/lib/auth";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -36,11 +39,13 @@ export default async function AdminTechnicianDetailPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ success?: string }>;
 }) {
+  await requirePermission("technicians");
   const { id } = await params;
   const { success } = await searchParams;
 
   const tech = await getAdminTechnicianDetail(id);
   if (!tech) notFound();
+  const lastChange = (await getLastChanges("technician", [id])).get(id);
 
   const [faceRegistered, ratingBreakdown] = await Promise.all([
     hasFaceDescriptor(tech.userId),
@@ -62,6 +67,7 @@ export default async function AdminTechnicianDetailPage({
             Technician Detail
           </h1>
           <p className="text-xs text-muted font-mono">{id.slice(0, 20)}...</p>
+          <ModifiedBy change={lastChange} />
         </div>
       </div>
 

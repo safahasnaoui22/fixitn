@@ -1,3 +1,4 @@
+import { requirePermission } from "@/lib/auth";
 import { TrendingUp, Wallet, Briefcase, CreditCard } from "lucide-react";
 import { getRevenueStats } from "@/lib/db/admin";
 import { formatDT } from "@/lib/utils";
@@ -18,6 +19,7 @@ const METHOD_LABEL: Record<string, string> = {
 };
 
 export default async function AdminRevenuePage() {
+  await requirePermission("revenue");
   const stats = await getRevenueStats();
   const maxFee = Math.max(...stats.monthly.map((m) => Number(m.fee)), 1);
 

@@ -1,3 +1,4 @@
+import { requirePermission } from "@/lib/auth";
 import { Wallet } from "lucide-react";
 import { listAdminPayments } from "@/lib/db/admin";
 import { formatDT, formatDate } from "@/lib/utils";
@@ -28,6 +29,7 @@ export default async function AdminPaymentsPage({
 }: {
   searchParams: Promise<{ type?: string }>;
 }) {
+  await requirePermission("payments");
   const { type } = await searchParams;
   const payments = await listAdminPayments(type);
 

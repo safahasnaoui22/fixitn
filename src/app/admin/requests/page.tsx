@@ -1,3 +1,4 @@
+import { requirePermission } from "@/lib/auth";
 import Link from "next/link";
 import { ClipboardList } from "lucide-react";
 import { listAdminRequests } from "@/lib/db/admin";
@@ -10,6 +11,7 @@ export default async function AdminRequestsPage({
 }: {
   searchParams: Promise<{ status?: string }>;
 }) {
+  await requirePermission("requests");
   const { status } = await searchParams;
   const requests = await listAdminRequests(status);
 

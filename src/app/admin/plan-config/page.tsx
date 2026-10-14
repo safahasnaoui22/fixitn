@@ -1,3 +1,4 @@
+import { requireRole } from "@/lib/auth";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -26,6 +27,7 @@ export default async function PlanConfigPage({
 }: {
   searchParams: Promise<{ error?: string; success?: string }>;
 }) {
+  await requireRole("ADMIN");
   const { error, success } = await searchParams;
   const [config, stats] = await Promise.all([getPlanConfig(), getSeniorStats()]);
 
