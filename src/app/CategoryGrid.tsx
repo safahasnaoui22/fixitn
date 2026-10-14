@@ -105,10 +105,9 @@ export function CategoryGrid({ categories }: { categories: Category[] }) {
             );
           })}
 
-          {/* Autres → shows every service in the list below */}
-          <button
-            type="button"
-            onClick={() => setShowAll(true)}
+          {/* Autres → page with every category */}
+          <Link
+            href="/categories"
             className="flex flex-col items-center gap-2 transition-transform active:scale-95"
           >
             <div
@@ -120,7 +119,7 @@ export function CategoryGrid({ categories }: { categories: Category[] }) {
             <span className="w-[72px] text-center text-[11px] font-medium leading-tight text-white/80">
               Autres
             </span>
-          </button>
+          </Link>
         </div>
       )}
 

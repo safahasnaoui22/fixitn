@@ -16,6 +16,8 @@ interface JobStatusTimelineProps {
   declinedAt?: string | null;
   cancelledAt?: string | null;
   className?: string;
+  /** dark = white text on the dark-blue theme */
+  dark?: boolean;
 }
 
 const TIMESTAMP_KEY: Record<FlowStatus, TimestampKey> = {
@@ -28,7 +30,9 @@ const TIMESTAMP_KEY: Record<FlowStatus, TimestampKey> = {
 };
 
 export function JobStatusTimeline(props: JobStatusTimelineProps) {
-  const { status, declinedAt, cancelledAt, className } = props;
+  const { status, declinedAt, cancelledAt, className, dark } = props;
+  const inkCls = dark ? "text-white" : "text-ink";
+  const mutedCls = dark ? "text-white/60" : "text-muted";
 
   // Declined/cancelled are terminal off-ramps, not a point on the happy-path
   // flow, so they get their own simple one-line state instead of the timeline.
@@ -41,11 +45,11 @@ export function JobStatusTimeline(props: JobStatusTimelineProps) {
           <X size={18} strokeWidth={2.5} />
         </div>
         <div className="pt-1.5">
-          <p className="font-heading text-sm font-semibold text-ink">
+          <p className={cn("font-heading text-sm font-semibold", inkCls)}>
             {isDeclined ? "Request Declined" : "Request Cancelled"}
           </p>
           {ts && (
-            <p className="text-xs text-muted">
+            <p className={cn("text-xs", mutedCls)}>
               {formatDate(ts)} · {formatTime(ts)}
             </p>
           )}
@@ -71,27 +75,27 @@ export function JobStatusTimeline(props: JobStatusTimelineProps) {
                 className={cn(
                   "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
                   isDone && "border-success bg-success text-white",
-                  isCurrent && "border-brand-orange bg-brand-orange-light text-brand-orange animate-pulse",
-                  !isDone && !isCurrent && "border-line bg-surface text-muted"
+                  isCurrent && (dark ? "border-brand-orange bg-brand-orange/20 text-brand-orange animate-pulse" : "border-brand-orange bg-brand-orange-light text-brand-orange animate-pulse"),
+                  !isDone && !isCurrent && (dark ? "border-white/20 bg-white/5 text-white/50" : "border-line bg-surface text-muted")
                 )}
               >
                 {isDone ? <Check size={16} strokeWidth={3} /> : <Clock size={15} />}
               </div>
               {!isLast && (
-                <div className={cn("min-h-8 w-0.5 flex-1", i < currentIndex ? "bg-success" : "bg-line")} />
+                <div className={cn("min-h-8 w-0.5 flex-1", i < currentIndex ? "bg-success" : dark ? "bg-white/15" : "bg-line")} />
               )}
             </div>
             <div className={cn("pb-7", isLast && "pb-0")}>
               <p
                 className={cn(
                   "font-heading text-sm font-semibold",
-                  isDone || isCurrent ? "text-ink" : "text-muted"
+                  isDone || isCurrent ? inkCls : mutedCls
                 )}
               >
                 {JOB_STATUS_LABEL[step]}
               </p>
               {ts ? (
-                <p className="text-xs text-muted">
+                <p className={cn("text-xs", mutedCls)}>
                   {formatDate(ts)} · {formatTime(ts)}
                 </p>
               ) : isCurrent ? (

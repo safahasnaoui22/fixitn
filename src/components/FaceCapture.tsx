@@ -2,11 +2,13 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Camera, RefreshCw, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/Button";
+import { NAVY_TILE, ORANGE } from "@/lib/theme";
 
 // ── Module-level singleton ─────────────────────────────────────────────
 // Models are heavy (~7 MB). Load them once per page session,
-// shared across all FaceCapture instances.
+// shared across all FaceCapture instances. Call preloadFaceModels() on any
+// page that comes BEFORE the camera (intro screens) so they are ready (or
+// nearly ready) by the time the person presses "Start".
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let faceApi: any = null;
 let modelsLoaded = false;
@@ -18,16 +20,18 @@ async function ensureModels(): Promise<void> {
 
   modelLoadPromise = (async () => {
     // Dynamic imports keep tfjs/face-api out of the server bundle entirely.
-    // Static top-level imports get evaluated during Next.js SSR, where
-    // tfjs's Node platform path breaks (util.TextEncoder issue).
-    const tf = await import("@tensorflow/tfjs");
-    await import("@tensorflow/tfjs-backend-webgl");
-    faceApi = await import("@vladmandic/face-api");
+    // (Static top-level imports get evaluated during Next.js SSR, where
+    // tfjs's Node platform path breaks.)
+    // The three libraries and the model files are downloaded IN PARALLEL.
+    const [tf, , api] = await Promise.all([
+      import("@tensorflow/tfjs"),
+      import("@tensorflow/tfjs-backend-webgl"),
+      import("@vladmandic/face-api"),
+    ]);
+    faceApi = api;
 
     await tf.setBackend("webgl");
     await tf.ready();
-
-    console.log("TensorFlow backend:", tf.getBackend());
 
     await Promise.all([
       faceApi.nets.tinyFaceDetector.loadFromUri("/models"),
@@ -35,10 +39,36 @@ async function ensureModels(): Promise<void> {
       faceApi.nets.faceRecognitionNet.loadFromUri("/models"),
     ]);
 
+    // Warm-up: the very first inference compiles the WebGL shaders (1-2 s).
+    // Do it now, while the person is still reading / the camera is starting,
+    // so the first real scan is instant.
+    try {
+      const c = document.createElement("canvas");
+      c.width = c.height = 160;
+      const ctx = c.getContext("2d");
+      if (ctx) {
+        ctx.fillStyle = "#808080";
+        ctx.fillRect(0, 0, 160, 160);
+      }
+      await faceApi
+        .detectSingleFace(c, new faceApi.TinyFaceDetectorOptions({ inputSize: 224 }))
+        .withFaceLandmarks();
+      await faceApi.nets.faceRecognitionNet.computeFaceDescriptor(c);
+    } catch {
+      // warm-up is only an optimisation
+    }
+
     modelsLoaded = true;
   })();
 
   return modelLoadPromise;
+}
+
+/** Start downloading the face models in the background (safe to call many times). */
+export function preloadFaceModels(): void {
+  ensureModels().catch(() => {
+    modelLoadPromise = null; // allow a retry later
+  });
 }
 
 // ── Types ──────────────────────────────────────────────────────────────
@@ -61,6 +91,8 @@ function euclidean(a: number[], b: number[]): number {
   return Math.sqrt(a.reduce((sum, v, i) => sum + (v - b[i]) ** 2, 0));
 }
 
+const VIEW = 280; // diameter of the round camera view (px)
+
 // ── Component ──────────────────────────────────────────────────────────
 export function FaceCapture({
   onCapture,
@@ -69,78 +101,73 @@ export function FaceCapture({
   captureLabel = "Capture Face",
 }: FaceCaptureProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const scanningRef = useRef(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mountedRef = useRef(true);
 
   const [status, setStatus] = useState<Status>("loading-models");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [faceDetected, setFaceDetected] = useState(false);
+  const [cameraReady, setCameraReady] = useState(false);
+  const [modelsReady, setModelsReady] = useState(modelsLoaded);
+
+  const stopLoop = useCallback(() => {
+    scanningRef.current = false;
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  }, []);
 
   const stopCamera = useCallback(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
+    stopLoop();
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
-  }, []);
+  }, [stopLoop]);
 
-  // ── Live scan loop ─────────────────────────────────────────────────
+  // ── Live scan loop (detector only: fast) ───────────────────────────
   const startLiveScan = useCallback(() => {
     if (!faceApi || !modelsLoaded) return;
+    stopLoop();
+    scanningRef.current = true;
 
-    intervalRef.current = setInterval(async () => {
-      if (!videoRef.current || !canvasRef.current || !mountedRef.current) return;
-      if (videoRef.current.readyState < 2) return; // not ready yet
-
-      try {
-        const detections = await faceApi
-          .detectAllFaces(
-            videoRef.current,
-            new faceApi.TinyFaceDetectorOptions({ inputSize: 320 })
-          )
-          .withFaceLandmarks();
-
-        if (!mountedRef.current) return;
-
-        const canvas = canvasRef.current;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) return;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        if (detections.length === 1) {
-          setFaceDetected(true);
-          const box = detections[0].detection.box;
-          ctx.beginPath();
-          ctx.ellipse(
-            box.x + box.width / 2,
-            box.y + box.height / 2,
-            box.width / 2 + 12,
-            box.height / 2 + 14,
-            0, 0, 2 * Math.PI
+    const tick = async () => {
+      if (!scanningRef.current || !mountedRef.current) return;
+      const video = videoRef.current;
+      if (video && video.readyState >= 2) {
+        try {
+          const found = await faceApi.detectAllFaces(
+            video,
+            new faceApi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 })
           );
-          ctx.strokeStyle = "#22c55e";
-          ctx.lineWidth = 3;
-          ctx.stroke();
-        } else {
-          setFaceDetected(false);
+          if (mountedRef.current && scanningRef.current) {
+            setFaceDetected(found.length === 1);
+          }
+        } catch {
+          // ignore transient detection errors
         }
-      } catch {
-        // Ignore transient detection errors
       }
-    }, 250);
-  }, []);
+      if (scanningRef.current && mountedRef.current) {
+        timerRef.current = setTimeout(tick, 120);
+      }
+    };
+    tick();
+  }, [stopLoop]);
 
-  // ── Camera start ──────────────────────────────────────────────────
+  // ── Camera start (runs in PARALLEL with the model download) ────────
   const startCamera = useCallback(async () => {
     if (!mountedRef.current) return;
     setFaceDetected(false);
+    setCameraReady(false);
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user", width: 640, height: 480 },
+        video: {
+          facingMode: "user",
+          width: { ideal: 640 },
+          height: { ideal: 480 },
+        },
         audio: false,
       });
 
@@ -151,13 +178,13 @@ export function FaceCapture({
 
       streamRef.current = stream;
 
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.onloadedmetadata = () => {
+      const video = videoRef.current;
+      if (video) {
+        video.srcObject = stream;
+        video.onloadedmetadata = () => {
           if (!mountedRef.current) return;
-          videoRef.current?.play();
-          setStatus("waiting");
-          startLiveScan();
+          video.play().catch(() => {});
+          setCameraReady(true);
         };
       }
     } catch {
@@ -168,31 +195,26 @@ export function FaceCapture({
         );
       }
     }
-  }, [startLiveScan]);
+  }, []);
 
-  // ── Init on mount ─────────────────────────────────────────────────
+  // ── Init on mount: camera + models at the same time ────────────────
   useEffect(() => {
     mountedRef.current = true;
 
-    (async () => {
-      try {
-        await ensureModels();
-        if (!mountedRef.current) return;
-        await startCamera();
-      } catch (err) {
+    startCamera();
+    ensureModels()
+      .then(() => {
+        if (mountedRef.current) setModelsReady(true);
+      })
+      .catch((err) => {
         console.error("FACE MODEL ERROR:", err);
-
+        modelLoadPromise = null;
+        modelsLoaded = false;
         if (mountedRef.current) {
           setStatus("error");
-          setErrorMsg(
-            err instanceof Error ? err.message : String(err)
-          );
-
-          modelLoadPromise = null;
-          modelsLoaded = false;
+          setErrorMsg(err instanceof Error ? err.message : String(err));
         }
-      }
-    })();
+      });
 
     return () => {
       mountedRef.current = false;
@@ -200,15 +222,20 @@ export function FaceCapture({
     };
   }, [startCamera, stopCamera]);
 
+  // ── Both ready → start scanning ────────────────────────────────────
+  useEffect(() => {
+    if (cameraReady && modelsReady && status === "loading-models") {
+      setStatus("waiting");
+      startLiveScan();
+    }
+  }, [cameraReady, modelsReady, status, startLiveScan]);
+
   // ── Capture ───────────────────────────────────────────────────────
   async function handleCapture() {
     if (!faceApi || !modelsLoaded || !videoRef.current) return;
 
     setStatus("scanning");
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
+    stopLoop();
 
     try {
       const detection = await faceApi
@@ -235,7 +262,7 @@ export function FaceCapture({
           setStatus("error");
           setErrorMsg(
             `Face does not match (score: ${distance.toFixed(3)}). ` +
-            "Try better lighting or contact support."
+              "Try better lighting or contact support."
           );
           startLiveScan();
           return;
@@ -245,7 +272,7 @@ export function FaceCapture({
       setStatus("success");
       stopCamera();
       onCapture(descriptor);
-    } catch (err) {
+    } catch {
       setStatus("error");
       setErrorMsg("Detection failed. Please retry.");
       startLiveScan();
@@ -257,140 +284,137 @@ export function FaceCapture({
     stopCamera();
     setErrorMsg(null);
     setFaceDetected(false);
+    setCameraReady(false);
+    setStatus("loading-models");
 
     // If models failed to load, try loading them again
     if (!modelsLoaded) {
-      modelLoadPromise = null; // reset so ensureModels() tries again
-      setStatus("loading-models");
-      try {
-        await ensureModels();
-      } catch {
-        setStatus("error");
-        setErrorMsg(
-          "Models still unavailable. Check your internet connection and that " +
-          "the /public/models/ folder contains all 7 model files."
-        );
-        return;
-      }
+      modelLoadPromise = null;
+      setModelsReady(false);
+      ensureModels()
+        .then(() => mountedRef.current && setModelsReady(true))
+        .catch(() => {
+          if (!mountedRef.current) return;
+          setStatus("error");
+          setErrorMsg(
+            "Models still unavailable. Check your internet connection and that " +
+              "the /public/models/ folder contains all the model files."
+          );
+        });
     }
 
-    setStatus("waiting");
     await startCamera();
   }
 
-  // ── Status text ───────────────────────────────────────────────────
+  // ── Look & feel ────────────────────────────────────────────────────
+  const ringColor =
+    status === "success" || (status === "waiting" && faceDetected)
+      ? "#22c55e"
+      : status === "scanning"
+        ? ORANGE
+        : status === "error" || status === "no-face"
+          ? "#ef4444"
+          : "rgba(255,255,255,0.25)";
+
   const STATUS_MSG: Partial<Record<Status, string>> = {
-    "loading-models": "Loading face detection models…",
-    waiting: faceDetected
-      ? "Face detected — ready to capture"
-      : "Position your face in the frame",
+    "loading-models": "Getting ready…",
+    waiting: faceDetected ? "Face detected — ready to capture" : "Position your face in the circle",
     scanning: "Analysing your face…",
     "no-face": "No face detected — try again",
     success: "Face captured successfully!",
     error: errorMsg ?? "Something went wrong",
   };
 
-  const STATUS_COLOR: Partial<Record<Status, string>> = {
-    waiting: faceDetected ? "text-success" : "text-muted",
-    success: "text-success",
-    error: "text-danger",
-    "no-face": "text-danger",
-    scanning: "text-brand-orange",
-    "loading-models": "text-muted",
-  };
+  const bad = status === "error" || status === "no-face";
 
   return (
-    <div className="flex flex-col items-center gap-4 w-full">
-      {/* Viewport */}
-      <div className="relative w-full max-w-sm overflow-hidden rounded-2xl border-2 border-line bg-brand-navy"
-        style={{ aspectRatio: "4/3" }}>
-        {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-        <video
-          ref={videoRef}
-          playsInline
-          muted
-          width={640}
-          height={480}
-          className="h-full w-full object-cover -scale-x-100"
+    <div className="flex w-full flex-col items-center gap-5">
+      {/* Round camera view */}
+      <div className="relative" style={{ width: VIEW + 20, height: VIEW + 20 }}>
+        {/* progress / status ring */}
+        <div
+          className={`absolute inset-0 rounded-full border-[3px] transition-colors duration-300 ${
+            status === "scanning" ? "animate-pulse" : ""
+          }`}
+          style={{ borderColor: ringColor }}
         />
-        <canvas
-          ref={canvasRef}
-          width={640}
-          height={480}
-          className="absolute inset-0 h-full w-full -scale-x-100 pointer-events-none"
-        />
+        <div
+          className="absolute overflow-hidden rounded-full"
+          style={{ inset: 10, backgroundColor: NAVY_TILE }}
+        >
+          {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+          <video
+            ref={videoRef}
+            playsInline
+            muted
+            className="h-full w-full -scale-x-100 object-cover"
+          />
 
-        {/* Loading overlay */}
-        {status === "loading-models" && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-brand-navy gap-3">
-            <Loader2 size={36} className="text-brand-orange animate-spin" />
-            <p className="text-xs text-white/60 text-center px-4">
-              Loading face detection models…
-            </p>
-          </div>
-        )}
+          {/* Getting ready (camera is already visible behind it as soon as it starts) */}
+          {status === "loading-models" && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/55 backdrop-blur-[2px]">
+              <Loader2 size={30} className="animate-spin text-white" />
+              <p className="px-6 text-center text-xs text-white/80">
+                {cameraReady ? "Almost ready…" : "Starting camera…"}
+              </p>
+            </div>
+          )}
 
-        {/* Success overlay */}
-        {status === "success" && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-brand-navy/80 gap-2">
-            <CheckCircle2 size={52} className="text-success" />
-            <p className="text-sm font-semibold text-white">Face captured!</p>
-          </div>
-        )}
-
-        {/* Face oval guide */}
-        {(status === "waiting" || status === "scanning" || status === "no-face") && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div
-              className={`rounded-full border-4 transition-colors duration-300 ${
-                faceDetected ? "border-success" : "border-white/25"
-              }`}
-              style={{ width: 170, height: 210 }}
-            />
-          </div>
-        )}
+          {status === "success" && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/60">
+              <CheckCircle2 size={56} className="text-emerald-400" />
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Status message */}
-      <div className="flex items-center gap-2 min-h-5">
-        {status === "scanning" && (
-          <Loader2 size={14} className="text-brand-orange animate-spin" />
-        )}
-        {status === "success" && (
-          <CheckCircle2 size={14} className="text-success" />
-        )}
-        {(status === "error" || status === "no-face") && (
-          <AlertCircle size={14} className="text-danger" />
-        )}
-        <p className={`text-sm font-medium ${STATUS_COLOR[status] ?? "text-muted"}`}>
+      <div className="flex min-h-6 items-center justify-center gap-2 px-2 text-center">
+        {status === "scanning" && <Loader2 size={15} className="animate-spin" style={{ color: ORANGE }} />}
+        {status === "success" && <CheckCircle2 size={15} className="text-emerald-400" />}
+        {bad && <AlertCircle size={15} className="shrink-0 text-red-400" />}
+        <p
+          className={`text-sm font-medium ${
+            bad
+              ? "text-red-300"
+              : status === "success" || (status === "waiting" && faceDetected)
+                ? "text-emerald-300"
+                : "text-white/70"
+          }`}
+        >
           {STATUS_MSG[status]}
         </p>
       </div>
 
       {/* Action buttons */}
-      <div className="flex gap-3 w-full max-w-sm">
-        {(status === "error") && (
-          <Button variant="outline" size="md" onClick={handleRetry} className="flex-1">
+      <div className="flex w-full max-w-sm gap-3">
+        {status === "error" && (
+          <button
+            type="button"
+            onClick={handleRetry}
+            className="flex h-14 flex-1 items-center justify-center gap-2 rounded-2xl border border-white/25 text-base font-semibold text-white active:scale-[0.98]"
+          >
             <RefreshCw size={16} />
             Retry
-          </Button>
+          </button>
         )}
         {(status === "waiting" || status === "no-face") && (
-          <Button
-            size="lg"
-            fullWidth
+          <button
+            type="button"
             onClick={handleCapture}
             disabled={!faceDetected}
+            className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl text-base font-bold text-white transition-all active:scale-[0.98] disabled:opacity-40"
+            style={{ backgroundColor: ORANGE }}
           >
             <Camera size={18} />
             {captureLabel}
-          </Button>
+          </button>
         )}
       </div>
 
       {/* Tips */}
       {status === "waiting" && !faceDetected && (
-        <ul className="text-xs text-muted space-y-1 text-center">
+        <ul className="space-y-1 text-center text-xs text-white/50">
           <li>• Face the camera directly in good light</li>
           <li>• Remove glasses or hat if needed</li>
           <li>• Hold your phone at eye level</li>

@@ -156,3 +156,27 @@ export async function requireRole(role: Role): Promise<SessionPayload> {
   if (session.role !== role) redirect("/");
   return session;
 }
+
+/**
+ * Admin-or-sous-admin guard for a single function.
+ * - ADMIN: always allowed.
+ * - SOUS_ADMIN: only if the admin ticked this function (read from the DB every
+ *   time, so removing a permission takes effect immediately).
+ * Everyone else is sent home.
+ */
+export async function requirePermission(
+  key: import("./permissions").PermissionKey
+): Promise<SessionPayload> {
+  const session = await requireUser();
+  if (session.role === "ADMIN") return session;
+  if (session.role === "SOUS_ADMIN") {
+    const { prisma } = await import("./db/client");
+    const user = await prisma.user.findUnique({
+      where: { id: session.userId },
+      select: { permissions: true },
+    });
+    if (user?.permissions.includes(key)) return session;
+    redirect("/sous-admin");
+  }
+  redirect("/");
+}

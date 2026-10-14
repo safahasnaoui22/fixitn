@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ShieldCheck, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { FaceCapture } from "@/components/FaceCapture";
+import { FaceCapture, preloadFaceModels } from "@/components/FaceCapture";
+import { DARK_BG } from "@/lib/theme";
 
 type Step = "phone" | "scanning" | "verifying" | "reset" | "done" | "error";
 
@@ -18,6 +19,11 @@ export default function FacePasswordResetPage() {
   const [confirm, setConfirm]       = useState("");
   const [errorMsg, setErrorMsg]     = useState("");
   const [loading, setLoading]       = useState(false);
+
+  // download the face models while the person types the phone number
+  useEffect(() => {
+    preloadFaceModels();
+  }, []);
 
   // Step 1 — enter phone to find account
   async function handlePhoneSubmit(e: React.FormEvent) {
@@ -165,11 +171,13 @@ export default function FacePasswordResetPage() {
             {errorMsg}
           </div>
         )}
-        <FaceCapture
-          onCapture={handleCapture}
-          captureLabel="Vérifier mon visage"
-          threshold={0.5}
-        />
+        <div className="rounded-3xl px-4 py-6" style={{ background: DARK_BG }}>
+          <FaceCapture
+            onCapture={handleCapture}
+            captureLabel="Vérifier mon visage"
+            threshold={0.5}
+          />
+        </div>
       </div>
     );
   }

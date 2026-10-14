@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/Button";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { DepartButton } from "./DepartButton";
 import { formatDate, formatDT } from "@/lib/utils";
+import { DARK_BG, NAVY_ROW, NAVY_TILE, ORANGE_TILE } from "@/lib/theme";
 import {
   acceptAction,
   declineAction,
@@ -87,29 +88,32 @@ export default async function RequestDetailPage({
   const distanceKm = techTransport?.distanceTraveled ?? null;
 
   return (
-    <div className="app-content">
+    <div className="flex min-h-0 flex-1 flex-col" style={{ background: DARK_BG }}>
+    <div className="app-content no-scrollbar">
       {/* Header */}
-      <div className="flex items-center gap-3 border-b border-line px-5 py-4">
+      <div className="flex items-center gap-3 border-b border-white/10 px-5 py-4">
         <Link
           href={isTechnician ? "/t/requests" : "/requests"}
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-alt"
+          className="flex h-9 w-9 items-center justify-center rounded-full text-white"
+          style={{ backgroundColor: NAVY_TILE }}
         >
           <ArrowLeft size={18} />
         </Link>
 
         <div className="min-w-0 flex-1">
-          <p className="truncate font-heading text-base font-semibold text-ink">
+          <p className="truncate font-heading text-base font-semibold text-white">
             {req.categoryName}
           </p>
-          <p className="text-xs text-muted">{formatDate(req.createdAt)}</p>
+          <p className="text-xs text-white/60">{formatDate(req.createdAt)}</p>
         </div>
 
-        <StatusBadge status={req.status} />
+        <StatusBadge status={req.status} dark />
       </div>
 
       <div className="px-5 py-5 flex flex-col gap-6">
         {/* Person card */}
-        <div className="flex items-center gap-3 rounded-2xl border border-line bg-surface-alt p-3">
+        <div className="flex items-center gap-3 rounded-2xl p-3"
+          style={{ backgroundColor: NAVY_ROW }}>
           <Avatar
             src={isTechnician ? req.clientAvatarUrl : req.technicianAvatarUrl}
             name={isTechnician ? req.clientFullName : req.technicianFullName}
@@ -117,13 +121,13 @@ export default async function RequestDetailPage({
           />
 
           <div className="min-w-0 flex-1">
-            <p className="truncate font-heading text-sm font-semibold text-ink">
+            <p className="truncate font-heading text-sm font-semibold text-white">
               {isTechnician
                 ? req.clientFullName
                 : req.technicianFullName}
             </p>
 
-            <p className="text-xs text-muted">
+            <p className="text-xs text-white/60">
               {isTechnician ? "Client" : req.technicianTitle}
             </p>
           </div>
@@ -133,20 +137,21 @@ export default async function RequestDetailPage({
             color={req.categoryColor}
             size={18}
             badgeSize={36}
+            variant="dark"
           />
         </div>
 
         {/* Pricing card — visit price + transport */}
         {(visitPrice > 0 || transportFee != null) && (
-          <div className="rounded-2xl border border-line bg-surface overflow-hidden">
-            <p className="px-4 pt-3 pb-2 text-xs font-semibold text-muted uppercase tracking-wider">
+          <div className="overflow-hidden rounded-2xl" style={{ backgroundColor: NAVY_ROW }}>
+            <p className="px-4 pt-3 pb-2 text-xs font-semibold text-white/60 uppercase tracking-wider">
               Service Fees
             </p>
 
-            <div className="divide-y divide-line">
+            <div className="divide-y divide-white/10">
               {visitPrice > 0 && (
                 <div className="flex items-center gap-3 px-4 py-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-orange-light shrink-0">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full shrink-0" style={{ backgroundColor: ORANGE_TILE }}>
                     <DollarSign
                       size={14}
                       className="text-brand-orange"
@@ -154,43 +159,43 @@ export default async function RequestDetailPage({
                   </div>
 
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-ink">
+                    <p className="text-sm font-medium text-white">
                       Visit fee (prix de visite)
                     </p>
 
-                    <p className="text-xs text-muted">
+                    <p className="text-xs text-white/60">
                       Fixed fee for this category
                     </p>
                   </div>
 
-                  <p className="font-heading text-base font-bold text-ink">
+                  <p className="font-heading text-base font-bold text-white">
                     {formatDT(visitPrice)}
                   </p>
                 </div>
               )}
 
               <div className="flex items-center gap-3 px-4 py-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-50 shrink-0">
-                  <Car size={14} className="text-blue-600" />
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-400/15 shrink-0">
+                  <Car size={14} className="text-blue-300" />
                 </div>
 
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-ink">
+                  <p className="text-sm font-medium text-white">
                     Transport fee
                   </p>
 
                   {distanceKm != null ? (
-                    <p className="text-xs text-muted">
+                    <p className="text-xs text-white/60">
                       {distanceKm.toFixed(1)} km × 1 DT/km
                     </p>
                   ) : (
-                    <p className="text-xs text-muted">
+                    <p className="text-xs text-white/60">
                       Calculated on arrival (1 DT/km)
                     </p>
                   )}
                 </div>
 
-                <p className="font-heading text-base font-bold text-ink">
+                <p className="font-heading text-base font-bold text-white">
                   {transportFee != null
                     ? formatDT(transportFee)
                     : "—"}
@@ -198,8 +203,8 @@ export default async function RequestDetailPage({
               </div>
 
               {visitPrice > 0 && transportFee != null && (
-                <div className="flex items-center justify-between px-4 py-3 bg-surface-alt">
-                  <p className="text-sm font-bold text-ink">
+                <div className="flex items-center justify-between px-4 py-3" style={{ backgroundColor: NAVY_TILE }}>
+                  <p className="text-sm font-bold text-white">
                     Total fees
                   </p>
 
@@ -214,27 +219,27 @@ export default async function RequestDetailPage({
 
         {/* Request details */}
         <div>
-          <p className="font-heading text-sm font-semibold text-ink mb-2">
+          <p className="font-heading text-sm font-semibold text-white mb-2">
             Request details
           </p>
 
-          <div className="rounded-2xl border border-line bg-surface divide-y divide-line">
+          <div className="rounded-2xl divide-y divide-white/10" style={{ backgroundColor: NAVY_ROW }}>
             <Row label="Address" value={req.address} />
             <Row label="Phone" value={req.phone} />
 
             <div className="px-4 py-3">
-              <p className="text-xs text-muted mb-1">
+              <p className="text-xs text-white/60 mb-1">
                 Description
               </p>
 
-              <p className="text-sm text-ink">
+              <p className="text-sm text-white">
                 {req.description}
               </p>
             </div>
 
             {req.photos.length > 0 && (
               <div className="px-4 py-3">
-                <p className="text-xs text-muted mb-2">
+                <p className="text-xs text-white/60 mb-2">
                   Photos
                 </p>
 
@@ -256,11 +261,12 @@ export default async function RequestDetailPage({
 
         {/* Timeline */}
         <div>
-          <p className="font-heading text-sm font-semibold text-ink mb-4">
+          <p className="font-heading text-sm font-semibold text-white mb-4">
             Job progress
           </p>
 
           <JobStatusTimeline
+            dark
             status={req.status}
             pendingAt={req.pendingAt}
             acceptedAt={req.acceptedAt}
@@ -277,20 +283,21 @@ export default async function RequestDetailPage({
         {!isTerminal && (
           <Link
             href={`/requests/${id}/chat`}
-            className="flex items-center gap-3 rounded-2xl border border-line bg-surface p-4"
+            className="flex items-center gap-3 rounded-2xl p-4"
+            style={{ backgroundColor: NAVY_ROW }}
           >
             <MessageCircle
               size={20}
               className="text-brand-orange"
             />
 
-            <span className="flex-1 text-sm font-medium text-ink">
+            <span className="flex-1 text-sm font-medium text-white">
               Message
             </span>
 
             <ChevronRight
               size={16}
-              className="text-muted"
+              className="text-white/60"
             />
           </Link>
         )}
@@ -307,6 +314,7 @@ export default async function RequestDetailPage({
               <Button
                 type="submit"
                 variant="outline"
+                className="border-white/25 text-white hover:bg-white/10"
                 fullWidth
                 size="lg"
               >
@@ -385,6 +393,7 @@ export default async function RequestDetailPage({
             <Button
               type="submit"
               variant="outline"
+                className="border-white/25 text-white hover:bg-white/10"
               fullWidth
               size="lg"
             >
@@ -395,18 +404,18 @@ export default async function RequestDetailPage({
 
         {/* Transport fee display when tech is on the way */}
         {isClient && req.status === "ON_THE_WAY" && (
-          <div className="flex items-center gap-3 rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3">
+          <div className="flex items-center gap-3 rounded-2xl bg-blue-400/10 px-4 py-3">
             <Navigation
               size={18}
-              className="text-blue-600 shrink-0"
+              className="text-blue-300 shrink-0"
             />
 
             <div>
-              <p className="text-sm font-semibold text-blue-800">
+              <p className="text-sm font-semibold text-blue-200">
                 Technician is on the way
               </p>
 
-              <p className="text-xs text-blue-600">
+              <p className="text-xs text-blue-300">
                 Transport fee will be confirmed on arrival
               </p>
             </div>
@@ -419,27 +428,27 @@ export default async function RequestDetailPage({
             req.status
           ) &&
           transportFee != null && (
-            <div className="flex items-center justify-between rounded-2xl border border-success/30 bg-success-light px-4 py-3">
+            <div className="flex items-center justify-between rounded-2xl bg-emerald-400/10 px-4 py-3">
               <div className="flex items-center gap-2">
                 <Car
                   size={16}
-                  className="text-success shrink-0"
+                  className="text-emerald-300 shrink-0"
                 />
 
                 <div>
-                  <p className="text-sm font-semibold text-success">
+                  <p className="text-sm font-semibold text-emerald-300">
                     Transport fee confirmed
                   </p>
 
                   {distanceKm != null && (
-                    <p className="text-xs text-success/70">
+                    <p className="text-xs text-emerald-300/70">
                       {distanceKm.toFixed(1)} km × 1 DT/km
                     </p>
                   )}
                 </div>
               </div>
 
-              <p className="font-heading text-base font-bold text-success">
+              <p className="font-heading text-base font-bold text-emerald-300">
                 {formatDT(transportFee)}
               </p>
             </div>
@@ -450,7 +459,7 @@ export default async function RequestDetailPage({
           req.status === "COMPLETED" &&
           req.clientConfirmedSolved === null && (
             <div>
-              <p className="font-heading text-sm font-semibold text-ink mb-3 text-center">
+              <p className="font-heading text-sm font-semibold text-white mb-3 text-center">
                 Was the problem solved?
               </p>
 
@@ -466,6 +475,7 @@ export default async function RequestDetailPage({
                   <Button
                     type="submit"
                     variant="outline"
+                className="border-white/25 text-white hover:bg-white/10"
                     fullWidth
                     size="lg"
                   >
@@ -502,7 +512,7 @@ export default async function RequestDetailPage({
           req.clientConfirmedSolved !== null && (
             <Link href={`/requests/${id}/rate`}>
               <Button
-                variant="secondary"
+                variant="primary"
                 fullWidth
                 size="lg"
               >
@@ -514,11 +524,12 @@ export default async function RequestDetailPage({
         {isClient &&
           req.status === "COMPLETED" &&
           existingReview && (
-            <p className="text-center text-sm text-success font-medium">
+            <p className="text-center text-sm text-emerald-300 font-medium">
               ✓ Review submitted
             </p>
           )}
       </div>
+    </div>
     </div>
   );
 }
@@ -532,11 +543,11 @@ function Row({
 }) {
   return (
     <div className="flex items-start justify-between gap-4 px-4 py-3">
-      <span className="text-xs text-muted shrink-0">
+      <span className="text-xs text-white/60 shrink-0">
         {label}
       </span>
 
-      <span className="text-sm text-ink text-right">
+      <span className="text-sm text-white text-right">
         {value}
       </span>
     </div>

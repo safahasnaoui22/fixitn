@@ -23,6 +23,8 @@ model User {
   avatarUrl       String?
   faceDescriptor  String?
   sessionVersion  Int      @default(0)
+  // Only used for SOUS_ADMIN: which admin functions the admin allowed (see src/lib/permissions.ts)
+  permissions     String[] @default(["technicians", "support"])
   createdAt       DateTime @default(now())
 
   technician              Technician?
@@ -293,4 +295,22 @@ model PasswordResetCode {
   createdAt DateTime @default(now())
 
   @@index([phone])
+}
+
+// --- Audit trail -----------------------------------------------------
+// One row each time an admin / sous-admin changes something. Used for the
+// "Modified by ..." labels and the Activity page.
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String
+  actorName  String
+  actorRole  String   // "ADMIN" | "SOUS_ADMIN"
+  action     String   // e.g. "technician.approve"
+  entityType String   // "technician" | "category" | "plan" | "user" | "request"
+  entityId   String
+  summary    String   // human text: "Approved technician Maryem"
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId, createdAt])
+  @@index([createdAt])
 }
