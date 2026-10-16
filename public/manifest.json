@@ -1,24 +1,48 @@
 {
-  "name": "Fixili — Des pros pour vos travaux",
+  "name": "Fixili",
   "short_name": "Fixili",
-  "description": "Trouvez un technicien vérifié près de chez vous",
+  "description": "Des pros pour tous vos travaux — Votre maison entre de bonnes mains",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#0D0F1A",
-  "theme_color": "#0D0F1A",
   "orientation": "portrait-primary",
+  "background_color": "#050507",
+  "theme_color": "#F97316",
+  "lang": "fr",
+  "categories": ["lifestyle", "utilities"],
   "icons": [
     {
       "src": "/icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
     },
     {
       "src": "/icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/home.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Accueil Fixili"
     }
   ]
 }
