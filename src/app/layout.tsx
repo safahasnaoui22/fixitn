@@ -4,6 +4,7 @@ import "./globals.css";
 import { PushNotificationManager } from "@/components/PushNotificationManager";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { SessionGuard } from "@/components/SessionGuard";
 
 const sora = Sora({
   subsets: ["latin"],
@@ -66,6 +67,7 @@ export default function RootLayout({
           <div className="app-shell">{children}</div>
           <PushNotificationManager />
           <InstallPrompt />
+          <SessionGuard />
         </ThemeProvider>
       </body>
     </html>

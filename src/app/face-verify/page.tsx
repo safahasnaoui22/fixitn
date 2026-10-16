@@ -10,7 +10,8 @@ import {
   LogOut,
 } from "lucide-react";
 import { FaceCapture, preloadFaceModels } from "@/components/FaceCapture";
-import { DARK_BG } from "@/lib/theme";
+import { DARK_BG, ORANGE } from "@/lib/theme";
+import { FaceIntro } from "@/components/FaceIntro";
 import { Button } from "@/components/ui/Button";
 
 type Step = "intro" | "scanning" | "verifying" | "success" | "error" | "support";
@@ -99,60 +100,23 @@ export default function FaceVerifyPage() {
   // ── Intro ────────────────────────────────────────────────────────────
   if (step === "intro") {
     return (
-      <div className="app-content flex flex-col" style={{ background: DARK_BG }}>
-        <div className="flex flex-1 flex-col items-center justify-center px-6 py-10 text-center gap-6">
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-brand-orange/20">
-            <ShieldCheck size={40} className="text-brand-orange" />
-          </div>
-
-          <div>
-            <h1 className="font-heading text-2xl font-bold text-white">
-              Verify Your Identity
-            </h1>
-            <p className="mt-2 text-[15px] text-white/60 leading-relaxed">
-              We don&apos;t recognise this device. For your security,
-              please verify your face before we grant access to your account.
-            </p>
-          </div>
-
-          <div className="w-full rounded-2xl bg-amber-400/10 px-4 py-3 text-left">
-            <p className="text-sm font-semibold text-amber-200 mb-1">
-              Why am I seeing this?
-            </p>
-            <p className="text-sm text-amber-200/90 leading-relaxed">
-              You are logging in from a new or unrecognised device. This
-              check ensures that only you can access your account — even if
-              someone else knows your password.
-            </p>
-          </div>
-
-          <div className="w-full flex flex-col gap-3">
-            <Button
-              fullWidth
-              size="lg"
-              onClick={() => setStep("scanning")}
-            >
-              <ShieldCheck size={18} />
-              Verify My Face
-            </Button>
-            <Button
-              fullWidth
-              size="lg"
-              variant="outline"
-              className="border-white/25 text-white hover:bg-white/10"
-              onClick={handleLogout}
-            >
-              <LogOut size={18} />
-              Cancel &amp; Log Out
-            </Button>
-          </div>
-
-          <p className="text-xs text-white/60 px-2">
-            Make sure you are in a well-lit room. The same face you
-            registered during signup must be visible.
+      <FaceIntro
+        title={
+          <>
+            Connexion par reconnaissance{" "}
+            <span style={{ color: ORANGE }}>faciale</span>
+          </>
+        }
+        subtitle="Scannez votre visage pour accéder à votre compte en toute sécurité."
+        startLabel="Démarrer la reconnaissance"
+        onStart={() => setStep("scanning")}
+        onBack={handleLogout}
+        footer={
+          <p className="text-xs text-white/45">
+            Même visage que lors de votre inscription, dans une pièce bien éclairée.
           </p>
-        </div>
-      </div>
+        }
+      />
     );
   }
 

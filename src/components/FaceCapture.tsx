@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Camera, RefreshCw, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import { NAVY_TILE, ORANGE } from "@/lib/theme";
+import { FaceCorners } from "@/components/FaceCorners";
 
 // ── Module-level singleton ─────────────────────────────────────────────
 // Models are heavy (~7 MB). Load them once per page session,
@@ -91,7 +92,7 @@ function euclidean(a: number[], b: number[]): number {
   return Math.sqrt(a.reduce((sum, v, i) => sum + (v - b[i]) ** 2, 0));
 }
 
-const VIEW = 280; // diameter of the round camera view (px)
+const VIEW = 260; // diameter of the round camera view (px)
 
 // ── Component ──────────────────────────────────────────────────────────
 export function FaceCapture({
@@ -307,14 +308,20 @@ export function FaceCapture({
   }
 
   // ── Look & feel ────────────────────────────────────────────────────
+  // Orange dashed ring (turns red on an error). It spins slowly while waiting
+  // and faster while analysing; a detected face makes it fully opaque.
   const ringColor =
-    status === "success" || (status === "waiting" && faceDetected)
-      ? "#22c55e"
-      : status === "scanning"
-        ? ORANGE
-        : status === "error" || status === "no-face"
-          ? "#ef4444"
-          : "rgba(255,255,255,0.25)";
+    status === "error" || status === "no-face"
+      ? "#ef4444"
+      : ORANGE;
+  const ringOpacity =
+    status === "waiting" && !faceDetected ? 0.45 : 1;
+  const ringSpin =
+    status === "scanning"
+      ? "faceRingSpin 2.5s linear infinite"
+      : status === "success"
+        ? "none"
+        : "faceRingSpin 14s linear infinite";
 
   const STATUS_MSG: Partial<Record<Status, string>> = {
     "loading-models": "Getting ready…",
@@ -329,43 +336,51 @@ export function FaceCapture({
 
   return (
     <div className="flex w-full flex-col items-center gap-5">
-      {/* Round camera view */}
-      <div className="relative" style={{ width: VIEW + 20, height: VIEW + 20 }}>
-        {/* progress / status ring */}
-        <div
-          className={`absolute inset-0 rounded-full border-[3px] transition-colors duration-300 ${
-            status === "scanning" ? "animate-pulse" : ""
-          }`}
-          style={{ borderColor: ringColor }}
-        />
-        <div
-          className="absolute overflow-hidden rounded-full"
-          style={{ inset: 10, backgroundColor: NAVY_TILE }}
-        >
-          {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-          <video
-            ref={videoRef}
-            playsInline
-            muted
-            className="h-full w-full -scale-x-100 object-cover"
+      {/* Round camera view with orange corners */}
+      <div className="relative" style={{ width: VIEW + 56, height: VIEW + 56 }}>
+        <FaceCorners length={50} thickness={4} radius={20} />
+
+        <div className="absolute" style={{ inset: 28 }}>
+          {/* dashed orange ring */}
+          <div
+            className="absolute rounded-full border-[3px] border-dashed transition-colors duration-300"
+            style={{
+              inset: 0,
+              borderColor: ringColor,
+              opacity: ringOpacity,
+              animation: ringSpin,
+            }}
           />
+          <div
+            className="absolute overflow-hidden rounded-full"
+            style={{ inset: 12, backgroundColor: NAVY_TILE }}
+          >
+            {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+            <video
+              ref={videoRef}
+              playsInline
+              muted
+              className="h-full w-full -scale-x-100 object-cover"
+            />
 
-          {/* Getting ready (camera is already visible behind it as soon as it starts) */}
-          {status === "loading-models" && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/55 backdrop-blur-[2px]">
-              <Loader2 size={30} className="animate-spin text-white" />
-              <p className="px-6 text-center text-xs text-white/80">
-                {cameraReady ? "Almost ready…" : "Starting camera…"}
-              </p>
-            </div>
-          )}
+            {/* Getting ready (camera is already visible behind it as soon as it starts) */}
+            {status === "loading-models" && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/55 backdrop-blur-[2px]">
+                <Loader2 size={30} className="animate-spin text-white" />
+                <p className="px-6 text-center text-xs text-white/80">
+                  {cameraReady ? "Almost ready…" : "Starting camera…"}
+                </p>
+              </div>
+            )}
 
-          {status === "success" && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/60">
-              <CheckCircle2 size={56} className="text-emerald-400" />
-            </div>
-          )}
+            {status === "success" && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/60">
+                <CheckCircle2 size={56} className="text-emerald-400" />
+              </div>
+            )}
+          </div>
         </div>
+        <style>{`@keyframes faceRingSpin { to { transform: rotate(360deg); } }`}</style>
       </div>
 
       {/* Status message */}

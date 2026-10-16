@@ -12,6 +12,12 @@ import { prisma } from "@/lib/db/client";
 import { isTechnicianApproved } from "@/lib/db/technicianApproval";
 import type { Role } from "@/lib/constants";
 
+// SECURITY POLICY (set to false to go back to "trusted device skips the face scan"):
+// true  = EVERY login (after a logout, or on another device) must pass the face
+//         check before the session is created.
+// false = a device that already passed the face check once logs in directly.
+const ALWAYS_VERIFY_FACE = true;
+
 function homeFor(role: string): string {
   if (role === "TECHNICIAN") return "/t/dashboard";
   if (role === "ADMIN") return "/admin";
@@ -38,16 +44,17 @@ export async function loginAction(formData: FormData): Promise<void> {
     );
   }
 
-  // ── SINGLE DEVICE ENFORCEMENT ──────────────────────────────────────
-  // Bump sessionVersion — this immediately invalidates ALL existing sessions
-  // for this user on every other device. Their next request will fail the
-  // version check in requireUser() and they'll be logged out.
-  const newVersion = await bumpSessionVersion(user.id);
-
   // ── Face setup check ───────────────────────────────────────────────
   const hasFace = await hasFaceDescriptor(user.id);
 
+  // SINGLE DEVICE ENFORCEMENT: bumping sessionVersion logs the user out of
+  // every other device. We bump only when this login is really completed:
+  //  - no face yet  → right now (nothing else to prove)
+  //  - face check   → in /api/face/verify, AFTER the face matched
+  // (so someone who only knows the password cannot kick the real owner out).
+
   if (!hasFace) {
+    const newVersion = await bumpSessionVersion(user.id);
     // Account exists but face never set up → send to face-setup
     await createSession({
       userId: user.id,
@@ -66,10 +73,12 @@ export async function loginAction(formData: FormData): Promise<void> {
 
   // ── Device check ───────────────────────────────────────────────────
   const knownDevice =
+    !ALWAYS_VERIFY_FACE &&
     deviceToken.length > 10 &&
     (await isKnownDevice(user.id, deviceToken));
 
   if (knownDevice) {
+    const newVersion = await bumpSessionVersion(user.id);
     // Known device — face already verified before — full session immediately
     // Check technician approval status
     let accountApproved: boolean | undefined = true;
@@ -100,7 +109,7 @@ export async function loginAction(formData: FormData): Promise<void> {
     pendingUserId: user.id,
     pendingFullName: user.fullName,
     pendingRole: user.role as Role,
-    sessionVersion: newVersion,
+    sessionVersion: user.sessionVersion ?? 0,
   });
 
   redirect("/face-verify");

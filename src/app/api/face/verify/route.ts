@@ -5,7 +5,7 @@ import {
   createSession,
 } from "@/lib/auth";
 import { getFaceDescriptor, saveKnownDevice } from "@/lib/db/face";
-import { findUserById } from "@/lib/db/users";
+import { findUserById, bumpSessionVersion } from "@/lib/db/users";
 
 import { isTechnicianApproved } from "@/lib/db/technicianApproval";
 
@@ -77,12 +77,16 @@ export async function POST(req: NextRequest) {
   // Destroy the short-lived pending cookie
   await destroyPendingSession();
 
+  // Face matched → NOW this device becomes the only active one:
+  // bumping the version logs the user out of every other device.
+  const newVersion = await bumpSessionVersion(user.id);
+
   // Issue full session
   await createSession({
     userId: user.id,
     role: user.role as import("@/lib/constants").Role,
     fullName: user.fullName,
-    sessionVersion: pending.sessionVersion,
+    sessionVersion: newVersion,
     faceSetup: true,
     deviceVerified: true,
     accountApproved:

@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ShieldCheck, Info, Loader2 } from "lucide-react";
 import { FaceCapture, preloadFaceModels } from "@/components/FaceCapture";
-import { DARK_BG } from "@/lib/theme";
+import { DARK_BG, ORANGE } from "@/lib/theme";
+import { FaceIntro } from "@/components/FaceIntro";
 
 type Step = "intro" | "scanning" | "saving" | "done" | "error";
 
@@ -70,62 +71,32 @@ async function handleCapture(descriptor: number[]) {
   }
 }
 
+  async function handleBack() {
+    await fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
+    router.replace("/login");
+    router.refresh();
+  }
+
   // ── Intro step ──────────────────────────────────────────────────────
   if (step === "intro") {
     return (
-      <div className="app-content flex flex-col" style={{ background: DARK_BG }}>
-        <div className="flex flex-1 flex-col items-center justify-center px-6 py-10 text-center gap-6">
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-brand-orange/20">
-            <ShieldCheck size={40} className="text-brand-orange" />
-          </div>
-
-          <div>
-            <h1 className="font-heading text-2xl font-bold text-white">
-              Set Up Face ID
-            </h1>
-            <p className="mt-2 text-[15px] text-white/60 leading-relaxed">
-              FixiTN uses face recognition to keep your account secure.
-              Your face scan is required once — it protects your account
-              if your phone is ever lost or stolen.
-            </p>
-          </div>
-
-          <div className="w-full rounded-2xl bg-white/5 p-4 text-left flex flex-col gap-3">
-            <p className="text-sm font-semibold text-white">How it works</p>
-            {[
-              "We scan your face once and save a mathematical fingerprint (not a photo)",
-              "If you log in from a new device, we'll verify your face before granting access",
-              "Your face data is never shared or sent to any third party",
-            ].map((item, i) => (
-              <div key={i} className="flex items-start gap-2.5">
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-orange/20 text-[11px] font-bold text-brand-orange mt-0.5">
-                  {i + 1}
-                </span>
-                <p className="text-sm text-white/60 leading-relaxed">{item}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex items-start gap-2 rounded-xl bg-blue-400/10 px-4 py-3 text-left w-full">
-            <Info size={15} className="text-blue-300 shrink-0 mt-0.5" />
-            <p className="text-xs text-blue-200">
-              Only your face's 128-number mathematical descriptor is stored —
-              it is impossible to reconstruct a photo from it.
-            </p>
-          </div>
-
-          <button
-            onClick={() => setStep("scanning")}
-            className="w-full rounded-2xl bg-brand-orange py-4 text-base font-bold text-white transition-all active:scale-[0.98]"
-          >
-            Start Face Setup
-          </button>
-
-          <p className="text-xs text-white/60">
-            Make sure you are in a well-lit room before continuing.
+      <FaceIntro
+        title={
+          <>
+            Activez la reconnaissance{" "}
+            <span style={{ color: ORANGE }}>faciale</span>
+          </>
+        }
+        subtitle="Scannez votre visage une seule fois pour protéger votre compte, même si votre téléphone est perdu."
+        startLabel="Démarrer la reconnaissance"
+        onStart={() => setStep("scanning")}
+        onBack={handleBack}
+        footer={
+          <p className="text-xs text-white/45">
+            Seule une empreinte numérique de votre visage est enregistrée, jamais une photo.
           </p>
-        </div>
-      </div>
+        }
+      />
     );
   }
 
