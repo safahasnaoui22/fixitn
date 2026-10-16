@@ -30,6 +30,7 @@ const PUBLIC_PREFIXES = [
   "/onboarding",
   "/login",
   "/register",
+  "/forgot-password",
   "/terms",
 ];
 
