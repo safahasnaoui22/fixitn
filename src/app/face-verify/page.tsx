@@ -8,10 +8,12 @@ import {
   Loader2,
   HelpCircle,
   LogOut,
+  ArrowLeft,
 } from "lucide-react";
 import { FaceCapture, preloadFaceModels } from "@/components/FaceCapture";
 import { DARK_BG, ORANGE } from "@/lib/theme";
 import { FaceIntro } from "@/components/FaceIntro";
+import { faceLogoutAction } from "@/app/face-logout";
 import { Button } from "@/components/ui/Button";
 
 type Step = "intro" | "scanning" | "verifying" | "success" | "error" | "support";
@@ -91,10 +93,8 @@ export default function FaceVerifyPage() {
     }
   }
 
-  async function handleLogout() {
-    await fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
-    router.replace("/login");
-    router.refresh();
+  function handleLogout() {
+    void faceLogoutAction();
   }
 
   // ── Intro ────────────────────────────────────────────────────────────
@@ -125,6 +125,14 @@ export default function FaceVerifyPage() {
     return (
       <div className="app-content flex flex-col" style={{ background: DARK_BG }}>
         <div className="flex flex-1 flex-col px-5 py-6 gap-5">
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="flex items-center gap-1.5 self-start text-sm text-white/70 hover:text-white"
+          >
+            <ArrowLeft size={18} className="rtl:rotate-180" />
+            Retour à la connexion
+          </button>
           <div className="text-center">
             <h1 className="font-heading text-xl font-bold text-white">
               Face Verification

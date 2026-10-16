@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ShieldCheck, Info, Loader2 } from "lucide-react";
+import { ShieldCheck, Info, Loader2, ArrowLeft } from "lucide-react";
 import { FaceCapture, preloadFaceModels } from "@/components/FaceCapture";
 import { DARK_BG, ORANGE } from "@/lib/theme";
 import { FaceIntro } from "@/components/FaceIntro";
+import { faceLogoutAction } from "@/app/face-logout";
 
 type Step = "intro" | "scanning" | "saving" | "done" | "error";
 
@@ -71,10 +72,8 @@ async function handleCapture(descriptor: number[]) {
   }
 }
 
-  async function handleBack() {
-    await fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
-    router.replace("/login");
-    router.refresh();
+  function handleBack() {
+    void faceLogoutAction();
   }
 
   // ── Intro step ──────────────────────────────────────────────────────
@@ -105,6 +104,14 @@ async function handleCapture(descriptor: number[]) {
     return (
       <div className="app-content flex flex-col" style={{ background: DARK_BG }}>
         <div className="flex flex-1 flex-col px-5 py-6 gap-5">
+          <button
+            type="button"
+            onClick={handleBack}
+            className="flex items-center gap-1.5 self-start text-sm text-white/70 hover:text-white"
+          >
+            <ArrowLeft size={18} className="rtl:rotate-180" />
+            Retour à la connexion
+          </button>
           <div className="text-center">
             <h1 className="font-heading text-xl font-bold text-white">
               Scan Your Face
@@ -184,6 +191,12 @@ async function handleCapture(descriptor: number[]) {
           className="w-full rounded-2xl bg-brand-orange py-4 text-base font-bold text-white"
         >
           Try Again
+        </button>
+        <button
+          onClick={handleBack}
+          className="w-full rounded-2xl border border-white/25 py-4 text-base font-semibold text-white"
+        >
+          Retour à la connexion
         </button>
       </div>
     </div>

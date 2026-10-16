@@ -116,12 +116,26 @@ export function FaceIntro({
         <button
           type="button"
           onClick={onStart}
-          className="mt-10 flex h-[60px] w-full items-center justify-center gap-3 rounded-full text-[17px] font-semibold text-white transition-transform active:scale-[0.98]"
-          style={{ backgroundColor: ORANGE, boxShadow: "0 8px 30px rgba(245,97,36,0.35)" }}
+          className="group relative mt-10 flex h-[76px] w-full items-center gap-4 overflow-hidden rounded-[28px] pe-4 ps-3 text-white transition-transform active:scale-[0.98]"
+          style={{
+            background: "linear-gradient(135deg, #FF7A3D 0%, #F56124 55%, #E24E12 100%)",
+            boxShadow: "0 12px 34px rgba(245,97,36,0.45), inset 0 1px 0 rgba(255,255,255,0.35)",
+          }}
         >
-          <ScanFace size={24} strokeWidth={1.8} />
-          <span className="flex-1 text-start">{startLabel}</span>
-          <ChevronRight size={20} className="rtl:rotate-180" />
+          {/* shine */}
+          <span
+            className="pointer-events-none absolute inset-x-0 top-0 h-1/2"
+            style={{ background: "linear-gradient(to bottom, rgba(255,255,255,0.16), transparent)" }}
+          />
+          <span className="relative flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-2xl bg-white/20">
+            <ScanFace size={28} strokeWidth={1.8} />
+          </span>
+          <span className="relative flex-1 text-start text-[17px] font-bold leading-tight">
+            {startLabel}
+          </span>
+          <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/25">
+            <ChevronRight size={22} strokeWidth={2.5} className="rtl:rotate-180" />
+          </span>
         </button>
 
         {footer && <div className="mt-5 text-center">{footer}</div>}
