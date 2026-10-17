@@ -119,3 +119,39 @@ export async function listUserDevices(userId: string) {
     lastSeenAt: d.lastSeenAt.toISOString(),
   }));
 }
+
+// ── ONE FACE = ONE ACCOUNT (do not remove, do not loosen) ─────────────────
+// Distance under which two descriptors are considered the SAME PERSON.
+// It is deliberately a bit LOOSER than the login threshold (0.5): a person who
+// can log in with face A must never be able to enrol as a "new" face B.
+export const SAME_PERSON_THRESHOLD = 0.55;
+
+function faceDistance(a: number[], b: number[]): number {
+  let sum = 0;
+  for (let i = 0; i < a.length; i++) sum += (a[i] - b[i]) ** 2;
+  return Math.sqrt(sum);
+}
+
+/**
+ * Returns the id of ANOTHER account that already owns this face (closest one
+ * under SAME_PERSON_THRESHOLD), or null if the face belongs to nobody else.
+ * There is NO bypass (no env flag, no dev mode) on purpose.
+ */
+export async function findOtherAccountWithFace(
+  descriptor: number[],
+  excludeUserId: string
+): Promise<{ userId: string; distance: number } | null> {
+  const others = await getAllFaceDescriptors(excludeUserId);
+  let best: { userId: string; distance: number } | null = null;
+  for (const o of others) {
+    const d = faceDistance(descriptor, o.descriptor);
+    if (d < SAME_PERSON_THRESHOLD && (!best || d < best.distance)) {
+      best = { userId: o.userId, distance: d };
+    }
+  }
+  return best;
+}
+
+export const FACE_SHARED_MESSAGE =
+  "Ce visage est déjà lié à un autre compte Fixili. Chaque personne ne peut avoir qu'un seul compte. " +
+  "Contactez support@fixili.tn.";

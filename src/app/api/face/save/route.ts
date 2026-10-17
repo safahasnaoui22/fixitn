@@ -3,18 +3,11 @@ import { getSession, createSession } from "@/lib/auth";
 import {
   saveFaceDescriptor,
   saveKnownDevice,
-  getAllFaceDescriptors,
+  findOtherAccountWithFace,
+  FACE_SHARED_MESSAGE,
 } from "@/lib/db/face";
 
 import { isTechnicianApproved } from "@/lib/db/technicianApproval";
-
-const UNIQUENESS_THRESHOLD = 0.45;
-
-function euclidean(a: number[], b: number[]): number {
-  return Math.sqrt(
-    a.reduce((sum, val, i) => sum + (val - b[i]) ** 2, 0)
-  );
-}
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
@@ -33,37 +26,17 @@ export async function POST(req: NextRequest) {
   const descriptor: number[] = body.descriptor;
   const deviceToken: string = body.deviceToken ?? crypto.randomUUID();
 
-  // ── FACE UNIQUENESS CHECK ──────────────────────────────────────────
-  // Compare incoming face against every stored descriptor.
-  // If any match (distance < threshold) → this face already has an account.
-  // DEV ONLY: lets one person (e.g. the developer) register the same face on
-  // several test accounts. Needs BOTH a non-production build AND the env flag,
-  // so it can never switch on by accident on Vercel.
-  const skipUniqueness =
-    process.env.NODE_ENV !== "production" &&
-    process.env.ALLOW_DUPLICATE_FACES === "true";
-
-  const existing = skipUniqueness
-    ? []
-    : await getAllFaceDescriptors(session.userId);
-
-  for (const stored of existing) {
-    const distance = euclidean(descriptor, stored.descriptor);
-    if (distance < UNIQUENESS_THRESHOLD) {
-      console.log(
-        `[face/save] Face already exists. userId=${session.userId} matched=${stored.userId} distance=${distance.toFixed(4)}`
-      );
-      return NextResponse.json(
-        {
-          error:
-            "This face is already linked to another Fixili account. " +
-            "Each person can only have one account. " +
-            "Contact support@fixili.tn if you believe this is an error.",
-          code: "FACE_ALREADY_EXISTS",
-        },
-        { status: 409 }
-      );
-    }
+  // ── ONE FACE = ONE ACCOUNT ─────────────────────────────────────────
+  // No bypass of any kind (the old ALLOW_DUPLICATE_FACES dev flag was removed).
+  const owner = await findOtherAccountWithFace(descriptor, session.userId);
+  if (owner) {
+    console.log(
+      `[face/save] Face already exists. userId=${session.userId} matched=${owner.userId} distance=${owner.distance.toFixed(4)}`
+    );
+    return NextResponse.json(
+      { error: FACE_SHARED_MESSAGE, code: "FACE_ALREADY_EXISTS" },
+      { status: 409 }
+    );
   }
 
   // ── Save descriptor ────────────────────────────────────────────────

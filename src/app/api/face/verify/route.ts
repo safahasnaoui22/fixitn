@@ -4,7 +4,12 @@ import {
   destroyPendingSession,
   createSession,
 } from "@/lib/auth";
-import { getFaceDescriptor, saveKnownDevice } from "@/lib/db/face";
+import {
+  getFaceDescriptor,
+  saveKnownDevice,
+  findOtherAccountWithFace,
+  FACE_SHARED_MESSAGE,
+} from "@/lib/db/face";
 import { findUserById, bumpSessionVersion } from "@/lib/db/users";
 
 import { isTechnicianApproved } from "@/lib/db/technicianApproval";
@@ -60,6 +65,20 @@ export async function POST(req: NextRequest) {
         distance: Number(distance.toFixed(4)),
         code: "FACE_MISMATCH",
       },
+      { status: 403 }
+    );
+  }
+
+  // ONE FACE = ONE ACCOUNT: if this face ALSO belongs to another account, nobody
+  // may log in with it (blocks old duplicated accounts until support fixes them).
+  const other = await findOtherAccountWithFace(incomingDescriptor, pending.pendingUserId);
+  if (other) {
+    console.log(
+      `[face/verify] SHARED FACE userId=${pending.pendingUserId} also=${other.userId} distance=${other.distance.toFixed(4)}`
+    );
+    await destroyPendingSession();
+    return NextResponse.json(
+      { error: FACE_SHARED_MESSAGE, code: "FACE_SHARED" },
       { status: 403 }
     );
   }

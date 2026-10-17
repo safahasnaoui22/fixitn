@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db/client";
-import { getFaceDescriptor } from "@/lib/db/face";
+import { getFaceDescriptor, findOtherAccountWithFace, FACE_SHARED_MESSAGE } from "@/lib/db/face";
 
 const THRESHOLD = 0.5;
 
@@ -50,6 +50,10 @@ export async function POST(req: NextRequest) {
       },
       { status: 403 }
     );
+  }
+
+  if (await findOtherAccountWithFace(descriptor, user.id)) {
+    return NextResponse.json({ error: FACE_SHARED_MESSAGE }, { status: 403 });
   }
 
   return NextResponse.json({ ok: true, userId: user.id });
