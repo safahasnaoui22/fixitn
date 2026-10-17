@@ -86,6 +86,8 @@ interface FaceCaptureProps {
   compareWith?: number[] | null;
   threshold?: number;
   captureLabel?: string;
+  /** Capture by itself once a face has been steady in the circle (~0.5 s). Used for login. */
+  autoCapture?: boolean;
 }
 
 function euclidean(a: number[], b: number[]): number {
@@ -100,12 +102,17 @@ export function FaceCapture({
   compareWith,
   threshold = 0.5,
   captureLabel = "Capture Face",
+  autoCapture = false,
 }: FaceCaptureProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const scanningRef = useRef(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mountedRef = useRef(true);
+  const stableRef = useRef(0);
+  const captureRef = useRef<() => void>(() => {});
+  const autoRef = useRef(autoCapture);
+  autoRef.current = autoCapture;
 
   const [status, setStatus] = useState<Status>("loading-models");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -144,6 +151,14 @@ export function FaceCapture({
           );
           if (mountedRef.current && scanningRef.current) {
             setFaceDetected(found.length === 1);
+            stableRef.current = found.length === 1 ? stableRef.current + 1 : 0;
+            // face steady for 4 checks in a row → capture without waiting for a tap
+            if (autoRef.current && stableRef.current >= 4) {
+              stableRef.current = 0;
+              scanningRef.current = false;
+              captureRef.current();
+              return;
+            }
           }
         } catch {
           // ignore transient detection errors
@@ -166,8 +181,9 @@ export function FaceCapture({
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: "user",
-          width: { ideal: 640 },
-          height: { ideal: 480 },
+          width: { ideal: 480 },
+          height: { ideal: 360 },
+          frameRate: { ideal: 30 },
         },
         audio: false,
       });
@@ -237,6 +253,7 @@ export function FaceCapture({
 
     setStatus("scanning");
     stopLoop();
+    stableRef.current = 0;
 
     try {
       const detection = await faceApi
@@ -279,6 +296,8 @@ export function FaceCapture({
       startLiveScan();
     }
   }
+
+  captureRef.current = handleCapture;
 
   // ── Retry ─────────────────────────────────────────────────────────
   async function handleRetry() {

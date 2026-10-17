@@ -13,6 +13,8 @@ import {
 import { FaceCapture, preloadFaceModels } from "@/components/FaceCapture";
 import { DARK_BG, ORANGE } from "@/lib/theme";
 import { FaceIntro } from "@/components/FaceIntro";
+import { AccentTitle } from "@/components/AccentTitle";
+import { useT } from "@/lib/i18n/I18nProvider";
 import { faceLogoutAction } from "@/app/face-logout";
 import { Button } from "@/components/ui/Button";
 
@@ -31,6 +33,7 @@ function getOrCreateDeviceToken(): string {
 }
 
 export default function FaceVerifyPage() {
+  const t = useT();
   const router = useRouter();
   const [step, setStep] = useState<Step>("intro");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -101,19 +104,14 @@ export default function FaceVerifyPage() {
   if (step === "intro") {
     return (
       <FaceIntro
-        title={
-          <>
-            Connexion par reconnaissance{" "}
-            <span style={{ color: ORANGE }}>faciale</span>
-          </>
-        }
-        subtitle="Scannez votre visage pour accéder à votre compte en toute sécurité."
-        startLabel="Démarrer la reconnaissance"
+        title={<AccentTitle text={t("face.verifyTitle")} />}
+        subtitle={t("face.verifySubtitle")}
+        startLabel={t("face.start")}
         onStart={() => setStep("scanning")}
         onBack={handleLogout}
         footer={
           <p className="text-xs text-white/45">
-            Même visage que lors de votre inscription, dans une pièce bien éclairée.
+            {t("face.verifyFooter")}
           </p>
         }
       />
@@ -131,14 +129,14 @@ export default function FaceVerifyPage() {
             className="flex items-center gap-1.5 self-start text-sm text-white/70 hover:text-white"
           >
             <ArrowLeft size={18} className="rtl:rotate-180" />
-            Retour à la connexion
+            {t("face.backToLogin")}
           </button>
           <div className="text-center">
             <h1 className="font-heading text-xl font-bold text-white">
               Face Verification
             </h1>
             <p className="mt-1 text-sm text-white/60">
-              Look directly at the camera and press verify.
+              Look directly at the camera — it verifies by itself.
             </p>
             {attempts > 0 && (
               <p className="mt-1.5 text-xs text-amber-300 font-medium">
@@ -158,6 +156,7 @@ export default function FaceVerifyPage() {
             onCapture={handleCapture}
             captureLabel="Verify My Face"
             threshold={0.5}
+            autoCapture={step === "scanning"}
           />
 
           <div className="flex items-center gap-2 mt-2">
@@ -206,8 +205,7 @@ export default function FaceVerifyPage() {
             Identity Verified!
           </h1>
           <p className="text-[15px] text-white/60 leading-relaxed">
-            Welcome back. This device is now trusted and you won&apos;t
-            need to verify again from it.
+            Welcome back. Your account is now active on this device only.
           </p>
           <Loader2 size={20} className="text-white/60 animate-spin mt-2" />
         </div>

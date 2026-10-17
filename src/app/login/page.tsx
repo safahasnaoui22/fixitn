@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { AuthBackground } from "@/components/AuthBackground";
 import { LoginForm } from "./LoginForm";
 import { getT } from "@/lib/i18n/server";
+import { FacePreloader } from "@/components/FacePreloader";
 import { InstallAppButton } from "@/components/InstallAppButton";
 import { LanguageToggle } from "@/components/LanguageToggle";
 
@@ -36,6 +37,7 @@ export default async function LoginPage() {
         </Suspense>
       </div>
 
+      <FacePreloader />
       <InstallAppButton />
     </AuthBackground>
   );
