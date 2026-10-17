@@ -1,9 +1,12 @@
 import Link from "next/link";
+import { getT } from "@/lib/i18n/server";
+import { LanguageToggle } from "@/components/LanguageToggle";
 import {
   Droplets, Zap, Wrench, Home, Sparkles, ChevronRight, X,
 } from "lucide-react";
 
-export default function OnboardingPage() {
+export default async function OnboardingPage() {
+  const t = await getT();
   return (
     <div
       className="relative flex min-h-screen w-full flex-col overflow-hidden"
@@ -29,7 +32,7 @@ export default function OnboardingPage() {
       />
 
       {/* ── Top-left X button ──────────────────────────────────────── */}
-      <div className="relative z-10 flex items-start justify-start px-5 pt-14">
+      <div className="relative z-10 flex items-start justify-between px-5 pt-14">
         <Link
           href="/login"
           className="flex h-9 w-9 items-center justify-center rounded-full"
@@ -37,10 +40,11 @@ export default function OnboardingPage() {
             background: "rgba(249,115,22,0.25)",
             border: "1.5px solid #F97316",
           }}
-          aria-label="Skip"
+          aria-label={t("onboarding.skip")}
         >
           <X size={18} color="#F97316" strokeWidth={3} />
         </Link>
+        <LanguageToggle />
       </div>
 
       {/* ── Main content — centered between the two curves ─────────── */}
@@ -67,7 +71,7 @@ export default function OnboardingPage() {
             fontSize: "clamp(15px, 4.5vw, 18px)",
           }}
         >
-          Des pros, pour tous<br />vos travaux.
+          {t("onboarding.tagline")}
         </p>
 
         {/* Service icons */}
@@ -102,8 +106,8 @@ export default function OnboardingPage() {
               letterSpacing: "0.01em",
             }}
           >
-            Commencer
-            <ChevronRight size={18} strokeWidth={2.5} />
+            {t("onboarding.start")}
+            <ChevronRight size={18} strokeWidth={2.5} className="rtl:rotate-180" />
           </Link>
 
           {/* Secondary — Already have account */}
@@ -116,7 +120,7 @@ export default function OnboardingPage() {
               border: "1px solid rgba(255,255,255,0.12)",
             }}
           >
-            J&apos;ai déjà un compte
+            {t("onboarding.haveAccount")}
           </Link>
         </div>
       </div>
@@ -127,7 +131,7 @@ export default function OnboardingPage() {
           className="text-xs tracking-widest uppercase"
           style={{ color: "rgba(255,255,255,0.25)", letterSpacing: "0.12em" }}
         >
-          Votre maison, entre de bonnes mains.
+          {t("onboarding.footer")}
         </p>
       </div>
     </div>

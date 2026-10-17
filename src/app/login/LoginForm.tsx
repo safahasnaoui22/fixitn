@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { loginAction } from "./actions";
 import { AUTH_INPUT } from "@/lib/theme";
+import { useT } from "@/lib/i18n/I18nProvider";
 
 const DEVICE_TOKEN_KEY = "fixitn_device";
 
@@ -19,6 +20,7 @@ function getOrCreateDeviceToken(): string {
 }
 
 export function LoginForm() {
+  const t = useT();
   const [deviceToken, setDeviceToken] = useState("");
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
@@ -39,7 +41,7 @@ export function LoginForm() {
 
       <div>
         <label htmlFor="phone" className="text-sm font-medium text-white">
-          Phone number
+          {t("login.phone")}
         </label>
         <input
           id="phone"
@@ -54,13 +56,13 @@ export function LoginForm() {
       <div>
         <div className="flex items-center justify-between">
           <label htmlFor="password" className="text-sm font-medium text-white">
-            Password
+            {t("login.password")}
           </label>
           <Link
             href="/forgot-password"
             className="text-xs font-semibold text-brand-orange"
           >
-            Mot de passe oublié ?
+            {t("login.forgot")}
           </Link>
         </div>
         <input
@@ -74,13 +76,13 @@ export function LoginForm() {
       </div>
 
       <Button type="submit" size="lg" fullWidth className="mt-2">
-        Log In
+        {t("login.submit")}
       </Button>
 
       <p className="text-center text-sm text-white/70">
-        Don&apos;t have an account?{" "}
+        {t("login.noAccount")}{" "}
         <Link href="/register" className="font-semibold text-brand-orange">
-          Sign up
+          {t("login.signup")}
         </Link>
       </p>
     </form>

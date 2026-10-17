@@ -10,15 +10,18 @@ import { useState } from "react";
 import { useTheme } from "./ThemeProvider";
 import { cn } from "@/lib/utils";
 import { NAV_BG } from "@/lib/theme";
+import { useT } from "@/lib/i18n/I18nProvider";
+import { LanguageToggle } from "@/components/LanguageToggle";
 
 const TABS = [
-  { href: "/",              icon: Home,          label: "Accueil" },
-  { href: "/requests",      icon: ClipboardList, label: "Réservations" },
-  { href: "/chats",         icon: MessageCircle, label: "Chat" },
-  { href: "/notifications", icon: Bell,          label: "Alertes" },
+  { href: "/",              icon: Home,          label: "nav.home" },
+  { href: "/requests",      icon: ClipboardList, label: "nav.bookings" },
+  { href: "/chats",         icon: MessageCircle, label: "nav.chat" },
+  { href: "/notifications", icon: Bell,          label: "nav.alerts" },
 ];
 
 export function ClientBottomNav({ dark = false }: { dark?: boolean }) {
+  const t = useT();
   const pathname = usePathname();
   const router = useRouter();
   const { theme, toggle } = useTheme();
@@ -43,7 +46,7 @@ export function ClientBottomNav({ dark = false }: { dark?: boolean }) {
         <div className="fixed bottom-0 inset-x-0 z-50 rounded-t-3xl border-t border-line bg-surface shadow-2xl">
           <div className="flex items-center justify-between px-5 py-4 border-b border-line">
             <p className="font-heading text-base font-semibold text-ink">
-              Mon compte
+              {t("menu.myAccount")}
             </p>
             <button
               onClick={() => setShowProfile(false)}
@@ -65,7 +68,7 @@ export function ClientBottomNav({ dark = false }: { dark?: boolean }) {
                   : <Moon size={18} className="text-muted" />
                 }
                 <span className="text-sm font-medium text-ink">
-                  {theme === "dark" ? "Mode clair" : "Mode sombre"}
+                  {theme === "dark" ? t("menu.lightMode") : t("menu.darkMode")}
                 </span>
               </div>
               <div className={cn(
@@ -79,6 +82,12 @@ export function ClientBottomNav({ dark = false }: { dark?: boolean }) {
               </div>
             </button>
 
+            {/* Language */}
+            <div className="flex items-center justify-between rounded-2xl border border-line bg-surface-alt px-4 py-3">
+              <span className="text-sm font-medium text-ink">{t("menu.language")}</span>
+              <LanguageToggle />
+            </div>
+
             {/* Profile */}
             <Link
               href="/profile"
@@ -86,7 +95,7 @@ export function ClientBottomNav({ dark = false }: { dark?: boolean }) {
               className="flex items-center gap-3 rounded-2xl border border-line bg-surface-alt px-4 py-3.5"
             >
               <User size={18} className="text-muted" />
-              <span className="text-sm font-medium text-ink">Mon profil</span>
+              <span className="text-sm font-medium text-ink">{t("menu.myProfile")}</span>
             </Link>
 
             {/* Support chat */}
@@ -98,10 +107,10 @@ export function ClientBottomNav({ dark = false }: { dark?: boolean }) {
               <HeadphonesIcon size={18} className="text-brand-orange" />
               <div>
                 <p className="text-sm font-semibold text-brand-orange">
-                  Contacter le support
+                  {t("menu.support")}
                 </p>
                 <p className="text-[10px] text-muted">
-                  Signalez un problème ou posez une question
+                  {t("menu.supportHint")}
                 </p>
               </div>
             </Link>
@@ -113,7 +122,7 @@ export function ClientBottomNav({ dark = false }: { dark?: boolean }) {
             >
               <LogOut size={18} className="text-danger" />
               <span className="text-sm font-semibold text-danger">
-                Se déconnecter
+                {t("menu.logout")}
               </span>
             </button>
           </div>
@@ -151,7 +160,7 @@ export function ClientBottomNav({ dark = false }: { dark?: boolean }) {
                   "text-[10px] font-medium",
                   active ? "text-brand-orange" : dark ? "text-white/45" : "text-muted"
                 )}>
-                  {label}
+                  {t(label)}
                 </span>
               </Link>
             );
@@ -172,7 +181,7 @@ export function ClientBottomNav({ dark = false }: { dark?: boolean }) {
               "text-[10px] font-medium",
               showProfile ? "text-brand-orange" : dark ? "text-white/45" : "text-muted"
             )}>
-              Profil
+              {t("nav.profile")}
             </span>
           </button>
         </div>

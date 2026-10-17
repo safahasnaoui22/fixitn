@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { Download, X, Share } from "lucide-react";
 
 interface BeforeInstallPromptEvent extends Event {
@@ -12,17 +13,18 @@ export function InstallPrompt() {
   const [androidPrompt, setAndroidPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showIos, setShowIos] = useState(false);
   const [dismissed, setDismissed] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
     // Check if already installed
     if (window.matchMedia("(display-mode: standalone)").matches) return;
 
-    // Check if previously dismissed
-    if (localStorage.getItem("install-dismissed")) return;
-
     // Android / Chrome
     const handler = (e: Event) => {
       e.preventDefault();
+      // shared with the "Installer l'application" button of the login page
+      (window as unknown as { __fixiliInstall?: Event }).__fixiliInstall = e;
+      window.dispatchEvent(new Event("fixili-install-ready"));
       setAndroidPrompt(e as BeforeInstallPromptEvent);
     };
     window.addEventListener("beforeinstallprompt", handler);
@@ -35,6 +37,7 @@ export function InstallPrompt() {
     return () => window.removeEventListener("beforeinstallprompt", handler);
   }, []);
 
+  const dismissed0 = typeof window !== "undefined" && !!localStorage.getItem("install-dismissed");
   const dismiss = () => {
     setDismissed(true);
     setAndroidPrompt(null);
@@ -50,7 +53,8 @@ export function InstallPrompt() {
     else dismiss();
   };
 
-  if (dismissed) return null;
+  // the login page has its own install button
+  if (dismissed || dismissed0 || pathname.startsWith("/login")) return null;
 
   // Android install banner
   if (androidPrompt) {

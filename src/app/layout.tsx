@@ -5,7 +5,10 @@ import { PushNotificationManager } from "@/components/PushNotificationManager";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { SessionGuard } from "@/components/SessionGuard";
-
+port { I18nProvider } from "@/lib/i18n/I18nProvider";
+import { getLocale } from "@/lib/i18n/server";
+import { dirOf } from "@/lib/i18n/config";
+import { getMessages } from "@/lib/i18n/translate";
 const sora = Sora({
   subsets: ["latin"],
   variable: "--font-sora",
@@ -84,10 +87,12 @@ export default function RootLayout({
 </head>
       <body className="bg-surface text-ink">
         <ThemeProvider>
+           <I18nProvider locale={locale} messages={getMessages(locale)}>
           <div className="app-shell">{children}</div>
           <PushNotificationManager />
           <InstallPrompt />
           <SessionGuard />
+              </I18nProvider>
         </ThemeProvider>
       </body>
     </html>
