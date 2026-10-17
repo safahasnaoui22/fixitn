@@ -1,14 +1,15 @@
 import type { Metadata, Viewport } from "next";
-import { Sora, Inter } from "next/font/google";
+import { Sora, Inter, Noto_Sans_Arabic } from "next/font/google";
 import "./globals.css";
 import { PushNotificationManager } from "@/components/PushNotificationManager";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { SessionGuard } from "@/components/SessionGuard";
-port { I18nProvider } from "@/lib/i18n/I18nProvider";
+import { I18nProvider } from "@/lib/i18n/I18nProvider";
 import { getLocale } from "@/lib/i18n/server";
 import { dirOf } from "@/lib/i18n/config";
 import { getMessages } from "@/lib/i18n/translate";
+
 const sora = Sora({
   subsets: ["latin"],
   variable: "--font-sora",
@@ -18,6 +19,12 @@ const sora = Sora({
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
+  display: "swap",
+});
+
+const arabic = Noto_Sans_Arabic({
+  subsets: ["arabic"],
+  variable: "--font-arabic",
   display: "swap",
 });
 
@@ -33,20 +40,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   themeColor: "#0D0F1A",
 };
-// Add this constant near the top of layout.tsx
-const swScript = `
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function() {
-    navigator.serviceWorker.register('/sw.js', { scope: '/' })
-      .then(function(reg) {
-        console.log('[SW] Registered:', reg.scope);
-      })
-      .catch(function(err) {
-        console.warn('[SW] Registration failed:', err);
-      });
-  });
-}
-`;
+
 // Anti-flash inline script — runs before React hydrates.
 // Reads localStorage and applies the dark class immediately so
 // there's no white flash when the user has dark mode saved.
@@ -62,37 +56,32 @@ const themeScript = `
 })();
 `;
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const locale = await getLocale();
   return (
     <html
-      lang="fr"
-      className={`${sora.variable} ${inter.variable} antialiased`}
+      lang={locale}
+      dir={dirOf(locale)}
+      className={`${sora.variable} ${inter.variable} ${arabic.variable} antialiased`}
       suppressHydrationWarning
     >
- 
-
       <head>
-  {/* Anti-flash theme script — must be first */}
-  <script dangerouslySetInnerHTML={{ __html: themeScript }} />
-  {/* Service worker registration — unconditional so PWABuilder detects it */}
-  <script dangerouslySetInnerHTML={{ __html: swScript }} />
-  <link rel="apple-touch-icon" href="/icons/icon-192.png" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Fixili" />
-</head>
+        {/* Anti-flash — must be first in head */}
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+      </head>
       <body className="bg-surface text-ink">
         <ThemeProvider>
-           <I18nProvider locale={locale} messages={getMessages(locale)}>
+          <I18nProvider locale={locale} messages={getMessages(locale)}>
           <div className="app-shell">{children}</div>
           <PushNotificationManager />
           <InstallPrompt />
           <SessionGuard />
-              </I18nProvider>
+          </I18nProvider>
         </ThemeProvider>
       </body>
     </html>
