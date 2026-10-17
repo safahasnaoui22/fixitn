@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/auth";
 import { getTechnicianByUserId } from "@/lib/db/catalog";
 import { prisma } from "@/lib/db/client";
+import { Users } from "lucide-react";
+import { isActiveSenior, seniorUnreadCount, countSeniorMembers } from "@/lib/db/seniorChat";
 import { Avatar } from "@/components/ui/Avatar";
 import { TechBottomNav } from "@/components/TechBottomNav";
 import { formatRelativeTime } from "@/lib/utils";
@@ -99,6 +101,10 @@ export default async function TechMessagesPage() {
 
   const contacts = await getContacts(session.userId, technician.id);
   const totalUnread = contacts.reduce((s, c) => s + c.unreadCount, 0);
+  const isSenior = await isActiveSenior(session.userId);
+  const [seniorUnread, seniorMembers] = isSenior
+    ? await Promise.all([seniorUnreadCount(session.userId), countSeniorMembers()])
+    : [0, 0];
 
   return (
     <>
@@ -119,6 +125,29 @@ export default async function TechMessagesPage() {
             {contacts.length} contact{contacts.length !== 1 ? "s" : ""}
           </p>
         </div>
+
+        {/* Senior group chat (only for Senior Pro technicians) */}
+        {isSenior && (
+          <Link
+            href="/t/senior"
+            className="mx-4 mt-4 flex items-center gap-3 rounded-2xl border border-brand-orange/30 bg-brand-orange-light px-4 py-3.5"
+          >
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-orange text-white">
+              <Users size={20} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-ink">Cercle Senior</p>
+              <p className="text-xs text-muted">
+                Discutez et entraidez-vous avec les {seniorMembers} techniciens Senior
+              </p>
+            </div>
+            {seniorUnread > 0 && (
+              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-orange px-1 text-[10px] font-bold text-white">
+                {seniorUnread}
+              </span>
+            )}
+          </Link>
+        )}
 
         {/* Contacts list */}
         {contacts.length === 0 ? (

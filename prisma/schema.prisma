@@ -25,6 +25,8 @@ model User {
   sessionVersion  Int      @default(0)
   // Only used for SOUS_ADMIN: which admin functions the admin allowed (see src/lib/permissions.ts)
   permissions     String[] @default(["technicians", "support"])
+  // Senior technicians' group chat: last time this user opened it (for the unread badge)
+  seniorChatReadAt DateTime?
   createdAt       DateTime @default(now())
 
   technician              Technician?
@@ -34,6 +36,7 @@ model User {
   notifications           Notification[]
   pushSubscriptions       PushSubscription[]
   knownDevices            KnownDevice[]
+  seniorMessages          SeniorMessage[]
   sentSupportMessages     SupportMessage[]   @relation("SentSupport")
   receivedSupportMessages SupportMessage[]   @relation("ReceivedSupport")
 }
@@ -312,5 +315,17 @@ model AuditLog {
   createdAt  DateTime @default(now())
 
   @@index([entityType, entityId, createdAt])
+  @@index([createdAt])
+}
+
+
+// Group chat between Senior Pro technicians (they help each other)
+model SeniorMessage {
+  id        String   @id @default(cuid())
+  senderId  String
+  sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  body      String
+  createdAt DateTime @default(now())
+
   @@index([createdAt])
 }

@@ -30,7 +30,20 @@ export const viewport: Viewport = {
   initialScale: 1,
   themeColor: "#0D0F1A",
 };
-
+// Add this constant near the top of layout.tsx
+const swScript = `
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('/sw.js', { scope: '/' })
+      .then(function(reg) {
+        console.log('[SW] Registered:', reg.scope);
+      })
+      .catch(function(err) {
+        console.warn('[SW] Registration failed:', err);
+      });
+  });
+}
+`;
 // Anti-flash inline script — runs before React hydrates.
 // Reads localStorage and applies the dark class immediately so
 // there's no white flash when the user has dark mode saved.
@@ -57,11 +70,18 @@ export default function RootLayout({
       className={`${sora.variable} ${inter.variable} antialiased`}
       suppressHydrationWarning
     >
+ 
+
       <head>
-        {/* Anti-flash — must be first in head */}
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
-        <link rel="apple-touch-icon" href="/icons/icon-192.png" />
-      </head>
+  {/* Anti-flash theme script — must be first */}
+  <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+  {/* Service worker registration — unconditional so PWABuilder detects it */}
+  <script dangerouslySetInnerHTML={{ __html: swScript }} />
+  <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Fixili" />
+</head>
       <body className="bg-surface text-ink">
         <ThemeProvider>
           <div className="app-shell">{children}</div>

@@ -1,82 +1,146 @@
-const CACHE = "fixitn-v1";
-const OFFLINE = "/onboarding";
+const CACHE_NAME = "fixili-v2";
+const OFFLINE_URL = "/onboarding";
 
-// Install — cache the shell
-self.addEventListener("install", (e) => {
-  e.waitUntil(
-    caches.open(CACHE).then((c) => c.addAll([OFFLINE, "/login"]))
+const PRECACHE = [
+  "/",
+  "/onboarding",
+  "/login",
+  "/manifest.json",
+  "/icons/icon-192.png",
+  "/icons/icon-512.png",
+];
+
+// ── Install ────────────────────────────────────────────────────────────
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE))
   );
   self.skipWaiting();
 });
 
-// Activate — clean old caches
-self.addEventListener("activate", (e) => {
-  e.waitUntil(
+// ── Activate ───────────────────────────────────────────────────────────
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
+      Promise.all(
+        keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k))
+      )
     )
   );
   self.clients.claim();
 });
 
-// Fetch — network first, fallback to offline page for navigation
-self.addEventListener("fetch", (e) => {
-  if (e.request.mode === "navigate") {
-    e.respondWith(
-      fetch(e.request).catch(() => caches.match(OFFLINE))
+// ── Fetch — network first, cache fallback ──────────────────────────────
+self.addEventListener("fetch", (event) => {
+  // Skip non-GET and browser-extension requests
+  if (
+    event.request.method !== "GET" ||
+    !event.request.url.startsWith(self.location.origin)
+  ) {
+    return;
+  }
+
+  // API routes — network only, never cache
+  if (event.request.url.includes("/api/")) {
+    return;
+  }
+
+  // Navigation requests — network first, offline fallback
+  if (event.request.mode === "navigate") {
+    event.respondWith(
+      fetch(event.request).catch(() =>
+        caches.match(OFFLINE_URL).then(
+          (cached) => cached ?? new Response("Offline", { status: 503 })
+        )
+      )
     );
-  }
-});
-
-// Push — show notification
-self.addEventListener("push", (e) => {
-  if (!e.data) return;
-
-  let data;
-  try {
-    data = e.data.json();
-  } catch {
-    data = { title: "FixiTN", body: e.data.text(), url: "/" };
+    return;
   }
 
-  const options = {
-    body: data.body ?? "",
-    icon: "/icons/icon-192.png",
-    badge: "/icons/icon-192.png",
-    tag: data.tag ?? "fixitn-notif",
-    data: { url: data.url ?? "/" },
-    vibrate: [200, 100, 200],
-    requireInteraction: false,
-    actions: data.url
-      ? [{ action: "open", title: "View" }, { action: "dismiss", title: "Dismiss" }]
-      : [],
-  };
-
-  e.waitUntil(
-    self.registration.showNotification(data.title ?? "FixiTN", options)
+  // Static assets — cache first, network fallback
+  event.respondWith(
+    caches.match(event.request).then(
+      (cached) =>
+        cached ??
+        fetch(event.request).then((response) => {
+          // Cache successful responses for static assets
+          if (
+            response.ok &&
+            (event.request.url.includes("/icons/") ||
+              event.request.url.includes("/models/") ||
+              event.request.url.endsWith(".png") ||
+              event.request.url.endsWith(".svg") ||
+              event.request.url.endsWith(".woff2"))
+          ) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) =>
+              cache.put(event.request, clone)
+            );
+          }
+          return response;
+        })
+    )
   );
 });
 
-// Notification click — open or focus the right page
-self.addEventListener("notificationclick", (e) => {
-  e.notification.close();
-  if (e.action === "dismiss") return;
+// ── Push notifications ─────────────────────────────────────────────────
+self.addEventListener("push", (event) => {
+  if (!event.data) return;
 
-  const url = e.notification.data?.url ?? "/";
+  let data;
+  try {
+    data = event.data.json();
+  } catch {
+    data = { title: "Fixili", body: event.data.text(), url: "/" };
+  }
 
-  e.waitUntil(
+  const options = {
+    body:             data.body ?? "",
+    icon:             "/icons/icon-192.png",
+    badge:            "/icons/icon-192.png",
+    tag:              data.tag ?? "fixili-notif",
+    data:             { url: data.url ?? "/" },
+    vibrate:          [200, 100, 200],
+    requireInteraction: false,
+    actions: data.url
+      ? [
+          { action: "open",    title: "Voir" },
+          { action: "dismiss", title: "Ignorer" },
+        ]
+      : [],
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(data.title ?? "Fixili", options)
+  );
+});
+
+// ── Notification click ─────────────────────────────────────────────────
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  if (event.action === "dismiss") return;
+
+  const url = event.notification.data?.url ?? "/";
+
+  event.waitUntil(
     clients
       .matchAll({ type: "window", includeUncontrolled: true })
       .then((list) => {
-        // If app window already open, navigate it
         for (const client of list) {
           if ("navigate" in client) {
             client.focus();
             return client.navigate(url);
           }
         }
-        // Otherwise open new window
         return clients.openWindow(url);
       })
   );
+});
+
+// ── Background sync (for offline actions) ─────────────────────────────
+self.addEventListener("sync", (event) => {
+  if (event.tag === "sync-messages") {
+    // Future: sync pending messages when back online
+    console.log("[SW] Background sync:", event.tag);
+  }
 });

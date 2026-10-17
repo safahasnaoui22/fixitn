@@ -2,14 +2,16 @@
   "name": "Fixili",
   "short_name": "Fixili",
   "description": "Des pros pour tous vos travaux — Votre maison entre de bonnes mains",
-  "start_url": "/",
+  "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#050507",
   "theme_color": "#F97316",
   "lang": "fr",
+  "dir": "ltr",
   "categories": ["lifestyle", "utilities"],
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/icons/icon-192.png",
@@ -36,13 +38,16 @@
       "purpose": "maskable"
     }
   ],
-  "screenshots": [
+  "shortcuts": [
     {
-      "src": "/screenshots/home.png",
-      "sizes": "390x844",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Accueil Fixili"
+      "name": "Accueil",
+      "url": "/",
+      "description": "Page d'accueil Fixili"
+    },
+    {
+      "name": "Mes réservations",
+      "url": "/requests",
+      "description": "Voir mes réservations"
     }
   ]
 }
