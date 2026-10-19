@@ -329,3 +329,51 @@ model SeniorMessage {
 
   @@index([createdAt])
 }
+// --- Security center ---------------------------------------------------
+// type: FACE_FAIL | FACE_SHARED | NEW_DEVICE | FORCED_LOGOUT | FACE_RESET | LOGIN_FAIL
+model SecurityEvent {
+  id        String   @id @default(cuid())
+  userId    String?
+  userName  String?
+  type      String
+  detail    String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([type, createdAt])
+  @@index([userId, createdAt])
+}
+
+// --- Disputes / reports on a job ---------------------------------------
+// status: OPEN | INVESTIGATING | RESOLVED
+model Report {
+  id             String    @id @default(cuid())
+  requestId      String?
+  reporterId     String
+  reporterName   String
+  reportedUserId String?
+  reportedName   String?
+  reason         String
+  details        String?
+  status         String    @default("OPEN")
+  adminNote      String?
+  handledBy      String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  resolvedAt     DateTime?
+
+  @@index([status, createdAt])
+}
+
+// --- Broadcast messages sent by the admin -----------------------------
+// audience: CLIENTS | TECHNICIANS | SENIORS | EVERYONE
+model Broadcast {
+  id            String   @id @default(cuid())
+  audience      String
+  title         String
+  body          String
+  sentCount     Int      @default(0)
+  createdByName String
+  createdAt     DateTime @default(now())
+}

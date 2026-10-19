@@ -4,6 +4,7 @@ import { Users, Phone, MapPin, Briefcase, ChevronRight, ArrowUpRight, Wrench, Us
 import { listAdminUsers } from "@/lib/db/admin";
 import { Avatar } from "@/components/ui/Avatar";
 import { formatDate } from "@/lib/utils";
+import { ResetFaceButton } from "@/components/ResetFaceButton";
 
 const ROLE_STYLES: Record<string, { badge: string; ring: string; dot: string }> = {
   TECHNICIAN: {
@@ -32,7 +33,7 @@ export default async function AdminUsersPage({
 }: {
   searchParams: Promise<{ role?: string }>;
 }) {
-  await requirePermission("users");
+  const actor = await requirePermission("users");
   const { role } = await searchParams;
   const users = await listAdminUsers(role);
 
@@ -228,6 +229,11 @@ export default async function AdminUsersPage({
                       <td className="px-4 py-3 text-muted">{user.jobCount}</td>
                       <td className="px-4 py-3 text-muted">{formatDate(user.createdAt)}</td>
                       <td className="px-4 py-3 text-right">
+                        {actor.role === "ADMIN" && user.role !== "ADMIN" && (
+                          <span className="mr-2 inline-block align-middle">
+                            <ResetFaceButton userId={user.id} name={user.fullName} />
+                          </span>
+                        )}
                         <Link
                           href={`/admin/users/${user.id}`}
                           className="inline-flex items-center gap-1 text-xs font-semibold text-brand-orange opacity-0 transition-opacity hover:underline group-hover:opacity-100"

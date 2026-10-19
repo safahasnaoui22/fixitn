@@ -14,6 +14,12 @@ import {
   History,
   Settings2,
   Layers,
+  ShieldAlert,
+  Flag,
+  Gauge,
+  CalendarClock,
+  Megaphone,
+  BarChart3,
   type LucideIcon,
 } from "lucide-react";
 import { panelLogout } from "./logout";
@@ -41,6 +47,12 @@ const ADMIN_NAV: Item[] = [
   { href: "/admin/create-account", label: "Create Account", icon: UserPlus },
   { href: "/admin/team", label: "Team & Access", icon: ShieldCheck },
   { href: "/admin/activity", label: "Activity", icon: History },
+  { href: "/admin/security", label: "Security", icon: ShieldAlert },
+  { href: "/admin/disputes", label: "Disputes", icon: Flag },
+  { href: "/admin/quality", label: "Quality", icon: Gauge },
+  { href: "/admin/subscriptions", label: "Plan alerts", icon: CalendarClock },
+  { href: "/admin/broadcast", label: "Broadcast", icon: Megaphone },
+  { href: "/admin/reports", label: "Reports", icon: BarChart3 },
 ];
 
 // What a sous-admin sees: his own home + only the functions the admin allowed.
