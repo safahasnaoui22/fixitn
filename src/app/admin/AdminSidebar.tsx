@@ -37,6 +37,7 @@ const ADMIN_NAV: Item[] = [
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/technicians", label: "Technicians", icon: Wrench },
   { href: "/admin/support", label: "Support", icon: MessageCircle },
+  { href: "/admin/complaints", label: "Complaints", icon: Flag },
   { href: "/admin/messages", label: "Messages", icon: MessageCircle },
   { href: "/admin/requests", label: "Requests", icon: ClipboardList },
   { href: "/admin/revenue", label: "Revenue", icon: TrendingUp },
@@ -59,6 +60,7 @@ const ADMIN_NAV: Item[] = [
 const SOUS_NAV: Record<PermissionKey, Item> = {
   technicians: { href: "/sous-admin/technicians", label: "Technicians", icon: Wrench },
   support: { href: "/sous-admin/support", label: "Support", icon: MessageCircle, badge: true },
+  complaints: { href: "/admin/complaints", label: "Complaints", icon: Flag },
   users: { href: "/admin/users", label: "Users", icon: Users },
   requests: { href: "/admin/requests", label: "Requests", icon: ClipboardList },
   categories: { href: "/admin/categories", label: "Categories", icon: Layers },

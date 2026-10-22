@@ -298,6 +298,36 @@ export async function createMessage(input: {
   body?: string | null;
   imageUrl?: string | null;
 }): Promise<void> {
+  const request = await prisma.serviceRequest.findUnique({
+    where: { id: input.requestId },
+    select: { clientId: true, technician: { select: { userId: true } } },
+  });
+  if (!request) throw new Error("Conversation not found.");
+  const isParticipant =
+    input.senderId === request.clientId ||
+    input.senderId === request.technician.userId;
+  if (!isParticipant) throw new Error("You cannot send messages in this conversation.");
+
+  const block = await prisma.chatBlock.findFirst({
+    where: {
+      requestId: input.requestId,
+      OR: [
+        { blockerId: input.senderId, blockedUserId: request.clientId === input.senderId ? request.technician.userId : request.clientId },
+        { blockerId: request.clientId === input.senderId ? request.technician.userId : request.clientId, blockedUserId: input.senderId },
+      ],
+    },
+    select: { id: true },
+  });
+  if (block) throw new Error("Messaging is disabled because one participant blocked the other.");
+
+  const restriction = await prisma.chatRestriction.findUnique({
+    where: { requestId: input.requestId },
+    select: { active: true },
+  });
+  if (restriction?.active) {
+    throw new Error("Messaging has been restricted by the Fixitn moderation team.");
+  }
+
   await prisma.message.create({
     data: {
       requestId: input.requestId,

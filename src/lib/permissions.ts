@@ -8,6 +8,7 @@
 export const PERMISSIONS = [
   { key: "technicians", label: "Technicians", hint: "Approve, decline, archive, verify, change plan" },
   { key: "support", label: "Support chat", hint: "Answer users in the support inbox" },
+  { key: "complaints", label: "Complaints", hint: "Review chat complaints and moderate reported conversations" },
   { key: "users", label: "Users", hint: "See users, reset a face ID" },
   { key: "requests", label: "Requests", hint: "See all service requests" },
   { key: "categories", label: "Categories", hint: "Create / edit categories and images" },
