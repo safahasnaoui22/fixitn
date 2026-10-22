@@ -49,6 +49,7 @@ export const NOTIFICATION_TYPES = [
   "STATUS_UPDATE",
   "NEW_MESSAGE",
   "NEW_REVIEW",
+  "CHAT_REPORT",
 ] as const;
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 

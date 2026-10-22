@@ -261,9 +261,6 @@ export default async function SousAdminTechniciansPage({
                       <select
                         name="planId"
                         defaultValue={tech.plan?.id ?? ""}
-                        onChange={(e) => {
-                          /* handled via form below */
-                        }}
                         className="rounded-lg border border-line px-2 py-1.5 text-xs outline-none focus:border-brand-orange bg-surface"
                       >
                         <option value="">— Select plan —</option>
@@ -273,6 +270,12 @@ export default async function SousAdminTechniciansPage({
                           </option>
                         ))}
                       </select>
+                      <button
+                        type="submit"
+                        className="rounded-lg bg-brand-orange px-3 py-1.5 text-xs font-semibold text-white hover:opacity-90"
+                      >
+                        Save
+                      </button>
                     </div>
                   </form>
 

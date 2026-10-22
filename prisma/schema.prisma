@@ -203,19 +203,20 @@ model Message {
 }
 
 
-// --- Client / technician chat moderation -------------------------------
-// Blocks are scoped to a service request so users can still communicate
-// about a different booking unless they block each other there too.
-model ChatBlock {
-  id            String   @id @default(cuid())
-  requestId     String
-  blockerId     String
-  blockedUserId String
-  createdAt     DateTime @default(now())
+// Reports submitted by clients or technicians about the other participant.
+model ChatReport {
+  id             String   @id @default(cuid())
+  requestId      String
+  reporterId     String
+  reportedUserId String
+  reason         String
+  details        String?
+  status         String   @default("OPEN") // OPEN | REVIEWING | RESOLVED | DISMISSED
+  createdAt      DateTime @default(now())
 
-  @@unique([requestId, blockerId, blockedUserId])
-  @@index([requestId])
-  @@index([blockedUserId, createdAt])
+  @@index([status, createdAt])
+  @@index([requestId, createdAt])
+  @@index([reportedUserId, createdAt])
 }
 
 // Admin-enforced messaging restriction for a specific booking conversation.

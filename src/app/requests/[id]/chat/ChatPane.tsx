@@ -6,6 +6,7 @@ import { Send } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { formatTime } from "@/lib/utils";
 import { sendMessageAction } from "./actions";
+import { ReportParticipantForm } from "./ReportParticipantForm";
 import type { MessageWithSender } from "@/lib/types";
 
 export function ChatPane({
@@ -69,6 +70,8 @@ export function ChatPane({
         })}
         <div ref={bottomRef} />
       </div>
+
+      <ReportParticipantForm requestId={requestId} />
 
       <form
         action={boundAction}
