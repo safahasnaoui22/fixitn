@@ -3,29 +3,30 @@ import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db/client";
 import { createNotification } from "@/lib/db/notifications";
 
-// GET — load all messages between this user and support
+const SUPPORT_ROLES = ["ADMIN", "SOUS_ADMIN"];
+
+// GET — load the shared support conversation for the signed-in user.
 export async function GET() {
   const session = await getSession();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Find any admin or sous-admin
-  const support = await prisma.user.findFirst({
-    where: { role: { in: ["ADMIN", "SOUS_ADMIN"] } },
+  const supportUsers = await prisma.user.findMany({
+    where: { role: { in: SUPPORT_ROLES } },
     select: { id: true },
-    orderBy: { createdAt: "asc" },
   });
+  const supportIds = supportUsers.map((user) => user.id);
 
-  if (!support) {
+  if (supportIds.length === 0) {
     return NextResponse.json({ messages: [], myUserId: session.userId });
   }
 
   const messages = await prisma.supportMessage.findMany({
     where: {
       OR: [
-        { fromUserId: session.userId, toUserId: support.id },
-        { fromUserId: support.id,     toUserId: session.userId },
+        { fromUserId: session.userId, toUserId: { in: supportIds } },
+        { fromUserId: { in: supportIds }, toUserId: session.userId },
       ],
     },
     include: {
@@ -34,75 +35,89 @@ export async function GET() {
     orderBy: { createdAt: "asc" },
   });
 
-  // Mark messages from support as read
+  // Mark support replies to this user as read.
   await prisma.supportMessage.updateMany({
-    where: { fromUserId: support.id, toUserId: session.userId, read: false },
+    where: {
+      fromUserId: { in: supportIds },
+      toUserId: session.userId,
+      read: false,
+    },
     data: { read: true },
   });
 
   return NextResponse.json({
     myUserId: session.userId,
-    messages: messages.map((m) => ({
-      id: m.id,
-      fromUserId: m.fromUserId,
-      toUserId: m.toUserId,
-      body: m.body,
-      read: m.read,
-      createdAt: m.createdAt.toISOString(),
-      fromUserName: m.fromUser.fullName,
-      fromUserAvatar: m.fromUser.avatarUrl,
-      fromUserRole: m.fromUser.role,
+    messages: messages.map((message) => ({
+      id: message.id,
+      fromUserId: message.fromUserId,
+      toUserId: message.toUserId,
+      body: message.body,
+      read: message.read,
+      createdAt: message.createdAt.toISOString(),
+      fromUserName: message.fromUser.fullName,
+      fromUserAvatar: message.fromUser.avatarUrl,
+      fromUserRole: message.fromUser.role,
     })),
   });
 }
 
-// POST — send a message to support
+// POST — send a message to the shared support inbox.
 export async function POST(req: NextRequest) {
   const session = await getSession();
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { body } = await req.json();
-  if (!body?.trim()) {
+  let body: string;
+  try {
+    const payload = await req.json();
+    body = typeof payload.body === "string" ? payload.body.trim() : "";
+  } catch {
+    return NextResponse.json({ error: "Requête invalide" }, { status: 400 });
+  }
+
+  if (!body) {
     return NextResponse.json({ error: "Message vide" }, { status: 400 });
   }
 
-  // Find sous-admin first, fall back to admin
-  const support = await prisma.user.findFirst({
-    where: { role: { in: ["SOUS_ADMIN", "ADMIN"] } },
+  const supportUsers = await prisma.user.findMany({
+    where: { role: { in: SUPPORT_ROLES } },
     select: { id: true, role: true },
-    orderBy: [
-      // prefer sous-admin (they handle support)
-      { role: "asc" },
-      { createdAt: "asc" },
-    ],
+    orderBy: { createdAt: "asc" },
   });
 
-  if (!support) {
+  if (supportUsers.length === 0) {
     return NextResponse.json(
       { error: "Service support indisponible pour le moment." },
       { status: 503 }
     );
   }
 
-  // Save message
+  // Store one copy of the incoming message. Both support roles can see it
+  // through the shared inbox; avoid creating duplicate message bubbles.
+  const preferredSupport =
+    supportUsers.find((user) => user.role === "SOUS_ADMIN") ?? supportUsers[0];
+
   await prisma.supportMessage.create({
     data: {
       fromUserId: session.userId,
-      toUserId: support.id,
-      body: body.trim(),
+      toUserId: preferredSupport.id,
+      body,
     },
   });
 
-  // Notify the support agent
-  await createNotification({
-    userId: support.id,
-    type: "NEW_MESSAGE",
-    title: `💬 Message de ${session.fullName}`,
-    body: body.trim().slice(0, 80),
-    requestId: null,
-  });
+  // Notify every Admin and Sous-admin so either can respond.
+  await Promise.all(
+    supportUsers.map((supportUser) =>
+      createNotification({
+        userId: supportUser.id,
+        type: "NEW_MESSAGE",
+        title: `💬 Message de ${session.fullName}`,
+        body: body.slice(0, 80),
+        requestId: null,
+      })
+    )
+  );
 
   return NextResponse.json({ ok: true });
 }
