@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   AreaChart,
   Area,
@@ -23,14 +23,11 @@ import {
   Percent,
   ChevronDown,
   Bell,
-  Sun,
-  Moon,
 } from "lucide-react";
 
 import Link from "next/link";
 import Navbar from "./Navbar";
 import { formatDT, formatRelativeTime } from "@/lib/utils";
-import styles from "./dashboard.module.css"; // <-- adjust to your real module filename
 
 type DashboardData = {
   stats: {
@@ -94,7 +91,12 @@ type DashboardData = {
   }>;
 };
 
-const COLORS = ["#22c55e", "#3b82f6", "#f59e0b", "#ef4444"];
+const COLORS = [
+  "#22c55e",
+  "#3b82f6",
+  "#f59e0b",
+  "#ef4444",
+];
 
 const NOTIF_CONFIG: Record<
   string,
@@ -103,20 +105,47 @@ const NOTIF_CONFIG: Record<
     bg: string;
   }
 > = {
-  NEW_REQUEST: { icon: "📋", bg: "var(--yellow-light)" },
-  STATUS_UPDATE: { icon: "🔄", bg: "var(--blue-light)" },
-  NEW_MESSAGE: { icon: "💬", bg: "var(--green-light)" },
-  NEW_REVIEW: { icon: "⭐", bg: "var(--yellow-light)" },
+  NEW_REQUEST: {
+    icon: "📋",
+    bg: "var(--yellow-light)",
+  },
+
+  STATUS_UPDATE: {
+    icon: "🔄",
+    bg: "var(--blue-light)",
+  },
+
+  NEW_MESSAGE: {
+    icon: "💬",
+    bg: "var(--green-light)",
+  },
+
+  NEW_REVIEW: {
+    icon: "⭐",
+    bg: "var(--yellow-light)",
+  },
 };
 
 function getStatusDisplay(status: string): string {
   if (
-    ["ACCEPTED", "ON_THE_WAY", "ARRIVED", "IN_PROGRESS"].includes(status)
+    [
+      "ACCEPTED",
+      "ON_THE_WAY",
+      "ARRIVED",
+      "IN_PROGRESS",
+    ].includes(status)
   ) {
     return "In Progress";
   }
-  if (status === "COMPLETED") return "Completed";
-  if (status === "PENDING") return "Pending";
+
+  if (status === "COMPLETED") {
+    return "Completed";
+  }
+
+  if (status === "PENDING") {
+    return "Pending";
+  }
+
   return "Cancelled";
 }
 
@@ -126,24 +155,30 @@ function statusBadgeClass(status: string): string {
   if (d === "In Progress") {
     return "bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300";
   }
+
   if (d === "Completed") {
     return "bg-success-light text-success";
   }
+
   if (d === "Pending") {
     return "bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300";
   }
+
   return "bg-surface-alt text-muted";
 }
 
 function methodBadge(method: string) {
   const styles: Record<string, string> = {
     D17: "bg-purple-100 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300",
-    FLOUCI:
-      "bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300",
+    FLOUCI: "bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300",
     BANK_TRANSFER: "bg-surface-alt text-ink",
     CASH: "bg-success-light text-success",
   };
-  return styles[method] ?? "bg-surface-alt text-muted";
+
+  return (
+    styles[method] ??
+    "bg-surface-alt text-muted"
+  );
 }
 
 function Avatar({
@@ -184,7 +219,11 @@ function Avatar({
     >
       {src ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={src} alt={name} className="h-full w-full object-cover" />
+        <img
+          src={src}
+          alt={name}
+          className="h-full w-full object-cover"
+        />
       ) : (
         initials
       )}
@@ -193,15 +232,25 @@ function Avatar({
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({
+  active,
+  payload,
+  label,
+}: any) => {
   if (active && payload?.length) {
     return (
-      <div className="rounded-lg border border-line bg-surface px-3 py-2 text-xs text-ink shadow-lg">
-        <div className="mb-1 text-muted">{label}</div>
-        <div className="font-bold">{formatDT(payload[0].value)}</div>
+      <div className="rounded-lg border border-line bg-surface dark:bg-[#0f1f3d] px-3 py-2 text-xs text-ink shadow-lg">
+        <div className="mb-1 text-muted">
+          {label}
+        </div>
+
+        <div className="font-bold">
+          {formatDT(payload[0].value)}
+        </div>
       </div>
     );
   }
+
   return null;
 };
 
@@ -210,14 +259,46 @@ const DonutChart: React.FC<{
   inProgress: number;
   pending: number;
   terminated: number;
-}> = ({ completed, inProgress, pending, terminated }) => {
-  const total = completed + inProgress + pending + terminated || 1;
+}> = ({
+  completed,
+  inProgress,
+  pending,
+  terminated,
+}) => {
+  const total =
+    completed +
+      inProgress +
+      pending +
+      terminated || 1;
 
   const data = [
-    { value: Math.round((completed / total) * 100), color: COLORS[0] },
-    { value: Math.round((inProgress / total) * 100), color: COLORS[1] },
-    { value: Math.round((pending / total) * 100), color: COLORS[2] },
-    { value: Math.round((terminated / total) * 100), color: COLORS[3] },
+    {
+      value: Math.round(
+        (completed / total) * 100
+      ),
+      color: COLORS[0],
+    },
+
+    {
+      value: Math.round(
+        (inProgress / total) * 100
+      ),
+      color: COLORS[1],
+    },
+
+    {
+      value: Math.round(
+        (pending / total) * 100
+      ),
+      color: COLORS[2],
+    },
+
+    {
+      value: Math.round(
+        (terminated / total) * 100
+      ),
+      color: COLORS[3],
+    },
   ];
 
   const R = 70;
@@ -234,8 +315,12 @@ const DonutChart: React.FC<{
       className="h-[135px] w-[135px] shrink-0 sm:h-[155px] sm:w-[155px]"
     >
       {data.map((seg, i) => {
-        const da = (seg.value / 100) * circ;
-        const do_ = -offset * (circ / 100);
+        const da =
+          (seg.value / 100) * circ;
+
+        const do_ =
+          -offset * (circ / 100);
+
         offset += seg.value;
 
         return (
@@ -258,7 +343,7 @@ const DonutChart: React.FC<{
         cx="77.5"
         cy="77.5"
         r={R - sw / 2 + 2}
-        fill="var(--card-bg)"
+        fill="var(--color-surface)"
       />
     </svg>
   );
@@ -267,34 +352,8 @@ const DonutChart: React.FC<{
 export const Dashboard: React.FC<{
   data: DashboardData;
 }> = ({ data }) => {
-  const [activeNav, setActiveNav] = useState("Dashboard");
-
-  // ── page-scoped theme ─────────────────────────────────────────────
-  const [theme, setTheme] = useState<"light" | "dark">("light");
-
-  useEffect(() => {
-    const stored = localStorage.getItem("fixi-admin-theme") as
-      | "light"
-      | "dark"
-      | null;
-    const prefersDark = window.matchMedia(
-      "(prefers-color-scheme: dark)"
-    ).matches;
-    setTheme(stored ?? (prefersDark ? "dark" : "light"));
-  }, []);
-
-  const toggleTheme = () => {
-    setTheme((prev) => {
-      const next = prev === "dark" ? "light" : "dark";
-      try {
-        localStorage.setItem("fixi-admin-theme", next);
-      } catch {
-        /* ignore */
-      }
-      return next;
-    });
-  };
-  // ─────────────────────────────────────────────────────────────────
+  const [activeNav, setActiveNav] =
+    useState("Dashboard");
 
   const {
     stats,
@@ -312,580 +371,726 @@ export const Dashboard: React.FC<{
       jobsOverview.pending +
       jobsOverview.terminated || 1;
 
-  const maxFee = Math.max(...monthly.map((m) => m.value), 1);
+  const maxFee = Math.max(
+    ...monthly.map((m) => m.value),
+    1
+  );
 
   return (
-    <div
-      className={styles.dashboardLayout}
-      data-theme={theme}
-      style={{ display: "flex", flexDirection: "column" }}
-    >
-      {/* Small square theme toggle — sits above content, top-right */}
-      <div className={styles.themeToggleRow}>
-        <button
-          type="button"
-          onClick={toggleTheme}
-          className={styles.themeToggle}
-          aria-label="Toggle theme"
-          title={theme === "dark" ? "Switch to light" : "Switch to dark"}
-        >
-          {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
-        </button>
-      </div>
+    <div className="flex min-w-0 flex-col gap-5">
+      {/* Stat cards */}
+      <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        {[
+          {
+            icon: DollarSign,
+            label: "Total Revenue",
+            value: formatDT(stats.totalRevenue),
+            color:
+              "bg-[var(--orange-light)] text-[var(--orange)]",
+          },
 
-      <div className="flex min-w-0 flex-col gap-5">
-        {/* Stat cards */}
-        <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-          {[
-            {
-              icon: DollarSign,
-              label: "Total Revenue",
-              value: formatDT(stats.totalRevenue),
-              color: "bg-[var(--orange-light)] text-[var(--orange)]",
-            },
-            {
-              icon: Briefcase,
-              label: "Platform Earnings",
-              value: formatDT(stats.platformEarnings),
-              color: "bg-success-light text-success",
-            },
-            {
-              icon: Wrench,
-              label: "Technicians",
-              value: stats.totalTechnicians,
-              color: "bg-[var(--purple-light)] text-[var(--purple)]",
-            },
-            {
-              icon: Users,
-              label: "Clients",
-              value: stats.totalClients,
-              color: "bg-[var(--blue-light)] text-[var(--blue)]",
-            },
-            {
-              icon: Briefcase,
-              label: "Total Jobs",
-              value: stats.totalJobs,
-              color: "bg-[var(--yellow-light)] text-[var(--yellow)]",
-            },
-          ].map((s, i) => (
+          {
+            icon: Briefcase,
+            label: "Platform Earnings",
+            value: formatDT(
+              stats.platformEarnings
+            ),
+            color:
+              "bg-success-light text-success",
+          },
+
+          {
+            icon: Wrench,
+            label: "Technicians",
+            value: stats.totalTechnicians,
+            color:
+              "bg-[var(--purple-light)] text-[var(--purple)]",
+          },
+
+          {
+            icon: Users,
+            label: "Clients",
+            value: stats.totalClients,
+            color:
+              "bg-[var(--blue-light)] text-[var(--blue)]",
+          },
+
+          {
+            icon: Briefcase,
+            label: "Total Jobs",
+            value: stats.totalJobs,
+            color:
+              "bg-[var(--yellow-light)] text-[var(--yellow)]",
+          },
+        ].map((s, i) => (
+          <div
+            key={i}
+            className="min-w-0 rounded-2xl border border-line bg-surface dark:bg-[#0f1f3d] p-4"
+          >
             <div
-              key={i}
-              className="min-w-0 rounded-2xl border border-line bg-surface p-4"
+              className={`mb-2 inline-flex h-9 w-9 items-center justify-center rounded-xl ${s.color}`}
             >
-              <div
-                className={`mb-2 inline-flex h-9 w-9 items-center justify-center rounded-xl ${s.color}`}
-              >
-                <s.icon size={18} />
-              </div>
-              <p className="truncate font-heading text-xl font-bold text-ink">
-                {s.value}
-              </p>
-              <p className="mt-0.5 truncate text-xs text-muted">{s.label}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* Charts row */}
-        <div className="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-3">
-          {/* Revenue chart */}
-          <div className="min-w-0 rounded-2xl border border-line bg-surface p-4 xl:col-span-2">
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <p className="font-heading text-sm font-semibold text-ink">
-                Revenue Overview
-              </p>
-              <Link
-                href="/admin/revenue"
-                className="shrink-0 text-xs font-medium text-brand-orange"
-              >
-                View full →
-              </Link>
+              <s.icon size={18} />
             </div>
 
-            {monthly.length === 0 ? (
-              <div className="flex h-36 items-center justify-center text-sm text-muted">
-                No payment data yet
-              </div>
-            ) : (
-              <div className="h-36 min-w-0 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart
-                    data={monthly}
-                    margin={{ top: 4, right: 4, bottom: 0, left: -20 }}
-                  >
-                    <defs>
-                      <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
-                        <stop
-                          offset="0%"
-                          stopColor="var(--color-brand-orange)"
-                          stopOpacity={0.2}
-                        />
-                        <stop
-                          offset="100%"
-                          stopColor="var(--color-brand-orange)"
-                          stopOpacity={0.02}
-                        />
-                      </linearGradient>
-                    </defs>
-
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      stroke="var(--color-line)"
-                      vertical={false}
-                    />
-
-                    <XAxis
-                      dataKey="date"
-                      tick={{ fontSize: 10, fill: "var(--color-muted)" }}
-                      axisLine={false}
-                      tickLine={false}
-                    />
-
-                    <YAxis
-                      tick={{ fontSize: 10, fill: "var(--color-muted)" }}
-                      axisLine={false}
-                      tickLine={false}
-                      tickFormatter={(v) =>
-                        v >= 1000 ? `${v / 1000}K` : `${v}`
-                      }
-                    />
-
-                    <Tooltip content={<CustomTooltip />} />
-
-                    <Area
-                      type="monotone"
-                      dataKey="value"
-                      stroke="var(--color-brand-orange)"
-                      strokeWidth={2.5}
-                      fill="url(#grad)"
-                      dot={{
-                        fill: "var(--color-brand-orange)",
-                        r: 3,
-                        strokeWidth: 2,
-                        stroke: "var(--color-surface)",
-                      }}
-                      activeDot={{ r: 5, fill: "var(--color-brand-orange)" }}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-          </div>
-
-          {/* Jobs donut */}
-          <div className="min-w-0 rounded-2xl border border-line bg-surface p-4">
-            <p className="mb-3 font-heading text-sm font-semibold text-ink">
-              Jobs Overview
+            <p className="truncate font-heading text-xl font-bold text-ink">
+              {s.value}
             </p>
 
-            <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-center">
-              <div className="flex shrink-0 justify-center">
-                <DonutChart
-                  completed={jobsOverview.completed}
-                  inProgress={jobsOverview.inProgress}
-                  pending={jobsOverview.pending}
-                  terminated={jobsOverview.terminated}
-                />
-              </div>
+            <p className="mt-0.5 truncate text-xs text-muted">
+              {s.label}
+            </p>
+          </div>
+        ))}
+      </div>
 
-              <div className="flex min-w-0 flex-1 flex-col gap-2">
-                {[
-                  {
-                    label: "Completed",
-                    value: jobsOverview.completed,
-                    color: COLORS[0],
-                  },
-                  {
-                    label: "In Progress",
-                    value: jobsOverview.inProgress,
-                    color: COLORS[1],
-                  },
-                  {
-                    label: "Pending",
-                    value: jobsOverview.pending,
-                    color: COLORS[2],
-                  },
-                  {
-                    label: "Cancelled",
-                    value: jobsOverview.terminated,
-                    color: COLORS[3],
-                  },
-                ].map((item) => (
-                  <div
-                    key={item.label}
-                    className="flex items-center justify-between gap-2"
-                  >
-                    <div className="flex min-w-0 items-center gap-1.5">
-                      <div
-                        className="h-2.5 w-2.5 shrink-0 rounded-full"
-                        style={{ background: item.color }}
+      {/* Charts row */}
+      <div className="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-3">
+        {/* Revenue chart */}
+        <div className="min-w-0 rounded-2xl border border-line bg-surface dark:bg-[#0f1f3d] p-4 xl:col-span-2">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <p className="font-heading text-sm font-semibold text-ink">
+              Revenue Overview
+            </p>
+
+            <Link
+              href="/admin/revenue"
+              className="shrink-0 text-xs font-medium text-brand-orange"
+            >
+              View full →
+            </Link>
+          </div>
+
+          {monthly.length === 0 ? (
+            <div className="flex h-36 items-center justify-center text-sm text-muted">
+              No payment data yet
+            </div>
+          ) : (
+            <div className="h-36 min-w-0 w-full">
+              <ResponsiveContainer
+                width="100%"
+                height="100%"
+              >
+                <AreaChart
+                  data={monthly}
+                  margin={{
+                    top: 4,
+                    right: 4,
+                    bottom: 0,
+                    left: -20,
+                  }}
+                >
+                  <defs>
+                    <linearGradient
+                      id="grad"
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="1"
+                    >
+                      <stop
+                        offset="0%"
+                        stopColor="var(--color-brand-orange)"
+                        stopOpacity={0.2}
                       />
-                      <span className="truncate text-[10px] text-muted">
-                        {item.label}
-                      </span>
-                    </div>
-                    <span className="shrink-0 text-[10px] font-semibold text-ink">
-                      {item.value} (
-                      {Math.round((item.value / total) * 100)}%)
+
+                      <stop
+                        offset="100%"
+                        stopColor="var(--color-brand-orange)"
+                        stopOpacity={0.02}
+                      />
+                    </linearGradient>
+                  </defs>
+
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="var(--color-line)"
+                    vertical={false}
+                  />
+
+                  <XAxis
+                    dataKey="date"
+                    tick={{
+                      fontSize: 10,
+                      fill: "var(--color-muted)",
+                    }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+
+                  <YAxis
+                    tick={{
+                      fontSize: 10,
+                      fill: "var(--color-muted)",
+                    }}
+                    axisLine={false}
+                    tickLine={false}
+                    tickFormatter={(v) =>
+                      v >= 1000
+                        ? `${v / 1000}K`
+                        : `${v}`
+                    }
+                  />
+
+                  <Tooltip
+                    content={<CustomTooltip />}
+                  />
+
+                  <Area
+                    type="monotone"
+                    dataKey="value"
+                    stroke="var(--color-brand-orange)"
+                    strokeWidth={2.5}
+                    fill="url(#grad)"
+                    dot={{
+                      fill: "var(--color-brand-orange)",
+                      r: 3,
+                      strokeWidth: 2,
+                      stroke: "var(--color-surface)",
+                    }}
+                    activeDot={{
+                      r: 5,
+                      fill: "var(--color-brand-orange)",
+                    }}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
+
+        {/* Jobs donut */}
+        <div className="min-w-0 rounded-2xl border border-line bg-surface dark:bg-[#0f1f3d] p-4">
+          <p className="mb-3 font-heading text-sm font-semibold text-ink">
+            Jobs Overview
+          </p>
+
+          <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-center">
+            <div className="flex shrink-0 justify-center">
+              <DonutChart
+                completed={
+                  jobsOverview.completed
+                }
+                inProgress={
+                  jobsOverview.inProgress
+                }
+                pending={
+                  jobsOverview.pending
+                }
+                terminated={
+                  jobsOverview.terminated
+                }
+              />
+            </div>
+
+            <div className="flex min-w-0 flex-1 flex-col gap-2">
+              {[
+                {
+                  label: "Completed",
+                  value:
+                    jobsOverview.completed,
+                  color: COLORS[0],
+                },
+
+                {
+                  label: "In Progress",
+                  value:
+                    jobsOverview.inProgress,
+                  color: COLORS[1],
+                },
+
+                {
+                  label: "Pending",
+                  value:
+                    jobsOverview.pending,
+                  color: COLORS[2],
+                },
+
+                {
+                  label: "Cancelled",
+                  value:
+                    jobsOverview.terminated,
+                  color: COLORS[3],
+                },
+              ].map((item) => (
+                <div
+                  key={item.label}
+                  className="flex items-center justify-between gap-2"
+                >
+                  <div className="flex min-w-0 items-center gap-1.5">
+                    <div
+                      className="h-2.5 w-2.5 shrink-0 rounded-full"
+                      style={{
+                        background: item.color,
+                      }}
+                    />
+
+                    <span className="truncate text-[10px] text-muted">
+                      {item.label}
                     </span>
                   </div>
-                ))}
-              </div>
+
+                  <span className="shrink-0 text-[10px] font-semibold text-ink">
+                    {item.value} (
+                    {Math.round(
+                      (item.value / total) *
+                        100
+                    )}
+                    %)
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Notifications + Recent Jobs */}
-        <div className="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-3">
-          <div className="min-w-0 rounded-2xl border border-line bg-surface p-4">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <p className="font-heading text-sm font-semibold text-ink">
-                Notifications
-              </p>
-              <Link
-                href="/notifications"
-                className="shrink-0 text-xs font-medium text-brand-orange"
-              >
-                View all
-              </Link>
-            </div>
+      {/* Notifications + Recent Jobs row */}
+      <div className="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-3">
+        {/* Notifications */}
+        <div className="min-w-0 rounded-2xl border border-line bg-surface dark:bg-[#0f1f3d] p-4">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <p className="font-heading text-sm font-semibold text-ink">
+              Notifications
+            </p>
 
-            <div className="flex flex-col gap-2">
-              {recentNotifications.length === 0 && (
-                <p className="py-4 text-center text-xs text-muted">
-                  No notifications yet
-                </p>
-              )}
-
-              {recentNotifications.map((n, i) => {
-                const cfg =
-                  NOTIF_CONFIG[n.type] ?? {
-                    icon: "🔔",
-                    bg: "var(--surface-alt)",
-                  };
-
-                return (
-                  <div
-                    key={i}
-                    className="flex min-w-0 items-center gap-2"
-                  >
-                    <div
-                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm"
-                      style={{ background: cfg.bg }}
-                    >
-                      {cfg.icon}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-xs font-medium text-ink">
-                        {n.title}
-                      </p>
-                      <p className="text-[10px] text-muted">
-                        {formatRelativeTime(n.createdAt)}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+            <Link
+              href="/notifications"
+              className="shrink-0 text-xs font-medium text-brand-orange"
+            >
+              View all
+            </Link>
           </div>
 
-          <div className="min-w-0 rounded-2xl border border-line bg-surface p-4 xl:col-span-2">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <p className="font-heading text-sm font-semibold text-ink">
-                Recent Jobs
+          <div className="flex flex-col gap-2">
+            {recentNotifications.length === 0 && (
+              <p className="py-4 text-center text-xs text-muted">
+                No notifications yet
               </p>
-              <Link
-                href="/admin/requests"
-                className="shrink-0 text-xs font-medium text-brand-orange"
-              >
-                View all
-              </Link>
-            </div>
+            )}
 
-            <div className="-mx-4 overflow-x-auto px-4">
-              <table className="w-full min-w-[480px] text-xs">
-                <thead>
-                  <tr className="border-b border-line">
-                    {["Service", "Client", "Technician", "Status", "Amount"].map(
-                      (h) => (
-                        <th
-                          key={h}
-                          className="pb-2 pr-3 text-left font-semibold text-muted"
-                        >
-                          {h}
-                        </th>
-                      )
-                    )}
+            {recentNotifications.map((n, i) => {
+              const cfg =
+                NOTIF_CONFIG[n.type] ?? {
+                  icon: "🔔",
+                  bg: "var(--surface-alt)",
+                };
+
+              return (
+                <div
+                  key={i}
+                  className="flex min-w-0 items-center gap-2"
+                >
+                  <div
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm"
+                    style={{
+                      background: cfg.bg,
+                    }}
+                  >
+                    {cfg.icon}
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-xs font-medium text-ink">
+                      {n.title}
+                    </p>
+
+                    <p className="text-[10px] text-muted">
+                      {formatRelativeTime(
+                        n.createdAt
+                      )}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Recent Jobs */}
+        <div className="min-w-0 rounded-2xl border border-line bg-surface dark:bg-[#0f1f3d] p-4 xl:col-span-2">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <p className="font-heading text-sm font-semibold text-ink">
+              Recent Jobs
+            </p>
+
+            <Link
+              href="/admin/requests"
+              className="shrink-0 text-xs font-medium text-brand-orange"
+            >
+              View all
+            </Link>
+          </div>
+
+          <div className="-mx-4 overflow-x-auto px-4">
+            <table className="w-full min-w-[480px] text-xs">
+              <thead>
+                <tr className="border-b border-line">
+                  {[
+                    "Service",
+                    "Client",
+                    "Technician",
+                    "Status",
+                    "Amount",
+                  ].map((h) => (
+                    <th
+                      key={h}
+                      className="pb-2 pr-3 text-left font-semibold text-muted"
+                    >
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+
+              <tbody className="divide-y divide-line">
+                {recentJobs.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={5}
+                      className="py-6 text-center text-muted"
+                    >
+                      No jobs yet
+                    </td>
                   </tr>
-                </thead>
+                )}
 
-                <tbody className="divide-y divide-line">
-                  {recentJobs.length === 0 && (
-                    <tr>
-                      <td colSpan={5} className="py-6 text-center text-muted">
-                        No jobs yet
-                      </td>
-                    </tr>
-                  )}
-
-                  {recentJobs.slice(0, 6).map((job) => (
+                {recentJobs
+                  .slice(0, 6)
+                  .map((job) => (
                     <tr
                       key={job.id}
-                      className="transition-colors hover:bg-surface-alt"
+                      className="transition-colors hover:bg-surface-alt dark:hover:bg-[#1a2d4b]"
                     >
                       <td className="py-2 pr-3 font-medium text-ink">
                         {job.service}
                       </td>
+
                       <td className="py-2 pr-3">
                         <div className="flex items-center gap-1.5">
                           <Avatar
                             name={job.clientName}
-                            src={job.clientAvatar}
+                            src={
+                              job.clientAvatar
+                            }
                             size={22}
                           />
+
                           <span className="max-w-[80px] truncate text-muted">
                             {job.clientName}
                           </span>
                         </div>
                       </td>
+
                       <td className="py-2 pr-3">
                         <div className="flex items-center gap-1.5">
                           <Avatar
-                            name={job.technicianName}
-                            src={job.technicianAvatar}
+                            name={
+                              job.technicianName
+                            }
+                            src={
+                              job.technicianAvatar
+                            }
                             size={22}
                           />
+
                           <span className="max-w-[80px] truncate text-muted">
-                            {job.technicianName}
+                            {
+                              job.technicianName
+                            }
                           </span>
                         </div>
                       </td>
+
                       <td className="py-2 pr-3">
                         <span
                           className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${statusBadgeClass(
                             job.status
                           )}`}
                         >
-                          {getStatusDisplay(job.status)}
+                          {getStatusDisplay(
+                            job.status
+                          )}
                         </span>
                       </td>
+
                       <td className="py-2 font-semibold text-ink">
-                        {job.amount ? formatDT(job.amount) : "—"}
+                        {job.amount
+                          ? formatDT(
+                              job.amount
+                            )
+                          : "—"}
                       </td>
                     </tr>
                   ))}
-                </tbody>
-              </table>
-            </div>
+              </tbody>
+            </table>
           </div>
         </div>
+      </div>
 
-        {/* Top Technicians + Payments */}
-        <div className="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-2">
-          <div className="min-w-0 rounded-2xl border border-line bg-surface p-4">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <p className="font-heading text-sm font-semibold text-ink">
-                Top Technicians
-              </p>
-              <Link
-                href="/admin/technicians"
-                className="shrink-0 text-xs font-medium text-brand-orange"
-              >
-                View all
-              </Link>
-            </div>
+      {/* Top Technicians + Payments row */}
+      <div className="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-2">
+        {/* Top Technicians */}
+        <div className="min-w-0 rounded-2xl border border-line bg-surface dark:bg-[#0f1f3d] p-4">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <p className="font-heading text-sm font-semibold text-ink">
+              Top Technicians
+            </p>
 
-            <div className="-mx-4 overflow-x-auto px-4">
-              <table className="w-full min-w-[320px] text-xs">
-                <thead>
-                  <tr className="border-b border-line">
-                    {["Technician", "Jobs", "Rating", "Earnings"].map((h) => (
-                      <th
-                        key={h}
-                        className="pb-2 pr-3 text-left font-semibold text-muted"
-                      >
-                        {h}
-                      </th>
-                    ))}
+            <Link
+              href="/admin/technicians"
+              className="shrink-0 text-xs font-medium text-brand-orange"
+            >
+              View all
+            </Link>
+          </div>
+
+          <div className="-mx-4 overflow-x-auto px-4">
+            <table className="w-full min-w-[320px] text-xs">
+              <thead>
+                <tr className="border-b border-line">
+                  {[
+                    "Technician",
+                    "Jobs",
+                    "Rating",
+                    "Earnings",
+                  ].map((h) => (
+                    <th
+                      key={h}
+                      className="pb-2 pr-3 text-left font-semibold text-muted"
+                    >
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+
+              <tbody className="divide-y divide-line">
+                {topTechnicians.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={4}
+                      className="py-6 text-center text-muted"
+                    >
+                      No data yet
+                    </td>
                   </tr>
-                </thead>
+                )}
 
-                <tbody className="divide-y divide-line">
-                  {topTechnicians.length === 0 && (
-                    <tr>
-                      <td colSpan={4} className="py-6 text-center text-muted">
-                        No data yet
-                      </td>
-                    </tr>
-                  )}
-
-                  {topTechnicians.map((tech) => (
+                {topTechnicians.map(
+                  (tech) => (
                     <tr
                       key={tech.name}
-                      className="transition-colors hover:bg-surface-alt"
+                      className="transition-colors hover:bg-surface-alt dark:hover:bg-[#1a2d4b]"
                     >
                       <td className="py-2 pr-3">
                         <div className="flex items-center gap-2">
                           <Avatar
                             name={tech.name}
-                            src={tech.avatarUrl}
+                            src={
+                              tech.avatarUrl
+                            }
                             size={26}
                           />
+
                           <div className="min-w-0">
                             <p className="max-w-[100px] truncate font-medium text-ink">
                               {tech.name}
                             </p>
+
                             <p className="truncate text-[10px] text-muted">
                               {tech.title}
                             </p>
                           </div>
                         </div>
                       </td>
+
                       <td className="py-2 pr-3 font-semibold text-ink">
                         {tech.jobs}
                       </td>
+
                       <td className="py-2 pr-3 text-muted">
-                        {tech.rating != null
-                          ? `⭐ ${tech.rating.toFixed(1)}`
+                        {tech.rating !=
+                        null
+                          ? `⭐ ${tech.rating.toFixed(
+                              1
+                            )}`
                           : "—"}
                       </td>
+
                       <td className="whitespace-nowrap py-2 font-semibold text-ink">
-                        {formatDT(tech.earnings)}
+                        {formatDT(
+                          tech.earnings
+                        )}
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <div className="min-w-0 rounded-2xl border border-line bg-surface p-4">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <p className="font-heading text-sm font-semibold text-ink">
-                Recent Payments
-              </p>
-              <Link
-                href="/admin/payments"
-                className="shrink-0 text-xs font-medium text-brand-orange"
-              >
-                View all
-              </Link>
-            </div>
-
-            <div className="flex min-w-0 flex-col divide-y divide-line">
-              {recentPayments.length === 0 && (
-                <p className="py-6 text-center text-xs text-muted">
-                  No payments yet
-                </p>
-              )}
-
-              {recentPayments.map((p) => {
-                const isCredit = p.type === "PAYOUT";
-                return (
-                  <div
-                    key={p.id}
-                    className="flex min-w-0 items-center gap-3 py-2.5"
-                  >
-                    <Avatar name={p.technicianName} size={32} />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-xs font-medium text-ink">
-                        {p.technicianName}
-                      </p>
-                      <div className="mt-0.5 flex min-w-0 items-center gap-1.5">
-                        <span
-                          className={`shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-semibold ${methodBadge(
-                            p.method
-                          )}`}
-                        >
-                          {p.method}
-                        </span>
-                        <span className="truncate text-[10px] text-muted">
-                          {p.type}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="shrink-0 text-right">
-                      <p
-                        className={`text-xs font-bold ${
-                          isCredit ? "text-success" : "text-danger"
-                        }`}
-                      >
-                        {isCredit ? "+" : "-"}
-                        {formatDT(p.amount)}
-                      </p>
-                      <p className="text-[10px] text-muted">
-                        {formatDT(p.platformFee)} fee
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                  )
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
 
-        {/* Platform Summary */}
-        <div className="min-w-0 rounded-2xl border border-line bg-surface p-4">
-          <p className="mb-3 font-heading text-sm font-semibold text-ink">
-            Platform Summary
-          </p>
+        {/* Recent Payments */}
+        <div className="min-w-0 rounded-2xl border border-line bg-surface dark:bg-[#0f1f3d] p-4">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <p className="font-heading text-sm font-semibold text-ink">
+              Recent Payments
+            </p>
 
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
-            {[
-              {
-                label: "Platform Earnings",
-                value: formatDT(stats.platformEarnings),
-                icon: DollarSign,
-              },
-              {
-                label: "Technicians",
-                value: stats.totalTechnicians,
-                icon: Wrench,
-              },
-              {
-                label: "Clients",
-                value: stats.totalClients,
-                icon: UserCheck,
-              },
-              {
-                label: "Completed Jobs",
-                value: jobsOverview.completed,
-                icon: BarChart2,
-              },
-              {
-                label: "Active Jobs",
-                value: jobsOverview.inProgress,
-                icon: Building2,
-              },
-              {
-                label: "Pending Jobs",
-                value: jobsOverview.pending,
-                icon: Percent,
-              },
-            ].map((item, i) => (
-              <div
-                key={i}
-                className="min-w-0 rounded-xl bg-surface-alt px-3 py-3 text-center"
-              >
-                <item.icon size={14} className="mx-auto mb-1 text-muted" />
-                <p className="truncate font-heading text-base font-bold text-ink">
-                  {item.value}
-                </p>
-                <p className="truncate text-[10px] leading-tight text-muted">
-                  {item.label}
-                </p>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-3">
             <Link
-              href="/admin/revenue"
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-surface-alt py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-line"
+              href="/admin/payments"
+              className="shrink-0 text-xs font-medium text-brand-orange"
             >
-              <BarChart2 size={16} />
-              View Detailed Reports
+              View all
             </Link>
           </div>
+
+          <div className="flex min-w-0 flex-col divide-y divide-line">
+            {recentPayments.length === 0 && (
+              <p className="py-6 text-center text-xs text-muted">
+                No payments yet
+              </p>
+            )}
+
+            {recentPayments.map((p) => {
+              const isCredit =
+                p.type === "PAYOUT";
+
+              return (
+                <div
+                  key={p.id}
+                  className="flex min-w-0 items-center gap-3 py-2.5"
+                >
+                  <Avatar
+                    name={p.technicianName}
+                    size={32}
+                  />
+
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-xs font-medium text-ink">
+                      {p.technicianName}
+                    </p>
+
+                    <div className="mt-0.5 flex min-w-0 items-center gap-1.5">
+                      <span
+                        className={`shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-semibold ${methodBadge(
+                          p.method
+                        )}`}
+                      >
+                        {p.method}
+                      </span>
+
+                      <span className="truncate text-[10px] text-muted">
+                        {p.type}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="shrink-0 text-right">
+                    <p
+                      className={`text-xs font-bold ${
+                        isCredit
+                          ? "text-success"
+                          : "text-danger"
+                      }`}
+                    >
+                      {isCredit ? "+" : "-"}
+                      {formatDT(p.amount)}
+                    </p>
+
+                    <p className="text-[10px] text-muted">
+                      {formatDT(
+                        p.platformFee
+                      )}{" "}
+                      fee
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Platform Summary */}
+      <div className="min-w-0 rounded-2xl border border-line bg-surface dark:bg-[#0f1f3d] p-4">
+        <p className="mb-3 font-heading text-sm font-semibold text-ink">
+          Platform Summary
+        </p>
+
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+          {[
+            {
+              label: "Platform Earnings",
+              value: formatDT(
+                stats.platformEarnings
+              ),
+              icon: DollarSign,
+            },
+
+            {
+              label: "Technicians",
+              value: stats.totalTechnicians,
+              icon: Wrench,
+            },
+
+            {
+              label: "Clients",
+              value: stats.totalClients,
+              icon: UserCheck,
+            },
+
+            {
+              label: "Completed Jobs",
+              value:
+                jobsOverview.completed,
+              icon: BarChart2,
+            },
+
+            {
+              label: "Active Jobs",
+              value:
+                jobsOverview.inProgress,
+              icon: Building2,
+            },
+
+            {
+              label: "Pending Jobs",
+              value:
+                jobsOverview.pending,
+              icon: Percent,
+            },
+          ].map((item, i) => (
+            <div
+              key={i}
+              className="min-w-0 rounded-xl bg-surface-alt dark:bg-[#172947] px-3 py-3 text-center"
+            >
+              <item.icon
+                size={14}
+                className="mx-auto mb-1 text-muted"
+              />
+
+              <p className="truncate font-heading text-base font-bold text-ink">
+                {item.value}
+              </p>
+
+              <p className="truncate text-[10px] leading-tight text-muted">
+                {item.label}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-3">
+          <Link
+            href="/admin/revenue"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-surface-alt dark:bg-[#172947] py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-line dark:hover:bg-[#203756]"
+          >
+            <BarChart2 size={16} />
+            View Detailed Reports
+          </Link>
         </div>
       </div>
     </div>
