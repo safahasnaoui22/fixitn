@@ -38,7 +38,7 @@ function NavSection({
 }) {
   return (
     <div className="mb-2">
-      <p className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-white/30">
+      <p className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-[color:var(--sidebar-text)] opacity-60">
         {title}
       </p>
       {items.map(({ label, icon: Icon, href }) => {
@@ -49,8 +49,8 @@ function NavSection({
             href={href}
             className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors mb-0.5 ${
               active
-                ? "bg-white/15 text-white"
-                : "text-white/70 hover:bg-white/10 hover:text-white"
+                ? "bg-[color:var(--sidebar-hover)] text-white"
+                : "text-[color:var(--sidebar-text)] hover:bg-[color:var(--sidebar-hover)] hover:text-white"
             }`}
           >
             <Icon size={16} className="shrink-0" />
@@ -79,7 +79,7 @@ const Navbar: React.FC<NavbarProps> = () => {
           className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
             pathname === "/admin"
               ? "bg-brand-orange text-white"
-              : "text-white/70 hover:bg-white/10 hover:text-white"
+              : "text-[color:var(--sidebar-text)] hover:bg-[color:var(--sidebar-hover)] hover:text-white"
           }`}
         >
           <LayoutDashboard size={16} className="shrink-0" />
@@ -98,7 +98,7 @@ const Navbar: React.FC<NavbarProps> = () => {
       <div className="p-3 shrink-0">
         <Link
           href="/"
-          className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium text-white/50 hover:bg-white/10 hover:text-white transition-colors"
+          className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium text-[color:var(--sidebar-text)] hover:bg-[color:var(--sidebar-hover)] hover:text-white transition-colors"
         >
           <Globe size={15} />
           <span>View Website</span>

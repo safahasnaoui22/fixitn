@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme inline {
   --font-sans: var(--font-inter);
   --font-heading: var(--font-sora);
@@ -21,10 +23,121 @@
   --color-star: #fbbf24;
 }
 
+/* =====================================================
+   LIGHT MODE — shared variables
+   Both Tailwind tokens and admin CSS-module vars live
+   here so `.dark` can override them in one place.
+   ===================================================== */
+
 :root {
-  --background: var(--color-surface-alt);
-  --foreground: var(--color-ink);
+  color-scheme: light;
+
+  /* App (mobile shell) base */
+  --background: #f7f8fa;
+  --foreground: #1a1a1a;
+
+  /* Admin dashboard / layout */
+  --sidebar-width: 220px;
+  --topbar-height: 60px;
+
+  --body-bg: #f3f4f8;
+  --card-bg: #ffffff;
+  --border: #e5e7eb;
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --text-muted: #9ca3af;
+
+  --sidebar-bg: #1a1d2e;
+  --sidebar-text: #9ca3af;
+  --sidebar-hover: rgba(255, 255, 255, 0.06);
+  --sidebar-active-bg: #f97316;
+  --sidebar-active-text: #ffffff;
+
+  --surface-hover: #f9fafb;
+  --table-header-bg: #fafafa;
+  --table-border: #f3f4f6;
+
+  /* Semantic colors + their light chip backgrounds */
+  --orange: #f97316;
+  --orange-hover: #ea6c0a;
+  --orange-light: #fff7ed;
+  --green: #22c55e;
+  --green-light: #dcfce7;
+  --blue: #3b82f6;
+  --blue-light: #dbeafe;
+  --purple: #8b5cf6;
+  --purple-light: #ede9fe;
+  --yellow: #eab308;
+  --yellow-light: #fef9c3;
+  --red: #ef4444;
+  --red-light: #fee2e2;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.05);
 }
+
+/* =====================================================
+   DARK MODE — one class flips everything
+   ===================================================== */
+
+.dark {
+  color-scheme: dark;
+
+  --background: #111318;
+  --foreground: #edeef5;
+
+  /* Tailwind tokens */
+  --color-surface: #111318;
+  --color-surface-alt: #1a1d27;
+  --color-line: #252836;
+  --color-ink: #edeef5;
+  --color-muted: #7b82a0;
+  --color-brand-navy: #090b14;
+  --color-brand-orange-light: rgba(249, 115, 22, 0.18);
+  --color-brand-orange-dark: #fb923c;
+  --color-success: #4ade80;
+  --color-success-light: rgba(74, 222, 128, 0.12);
+  --color-danger: #f87171;
+  --color-danger-light: rgba(248, 113, 113, 0.12);
+  --color-star: #fbbf24;
+
+  /* Admin dashboard variables */
+  --body-bg: #0e1017;
+  --card-bg: #1b1e26;
+  --border: #303541;
+  --text-primary: #f3f4f6;
+  --text-secondary: #b0b7c3;
+  --text-muted: #858e9e;
+
+  --sidebar-bg: #151720;
+  --sidebar-text: #a1a8b6;
+  --sidebar-hover: rgba(255, 255, 255, 0.06);
+  --sidebar-active-bg: #f97316;
+  --sidebar-active-text: #ffffff;
+
+  --surface-hover: #252a35;
+  --table-header-bg: #222631;
+  --table-border: #303541;
+
+  /* Chip / badge backgrounds — tinted for dark */
+  --orange-light: #3b2518;
+  --green-light: #173523;
+  --blue-light: #1c2e49;
+  --purple-light: #302448;
+  --yellow-light: #3a3219;
+  --red-light: #3b2025;
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.25), 0 1px 2px rgba(0, 0, 0, 0.18);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.35), 0 2px 4px -1px rgba(0, 0, 0, 0.25);
+}
+
+/* =====================================================
+   Base
+   ===================================================== */
 
 * {
   border-color: var(--color-line);
@@ -41,11 +154,10 @@ h1, h2, h3, h4, .font-heading {
   font-family: var(--font-heading), var(--font-sans), system-ui, sans-serif;
 }
 
-/* Phone-proportioned app shell: full-bleed on mobile, a framed column on
-   larger screens — the screens were designed as a mobile app, so this keeps
-   that intent instead of stretching everything edge to edge on desktop.
-   It's a fixed-height flex column so bottom nav stays put while
-   `.app-content` (the inner scroll area) scrolls independently. */
+/* =====================================================
+   App shell (mobile-framed layout)
+   ===================================================== */
+
 .app-shell {
   max-width: 480px;
   margin-inline: auto;
@@ -65,7 +177,8 @@ h1, h2, h3, h4, .font-heading {
 
 @media (min-width: 480px) {
   .app-shell {
-    box-shadow: 0 0 0 1px var(--color-line), 0 24px 64px -16px rgba(15, 27, 51, 0.18);
+    box-shadow: 0 0 0 1px var(--color-line),
+      0 24px 64px -16px rgba(15, 27, 51, 0.18);
     height: calc(100dvh - 2rem);
     margin-block: 1rem;
     border-radius: 28px;
@@ -81,44 +194,55 @@ h1, h2, h3, h4, .font-heading {
 
 @keyframes fade-up {
   from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 .animate-fade-up {
   animation: fade-up 0.4s ease-out both;
 }
-/* ── Dark mode overrides ───────────────────────────────────────────────────
-   Applied when <html class="dark"> is set by ThemeProvider.
-   Every CSS variable that changes between light and dark is listed here.
-   Variables that stay the same (brand-orange, etc.) are NOT repeated.
-────────────────────────────────────────────────────────────────────────── */
 
-/* ── Dark mode ─────────────────────────────────────────────────────── */
-.dark {
-  color-scheme: dark;
+/* =====================================================
+   Admin panel — full width override
+   ===================================================== */
 
-  --color-surface:              #111318;
-  --color-surface-alt:          #1A1D27;
-  --color-line:                 #252836;
-  --color-ink:                  #EDEEF5;
-  --color-muted:                #7B82A0;
-  --color-brand-navy:           #090B14;
-
-  --color-brand-orange-light:   rgba(249,115,22,0.18);
-  --color-brand-orange-dark:    #FB923C;
-
-  --color-success:              #4ADE80;
-  --color-success-light:        rgba(74,222,128,0.12);
-  --color-danger:               #F87171;
-  --color-danger-light:         rgba(248,113,113,0.12);
-  --color-star:                 #FBBF24;
+.app-shell:has(.admin-shell) {
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  height: 100dvh;
+  margin: 0;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: hidden;
 }
 
-/* Dark mode card borders get a subtle glow */
+.admin-shell,
+.admin-shell main,
+.admin-shell main > div {
+  min-width: 0;
+}
+
+/* =====================================================
+   Arabic (RTL)
+   ===================================================== */
+
+html[dir="rtl"] body,
+html[dir="rtl"] h1,
+html[dir="rtl"] h2,
+html[dir="rtl"] h3,
+html[dir="rtl"] h4,
+html[dir="rtl"] .font-heading {
+  font-family: var(--font-arabic), system-ui, sans-serif;
+  letter-spacing: 0;
+}
+
+/* =====================================================
+   Dark-mode polish
+   ===================================================== */
+
 .dark .rounded-2xl.border {
   border-color: var(--color-line);
 }
 
-/* Inputs in dark mode */
 .dark input,
 .dark textarea,
 .dark select {
@@ -132,232 +256,26 @@ h1, h2, h3, h4, .font-heading {
   color: var(--color-muted);
 }
 
-/* Bottom nav in dark mode */
 .dark nav {
   border-color: var(--color-line);
 }
 
-/* Tables in dark mode */
 .dark table th {
   color: var(--color-muted);
 }
 
-/* Smooth transition */
+/* Smooth transitions */
 *, *::before, *::after {
-  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.1s ease;
+  transition: background-color 0.15s ease, border-color 0.15s ease,
+    color 0.1s ease;
 }
-
-/* Don't animate transforms (breaks animations) */
 .animate-spin, .animate-pulse, .animate-bounce {
   transition: none !important;
 }
-
-/* Smooth transition when toggling */
 html {
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 /* Dark scrollbar */
-.dark ::-webkit-scrollbar-track {
-  background: #141726;
-}
-.dark ::-webkit-scrollbar-thumb {
-  background: #1E2136;
-}
-.app-shell:has(.admin-shell) {
-  width: 100%;
-  max-width: none;
-  height: 100dvh;
-  margin: 0;
-  border-radius: 0;
-  box-shadow: none;
-  overflow: hidden;
-}
-/* =========================================================
-   ADMIN PANEL
-   The normal FixiTN app uses a 480px mobile shell.
-   Admin uses the full browser width.
-   ========================================================= */
-
-.app-shell:has(.admin-shell) {
-  width: 100%;
-  max-width: none;
-  min-width: 0;
-  height: 100dvh;
-  margin: 0;
-  border-radius: 0;
-  box-shadow: none;
-  overflow: hidden;
-}
-
-/* Prevent flex/grid children from forcing horizontal overflow */
-.admin-shell,
-.admin-shell main,
-.admin-shell main > div {
-  min-width: 0;
-}
-/* ── Arabic (right-to-left) ─────────────────────────────────────────── */
-html[dir="rtl"] body,
-html[dir="rtl"] h1,
-html[dir="rtl"] h2,
-html[dir="rtl"] h3,
-html[dir="rtl"] h4,
-html[dir="rtl"] .font-heading {
-  font-family: var(--font-arabic), system-ui, sans-serif;
-  letter-spacing: 0;
-}
-/* =====================================================
-   LIGHT / DARK MODE
-   ===================================================== */
-
-:global(:root) {
-  color-scheme: light;
-
-  --body-bg: #f3f4f8;
-  --card-bg: #ffffff;
-  --border: #e5e7eb;
-  --text-primary: #111827;
-  --text-secondary: #6b7280;
-  --text-muted: #9ca3af;
-
-  --sidebar-bg: #1a1d2e;
-  --sidebar-text: #9ca3af;
-
-  --surface-hover: #f9fafb;
-  --table-header-bg: #fafafa;
-  --table-border: #f3f4f6;
-
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
-}
-
-:global([data-theme="dark"]) {
-  color-scheme: dark;
-
-  --body-bg: #111318;
-  --card-bg: #1b1e26;
-  --border: #303541;
-  --text-primary: #f3f4f6;
-  --text-secondary: #b0b7c3;
-  --text-muted: #858e9e;
-
-  --sidebar-bg: #151720;
-  --sidebar-text: #a1a8b6;
-
-  --surface-hover: #252a35;
-  --table-header-bg: #222631;
-  --table-border: #303541;
-
-  --orange-light: #3b2518;
-  --green-light: #173523;
-  --blue-light: #1c2e49;
-  --purple-light: #302448;
-  --yellow-light: #3a3219;
-  --red-light: #3b2025;
-
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.2);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.25);
-}
-
-/* Main dashboard */
-:global([data-theme="dark"]) .dashboardLayout {
-  background: var(--body-bg);
-  color: var(--text-primary);
-}
-
-/* Cards and topbar */
-:global([data-theme="dark"]) .topbar,
-:global([data-theme="dark"]) .card,
-:global([data-theme="dark"]) .statCard {
-  background: var(--card-bg);
-  border-color: var(--border);
-}
-
-/* Text */
-:global([data-theme="dark"]) .topbarTitle,
-:global([data-theme="dark"]) .cardTitle,
-:global([data-theme="dark"]) .statValue,
-:global([data-theme="dark"]) .techName,
-:global([data-theme="dark"]) .jobId {
-  color: var(--text-primary);
-}
-
-/* Search */
-:global([data-theme="dark"]) .searchBox,
-:global([data-theme="dark"]) .chartDropdown,
-:global([data-theme="dark"]) .dateRangePicker {
-  background: var(--surface-hover);
-  border-color: var(--border);
-  color: var(--text-secondary);
-}
-
-:global([data-theme="dark"]) .searchInput {
-  color: var(--text-primary);
-}
-
-/* Tables */
-:global([data-theme="dark"]) .dataTable th,
-:global([data-theme="dark"]) .techTable th {
-  background: var(--table-header-bg);
-  color: var(--text-secondary);
-  border-color: var(--border);
-}
-
-:global([data-theme="dark"]) .dataTable td,
-:global([data-theme="dark"]) .techTable td {
-  color: var(--text-primary);
-  border-color: var(--table-border);
-}
-
-:global([data-theme="dark"]) .dataTable tr:hover td,
-:global([data-theme="dark"]) .techTable tr:hover td {
-  background: var(--surface-hover);
-}
-
-/* Notifications and summary */
-:global([data-theme="dark"]) .notifItem {
-  border-color: var(--border);
-}
-
-:global([data-theme="dark"]) .notifItem:hover,
-:global([data-theme="dark"]) .adminProfile:hover,
-:global([data-theme="dark"]) .notifBtn:hover {
-  background: var(--surface-hover);
-}
-
-:global([data-theme="dark"]) .notifBtn {
-  background: var(--card-bg);
-  border-color: var(--border);
-  color: var(--text-secondary);
-}
-
-:global([data-theme="dark"]) .summaryItem {
-  border-color: var(--border);
-}
-
-:global([data-theme="dark"]) .summaryLeft {
-  color: var(--text-secondary);
-}
-
-:global([data-theme="dark"]) .adminName {
-  color: var(--text-primary);
-}
-
-/* Neutral surfaces */
-:global([data-theme="dark"]) .summaryCard,
-:global([data-theme="dark"]) .statCard {
-  box-shadow: var(--shadow-sm);
-}
-
-:global([data-theme="dark"]) .detailedReportsBtn:hover {
-  color: #ffffff;
-}
-
-/* Chart grid */
-:global([data-theme="dark"]) .recharts-cartesian-grid line {
-  stroke: var(--border);
-}
-
-:global([data-theme="dark"]) .recharts-text {
-  fill: var(--text-muted);
-}
+.dark ::-webkit-scrollbar-track { background: #141726; }
+.dark ::-webkit-scrollbar-thumb { background: #1e2136; }

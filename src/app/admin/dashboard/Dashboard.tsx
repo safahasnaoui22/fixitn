@@ -107,22 +107,22 @@ const NOTIF_CONFIG: Record<
 > = {
   NEW_REQUEST: {
     icon: "📋",
-    bg: "#fef3c7",
+    bg: "var(--yellow-light)",
   },
 
   STATUS_UPDATE: {
     icon: "🔄",
-    bg: "#dbeafe",
+    bg: "var(--blue-light)",
   },
 
   NEW_MESSAGE: {
     icon: "💬",
-    bg: "#dcfce7",
+    bg: "var(--green-light)",
   },
 
   NEW_REVIEW: {
     icon: "⭐",
-    bg: "#fef9c3",
+    bg: "var(--yellow-light)",
   },
 };
 
@@ -171,7 +171,7 @@ function methodBadge(method: string) {
   const styles: Record<string, string> = {
     D17: "bg-purple-100 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300",
     FLOUCI: "bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300",
-    BANK_TRANSFER: "bg-gray-100 text-ink",
+    BANK_TRANSFER: "bg-surface-alt text-ink",
     CASH: "bg-success-light text-success",
   };
 
@@ -191,11 +191,11 @@ function Avatar({
   size?: number;
 }) {
   const bg = [
-    "#dbeafe",
-    "#fef3c7",
-    "#dcfce7",
-    "#ede9fe",
-    "#fee2e2",
+    "var(--blue-light)",
+    "var(--yellow-light)",
+    "var(--green-light)",
+    "var(--purple-light)",
+    "var(--red-light)",
   ];
 
   const i = name.charCodeAt(0) % bg.length;
@@ -240,7 +240,7 @@ const CustomTooltip = ({
   if (active && payload?.length) {
     return (
       <div className="rounded-lg border border-line bg-surface px-3 py-2 text-xs text-ink shadow-lg">
-        <div className="mb-1 text-white/70">
+        <div className="mb-1 text-muted">
           {label}
         </div>
 
@@ -386,7 +386,7 @@ export const Dashboard: React.FC<{
             label: "Total Revenue",
             value: formatDT(stats.totalRevenue),
             color:
-              "bg-orange-100 text-orange-600",
+              "bg-[var(--orange-light)] text-[var(--orange)]",
           },
 
           {
@@ -404,7 +404,7 @@ export const Dashboard: React.FC<{
             label: "Technicians",
             value: stats.totalTechnicians,
             color:
-              "bg-purple-100 text-purple-600",
+              "bg-[var(--purple-light)] text-[var(--purple)]",
           },
 
           {
@@ -412,7 +412,7 @@ export const Dashboard: React.FC<{
             label: "Clients",
             value: stats.totalClients,
             color:
-              "bg-blue-100 text-blue-600",
+              "bg-[var(--blue-light)] text-[var(--blue)]",
           },
 
           {
@@ -420,7 +420,7 @@ export const Dashboard: React.FC<{
             label: "Total Jobs",
             value: stats.totalJobs,
             color:
-              "bg-amber-100 text-amber-600",
+              "bg-[var(--yellow-light)] text-[var(--yellow)]",
           },
         ].map((s, i) => (
           <div
@@ -490,13 +490,13 @@ export const Dashboard: React.FC<{
                     >
                       <stop
                         offset="0%"
-                        stopColor="#f97316"
+                        stopColor="var(--color-brand-orange)"
                         stopOpacity={0.2}
                       />
 
                       <stop
                         offset="100%"
-                        stopColor="#f97316"
+                        stopColor="var(--color-brand-orange)"
                         stopOpacity={0.02}
                       />
                     </linearGradient>
@@ -539,18 +539,18 @@ export const Dashboard: React.FC<{
                   <Area
                     type="monotone"
                     dataKey="value"
-                    stroke="#f97316"
+                    stroke="var(--color-brand-orange)"
                     strokeWidth={2.5}
                     fill="url(#grad)"
                     dot={{
-                      fill: "#f97316",
+                      fill: "var(--color-brand-orange)",
                       r: 3,
                       strokeWidth: 2,
                       stroke: "var(--color-surface)",
                     }}
                     activeDot={{
                       r: 5,
-                      fill: "#f97316",
+                      fill: "var(--color-brand-orange)",
                     }}
                   />
                 </AreaChart>
@@ -673,7 +673,7 @@ export const Dashboard: React.FC<{
               const cfg =
                 NOTIF_CONFIG[n.type] ?? {
                   icon: "🔔",
-                  bg: "#f3f4f6",
+                  bg: "var(--surface-alt)",
                 };
 
               return (

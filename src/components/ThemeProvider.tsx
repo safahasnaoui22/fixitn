@@ -2,10 +2,10 @@
 
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useState,
-  useCallback,
 } from "react";
 
 type Theme = "light" | "dark";
@@ -24,17 +24,26 @@ export function useTheme() {
   return useContext(ThemeContext);
 }
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>("light");
+const STORAGE_KEY = "fixili-theme";
 
-  // On mount, read the stored preference (the inline script already
-  // applied the class — we just sync React state with it)
+export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  // Read whatever the inline script already applied so the toggle icon
+  // is correct on first render (no flicker).
+  const [theme, setTheme] = useState<Theme>(() => {
+    if (typeof document === "undefined") return "light";
+    return document.documentElement.classList.contains("dark")
+      ? "dark"
+      : "light";
+  });
+
+  // Sync with storage / system preference after mount
   useEffect(() => {
-    const stored = localStorage.getItem("fixili-theme") as Theme | null;
+    const stored = localStorage.getItem(STORAGE_KEY) as Theme | null;
     const prefersDark = window.matchMedia(
       "(prefers-color-scheme: dark)"
     ).matches;
     const initial: Theme = stored ?? (prefersDark ? "dark" : "light");
+
     setTheme(initial);
     applyTheme(initial);
   }, []);
@@ -43,7 +52,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setTheme((prev) => {
       const next: Theme = prev === "dark" ? "light" : "dark";
       applyTheme(next);
-      localStorage.setItem("fixili-theme", next);
+      try {
+        localStorage.setItem(STORAGE_KEY, next);
+      } catch {
+        /* ignore quota / private-mode errors */
+      }
       return next;
     });
   }, []);
@@ -56,10 +69,5 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 }
 
 function applyTheme(theme: Theme) {
-  const root = document.documentElement;
-  if (theme === "dark") {
-    root.classList.add("dark");
-  } else {
-    root.classList.remove("dark");
-  }
+  document.documentElement.classList.toggle("dark", theme === "dark");
 }
