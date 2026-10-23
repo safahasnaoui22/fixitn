@@ -1,3 +1,4 @@
+
 @import "tailwindcss";
 
 @custom-variant dark (&:where(.dark, .dark *));
@@ -25,18 +26,14 @@
 
 /* =====================================================
    LIGHT MODE — shared variables
-   Both Tailwind tokens and admin CSS-module vars live
-   here so `.dark` can override them in one place.
    ===================================================== */
 
 :root {
   color-scheme: light;
 
-  /* App (mobile shell) base */
   --background: #f7f8fa;
   --foreground: #1a1a1a;
 
-  /* Admin dashboard / layout */
   --sidebar-width: 220px;
   --topbar-height: 60px;
 
@@ -57,18 +54,22 @@
   --table-header-bg: #fafafa;
   --table-border: #f3f4f6;
 
-  /* Semantic colors + their light chip backgrounds */
   --orange: #f97316;
   --orange-hover: #ea6c0a;
   --orange-light: #fff7ed;
+
   --green: #22c55e;
   --green-light: #dcfce7;
+
   --blue: #3b82f6;
   --blue-light: #dbeafe;
+
   --purple: #8b5cf6;
   --purple-light: #ede9fe;
+
   --yellow: #eab308;
   --yellow-light: #fef9c3;
+
   --red: #ef4444;
   --red-light: #fee2e2;
 
@@ -76,54 +77,65 @@
   --radius-md: 10px;
   --radius-lg: 14px;
 
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.05);
+  --shadow-sm:
+    0 1px 3px rgba(0, 0, 0, 0.06),
+    0 1px 2px rgba(0, 0, 0, 0.04);
+
+  --shadow-md:
+    0 4px 6px -1px rgba(0, 0, 0, 0.08),
+    0 2px 4px -1px rgba(0, 0, 0, 0.05);
 }
 
 /* =====================================================
-   DARK MODE — one class flips everything
+   DARK MODE
    ===================================================== */
 
 .dark {
   color-scheme: dark;
 
-  --background: #111318;
-  --foreground: #edeef5;
+  --background: #081426;
+  --foreground: #f1f5f9;
 
-  /* Tailwind tokens */
-  --color-surface: #111318;
-  --color-surface-alt: #1a1d27;
-  --color-line: #252836;
-  --color-ink: #edeef5;
-  --color-muted: #7b82a0;
-  --color-brand-navy: #090b14;
+  /* Tailwind colors */
+  --color-surface: #0f1f3d;
+  --color-surface-alt: #172947;
+  --color-line: #2a3b56;
+  --color-ink: #f1f5f9;
+  --color-muted: #cbd5e1;
+
+  --color-brand-navy: #081426;
+  --color-brand-navy-light: #172947;
   --color-brand-orange-light: rgba(249, 115, 22, 0.18);
   --color-brand-orange-dark: #fb923c;
+
   --color-success: #4ade80;
   --color-success-light: rgba(74, 222, 128, 0.12);
+
   --color-danger: #f87171;
   --color-danger-light: rgba(248, 113, 113, 0.12);
+
   --color-star: #fbbf24;
 
-  /* Admin dashboard variables */
-  --body-bg: #0e1017;
-  --card-bg: #1b1e26;
-  --border: #303541;
-  --text-primary: #f3f4f6;
-  --text-secondary: #b0b7c3;
-  --text-muted: #858e9e;
+  /* Admin dashboard */
+  --body-bg: #081426;
+  --card-bg: #0f1f3d;
+  --border: #2a3b56;
 
-  --sidebar-bg: #151720;
-  --sidebar-text: #a1a8b6;
-  --sidebar-hover: rgba(255, 255, 255, 0.06);
+  --text-primary: #f1f5f9;
+  --text-secondary: #cbd5e1;
+  --text-muted: #a6b4c8;
+
+  --sidebar-bg: #0b1425;
+  --sidebar-text: #cbd5e1;
+  --sidebar-hover: rgba(255, 255, 255, 0.08);
   --sidebar-active-bg: #f97316;
   --sidebar-active-text: #ffffff;
 
-  --surface-hover: #252a35;
-  --table-header-bg: #222631;
-  --table-border: #303541;
+  --surface-hover: #172947;
+  --table-header-bg: #142541;
+  --table-border: #2a3b56;
 
-  /* Chip / badge backgrounds — tinted for dark */
+  /* Badge backgrounds */
   --orange-light: #3b2518;
   --green-light: #173523;
   --blue-light: #1c2e49;
@@ -131,31 +143,45 @@
   --yellow-light: #3a3219;
   --red-light: #3b2025;
 
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.25), 0 1px 2px rgba(0, 0, 0, 0.18);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.35), 0 2px 4px -1px rgba(0, 0, 0, 0.25);
+  --shadow-sm:
+    0 1px 3px rgba(0, 0, 0, 0.25),
+    0 1px 2px rgba(0, 0, 0, 0.18);
+
+  --shadow-md:
+    0 4px 6px -1px rgba(0, 0, 0, 0.35),
+    0 2px 4px -1px rgba(0, 0, 0, 0.25);
 }
 
 /* =====================================================
-   Base
+   BASE
    ===================================================== */
 
 * {
   border-color: var(--color-line);
 }
 
+html,
 body {
+  min-height: 100%;
+}
 
+body {
+  background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
   -webkit-tap-highlight-color: transparent;
 }
 
-h1, h2, h3, h4, .font-heading {
+h1,
+h2,
+h3,
+h4,
+.font-heading {
   font-family: var(--font-heading), var(--font-sans), system-ui, sans-serif;
 }
 
 /* =====================================================
-   App shell (mobile-framed layout)
+   APP SHELL
    ===================================================== */
 
 .app-shell {
@@ -177,7 +203,8 @@ h1, h2, h3, h4, .font-heading {
 
 @media (min-width: 480px) {
   .app-shell {
-    box-shadow: 0 0 0 1px var(--color-line),
+    box-shadow:
+      0 0 0 1px var(--color-line),
       0 24px 64px -16px rgba(15, 27, 51, 0.18);
     height: calc(100dvh - 2rem);
     margin-block: 1rem;
@@ -188,20 +215,29 @@ h1, h2, h3, h4, .font-heading {
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
 .no-scrollbar {
   scrollbar-width: none;
 }
 
 @keyframes fade-up {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
+
 .animate-fade-up {
   animation: fade-up 0.4s ease-out both;
 }
 
 /* =====================================================
-   Admin panel — full width override
+   ADMIN PANEL — FULL WIDTH
    ===================================================== */
 
 .app-shell:has(.admin-shell) {
@@ -222,7 +258,54 @@ h1, h2, h3, h4, .font-heading {
 }
 
 /* =====================================================
-   Arabic (RTL)
+   ADMIN DASHBOARD — DARK BACKGROUND FIX
+   ===================================================== */
+
+.dark body {
+  background-color: #081426;
+  color: #f1f5f9;
+}
+
+.dark .app-shell:has(.admin-shell) {
+  background-color: #081426;
+}
+
+.dark .admin-shell {
+  background-color: var(--body-bg);
+  color: var(--text-primary);
+}
+
+.dark .admin-shell main,
+.dark .admin-shell main > div {
+  background-color: var(--body-bg);
+  color: var(--text-primary);
+}
+
+/* Dashboard cards */
+.dark .admin-shell .bg-surface {
+  background-color: #0f1f3d;
+}
+
+.dark .admin-shell .bg-surface-alt {
+  background-color: #172947;
+}
+
+/* Dashboard headings */
+.dark .admin-shell h1,
+.dark .admin-shell h2,
+.dark .admin-shell h3,
+.dark .admin-shell h4,
+.dark .admin-shell .text-ink {
+  color: #f1f5f9;
+}
+
+/* Supporting text */
+.dark .admin-shell .text-muted {
+  color: #cbd5e1;
+}
+
+/* =====================================================
+   ARABIC — RTL
    ===================================================== */
 
 html[dir="rtl"] body,
@@ -236,7 +319,7 @@ html[dir="rtl"] .font-heading {
 }
 
 /* =====================================================
-   Dark-mode polish
+   DARK MODE — INPUTS, BORDERS AND TABLES
    ===================================================== */
 
 .dark .rounded-2xl.border {
@@ -264,18 +347,39 @@ html[dir="rtl"] .font-heading {
   color: var(--color-muted);
 }
 
-/* Smooth transitions */
-*, *::before, *::after {
-  transition: background-color 0.15s ease, border-color 0.15s ease,
+/* =====================================================
+   SMOOTH TRANSITIONS
+   ===================================================== */
+
+*,
+*::before,
+*::after {
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
     color 0.1s ease;
 }
-.animate-spin, .animate-pulse, .animate-bounce {
+
+.animate-spin,
+.animate-pulse,
+.animate-bounce {
   transition: none !important;
 }
+
 html {
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
 }
 
-/* Dark scrollbar */
-.dark ::-webkit-scrollbar-track { background: #141726; }
-.dark ::-webkit-scrollbar-thumb { background: #1e2136; }
+/* =====================================================
+   DARK SCROLLBAR
+   ===================================================== */
+
+.dark ::-webkit-scrollbar-track {
+  background: #0b1425;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #2a3b56;
+}
