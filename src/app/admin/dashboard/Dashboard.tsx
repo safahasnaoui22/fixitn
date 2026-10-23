@@ -164,20 +164,20 @@ function statusBadgeClass(status: string): string {
     return "bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300";
   }
 
-  return "bg-surface-alt text-muted";
+  return "bg-surface-alt text-muted dark:text-slate-300";
 }
 
 function methodBadge(method: string) {
   const styles: Record<string, string> = {
     D17: "bg-purple-100 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300",
     FLOUCI: "bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300",
-    BANK_TRANSFER: "bg-surface-alt text-ink",
+    BANK_TRANSFER: "bg-surface-alt text-ink dark:bg-[#172947] dark:text-slate-100",
     CASH: "bg-success-light text-success",
   };
 
   return (
     styles[method] ??
-    "bg-surface-alt text-muted"
+    "bg-surface-alt text-muted dark:text-slate-300"
   );
 }
 
@@ -209,7 +209,7 @@ function Avatar({
 
   return (
     <div
-      className="flex shrink-0 items-center justify-center overflow-hidden rounded-full text-xs font-bold text-ink"
+      className="flex shrink-0 items-center justify-center overflow-hidden rounded-full text-xs font-bold text-ink dark:text-slate-100"
       style={{
         width: size,
         height: size,
@@ -239,8 +239,8 @@ const CustomTooltip = ({
 }: any) => {
   if (active && payload?.length) {
     return (
-      <div className="rounded-lg border border-line bg-surface dark:bg-[#0f1f3d] px-3 py-2 text-xs text-ink shadow-lg">
-        <div className="mb-1 text-muted">
+      <div className="rounded-lg border border-line bg-surface dark:bg-[#0f1f3d] px-3 py-2 text-xs text-ink dark:text-slate-100 shadow-lg">
+        <div className="mb-1 text-muted dark:text-slate-300">
           {label}
         </div>
 
@@ -377,7 +377,7 @@ export const Dashboard: React.FC<{
   );
 
   return (
-    <div className="flex min-w-0 flex-col gap-5">
+    <div className="flex min-w-0 flex-col gap-5 bg-transparent dark:bg-[#081426]">
       {/* Stat cards */}
       <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {[
@@ -433,11 +433,11 @@ export const Dashboard: React.FC<{
               <s.icon size={18} />
             </div>
 
-            <p className="truncate font-heading text-xl font-bold text-ink">
+            <p className="truncate font-heading text-xl font-bold text-ink dark:text-slate-100">
               {s.value}
             </p>
 
-            <p className="mt-0.5 truncate text-xs text-muted">
+            <p className="mt-0.5 truncate text-xs text-muted dark:text-slate-300">
               {s.label}
             </p>
           </div>
@@ -449,7 +449,7 @@ export const Dashboard: React.FC<{
         {/* Revenue chart */}
         <div className="min-w-0 rounded-2xl border border-line bg-surface dark:bg-[#0f1f3d] p-4 xl:col-span-2">
           <div className="mb-4 flex items-center justify-between gap-3">
-            <p className="font-heading text-sm font-semibold text-ink">
+            <p className="font-heading text-sm font-semibold text-ink dark:text-slate-100">
               Revenue Overview
             </p>
 
@@ -462,7 +462,7 @@ export const Dashboard: React.FC<{
           </div>
 
           {monthly.length === 0 ? (
-            <div className="flex h-36 items-center justify-center text-sm text-muted">
+            <div className="flex h-36 items-center justify-center text-sm text-muted dark:text-slate-300">
               No payment data yet
             </div>
           ) : (
@@ -561,7 +561,7 @@ export const Dashboard: React.FC<{
 
         {/* Jobs donut */}
         <div className="min-w-0 rounded-2xl border border-line bg-surface dark:bg-[#0f1f3d] p-4">
-          <p className="mb-3 font-heading text-sm font-semibold text-ink">
+          <p className="mb-3 font-heading text-sm font-semibold text-ink dark:text-slate-100">
             Jobs Overview
           </p>
 
@@ -625,12 +625,12 @@ export const Dashboard: React.FC<{
                       }}
                     />
 
-                    <span className="truncate text-[10px] text-muted">
+                    <span className="truncate text-[10px] text-muted dark:text-slate-300">
                       {item.label}
                     </span>
                   </div>
 
-                  <span className="shrink-0 text-[10px] font-semibold text-ink">
+                  <span className="shrink-0 text-[10px] font-semibold text-ink dark:text-slate-100">
                     {item.value} (
                     {Math.round(
                       (item.value / total) *
@@ -650,7 +650,7 @@ export const Dashboard: React.FC<{
         {/* Notifications */}
         <div className="min-w-0 rounded-2xl border border-line bg-surface dark:bg-[#0f1f3d] p-4">
           <div className="mb-3 flex items-center justify-between gap-3">
-            <p className="font-heading text-sm font-semibold text-ink">
+            <p className="font-heading text-sm font-semibold text-ink dark:text-slate-100">
               Notifications
             </p>
 
@@ -664,7 +664,7 @@ export const Dashboard: React.FC<{
 
           <div className="flex flex-col gap-2">
             {recentNotifications.length === 0 && (
-              <p className="py-4 text-center text-xs text-muted">
+              <p className="py-4 text-center text-xs text-muted dark:text-slate-300">
                 No notifications yet
               </p>
             )}
@@ -691,11 +691,11 @@ export const Dashboard: React.FC<{
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-xs font-medium text-ink">
+                    <p className="truncate text-xs font-medium text-ink dark:text-slate-100">
                       {n.title}
                     </p>
 
-                    <p className="text-[10px] text-muted">
+                    <p className="text-[10px] text-muted dark:text-slate-300">
                       {formatRelativeTime(
                         n.createdAt
                       )}
@@ -710,7 +710,7 @@ export const Dashboard: React.FC<{
         {/* Recent Jobs */}
         <div className="min-w-0 rounded-2xl border border-line bg-surface dark:bg-[#0f1f3d] p-4 xl:col-span-2">
           <div className="mb-3 flex items-center justify-between gap-3">
-            <p className="font-heading text-sm font-semibold text-ink">
+            <p className="font-heading text-sm font-semibold text-ink dark:text-slate-100">
               Recent Jobs
             </p>
 
@@ -735,7 +735,7 @@ export const Dashboard: React.FC<{
                   ].map((h) => (
                     <th
                       key={h}
-                      className="pb-2 pr-3 text-left font-semibold text-muted"
+                      className="pb-2 pr-3 text-left font-semibold text-muted dark:text-slate-300"
                     >
                       {h}
                     </th>
@@ -748,7 +748,7 @@ export const Dashboard: React.FC<{
                   <tr>
                     <td
                       colSpan={5}
-                      className="py-6 text-center text-muted"
+                      className="py-6 text-center text-muted dark:text-slate-300"
                     >
                       No jobs yet
                     </td>
@@ -762,7 +762,7 @@ export const Dashboard: React.FC<{
                       key={job.id}
                       className="transition-colors hover:bg-surface-alt dark:hover:bg-[#1a2d4b]"
                     >
-                      <td className="py-2 pr-3 font-medium text-ink">
+                      <td className="py-2 pr-3 font-medium text-ink dark:text-slate-100">
                         {job.service}
                       </td>
 
@@ -776,7 +776,7 @@ export const Dashboard: React.FC<{
                             size={22}
                           />
 
-                          <span className="max-w-[80px] truncate text-muted">
+                          <span className="max-w-[80px] truncate text-muted dark:text-slate-300">
                             {job.clientName}
                           </span>
                         </div>
@@ -794,7 +794,7 @@ export const Dashboard: React.FC<{
                             size={22}
                           />
 
-                          <span className="max-w-[80px] truncate text-muted">
+                          <span className="max-w-[80px] truncate text-muted dark:text-slate-300">
                             {
                               job.technicianName
                             }
@@ -814,7 +814,7 @@ export const Dashboard: React.FC<{
                         </span>
                       </td>
 
-                      <td className="py-2 font-semibold text-ink">
+                      <td className="py-2 font-semibold text-ink dark:text-slate-100">
                         {job.amount
                           ? formatDT(
                               job.amount
@@ -834,7 +834,7 @@ export const Dashboard: React.FC<{
         {/* Top Technicians */}
         <div className="min-w-0 rounded-2xl border border-line bg-surface dark:bg-[#0f1f3d] p-4">
           <div className="mb-3 flex items-center justify-between gap-3">
-            <p className="font-heading text-sm font-semibold text-ink">
+            <p className="font-heading text-sm font-semibold text-ink dark:text-slate-100">
               Top Technicians
             </p>
 
@@ -858,7 +858,7 @@ export const Dashboard: React.FC<{
                   ].map((h) => (
                     <th
                       key={h}
-                      className="pb-2 pr-3 text-left font-semibold text-muted"
+                      className="pb-2 pr-3 text-left font-semibold text-muted dark:text-slate-300"
                     >
                       {h}
                     </th>
@@ -871,7 +871,7 @@ export const Dashboard: React.FC<{
                   <tr>
                     <td
                       colSpan={4}
-                      className="py-6 text-center text-muted"
+                      className="py-6 text-center text-muted dark:text-slate-300"
                     >
                       No data yet
                     </td>
@@ -895,22 +895,22 @@ export const Dashboard: React.FC<{
                           />
 
                           <div className="min-w-0">
-                            <p className="max-w-[100px] truncate font-medium text-ink">
+                            <p className="max-w-[100px] truncate font-medium text-ink dark:text-slate-100">
                               {tech.name}
                             </p>
 
-                            <p className="truncate text-[10px] text-muted">
+                            <p className="truncate text-[10px] text-muted dark:text-slate-300">
                               {tech.title}
                             </p>
                           </div>
                         </div>
                       </td>
 
-                      <td className="py-2 pr-3 font-semibold text-ink">
+                      <td className="py-2 pr-3 font-semibold text-ink dark:text-slate-100">
                         {tech.jobs}
                       </td>
 
-                      <td className="py-2 pr-3 text-muted">
+                      <td className="py-2 pr-3 text-muted dark:text-slate-300">
                         {tech.rating !=
                         null
                           ? `⭐ ${tech.rating.toFixed(
@@ -919,7 +919,7 @@ export const Dashboard: React.FC<{
                           : "—"}
                       </td>
 
-                      <td className="whitespace-nowrap py-2 font-semibold text-ink">
+                      <td className="whitespace-nowrap py-2 font-semibold text-ink dark:text-slate-100">
                         {formatDT(
                           tech.earnings
                         )}
@@ -935,7 +935,7 @@ export const Dashboard: React.FC<{
         {/* Recent Payments */}
         <div className="min-w-0 rounded-2xl border border-line bg-surface dark:bg-[#0f1f3d] p-4">
           <div className="mb-3 flex items-center justify-between gap-3">
-            <p className="font-heading text-sm font-semibold text-ink">
+            <p className="font-heading text-sm font-semibold text-ink dark:text-slate-100">
               Recent Payments
             </p>
 
@@ -949,7 +949,7 @@ export const Dashboard: React.FC<{
 
           <div className="flex min-w-0 flex-col divide-y divide-line">
             {recentPayments.length === 0 && (
-              <p className="py-6 text-center text-xs text-muted">
+              <p className="py-6 text-center text-xs text-muted dark:text-slate-300">
                 No payments yet
               </p>
             )}
@@ -969,7 +969,7 @@ export const Dashboard: React.FC<{
                   />
 
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-xs font-medium text-ink">
+                    <p className="truncate text-xs font-medium text-ink dark:text-slate-100">
                       {p.technicianName}
                     </p>
 
@@ -982,7 +982,7 @@ export const Dashboard: React.FC<{
                         {p.method}
                       </span>
 
-                      <span className="truncate text-[10px] text-muted">
+                      <span className="truncate text-[10px] text-muted dark:text-slate-300">
                         {p.type}
                       </span>
                     </div>
@@ -1000,7 +1000,7 @@ export const Dashboard: React.FC<{
                       {formatDT(p.amount)}
                     </p>
 
-                    <p className="text-[10px] text-muted">
+                    <p className="text-[10px] text-muted dark:text-slate-300">
                       {formatDT(
                         p.platformFee
                       )}{" "}
@@ -1016,7 +1016,7 @@ export const Dashboard: React.FC<{
 
       {/* Platform Summary */}
       <div className="min-w-0 rounded-2xl border border-line bg-surface dark:bg-[#0f1f3d] p-4">
-        <p className="mb-3 font-heading text-sm font-semibold text-ink">
+        <p className="mb-3 font-heading text-sm font-semibold text-ink dark:text-slate-100">
           Platform Summary
         </p>
 
@@ -1069,14 +1069,14 @@ export const Dashboard: React.FC<{
             >
               <item.icon
                 size={14}
-                className="mx-auto mb-1 text-muted"
+                className="mx-auto mb-1 text-muted dark:text-slate-300"
               />
 
-              <p className="truncate font-heading text-base font-bold text-ink">
+              <p className="truncate font-heading text-base font-bold text-ink dark:text-slate-100">
                 {item.value}
               </p>
 
-              <p className="truncate text-[10px] leading-tight text-muted">
+              <p className="truncate text-[10px] leading-tight text-muted dark:text-slate-300">
                 {item.label}
               </p>
             </div>
@@ -1086,7 +1086,7 @@ export const Dashboard: React.FC<{
         <div className="mt-3">
           <Link
             href="/admin/revenue"
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-surface-alt dark:bg-[#172947] py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-line dark:hover:bg-[#203756]"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-surface-alt dark:bg-[#172947] py-2.5 text-sm font-semibold text-ink dark:text-slate-100 transition-colors hover:bg-line dark:hover:bg-[#203756]"
           >
             <BarChart2 size={16} />
             View Detailed Reports
