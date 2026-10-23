@@ -206,3 +206,158 @@ html[dir="rtl"] .font-heading {
   font-family: var(--font-arabic), system-ui, sans-serif;
   letter-spacing: 0;
 }
+/* =====================================================
+   LIGHT / DARK MODE
+   ===================================================== */
+
+:global(:root) {
+  color-scheme: light;
+
+  --body-bg: #f3f4f8;
+  --card-bg: #ffffff;
+  --border: #e5e7eb;
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --text-muted: #9ca3af;
+
+  --sidebar-bg: #1a1d2e;
+  --sidebar-text: #9ca3af;
+
+  --surface-hover: #f9fafb;
+  --table-header-bg: #fafafa;
+  --table-border: #f3f4f6;
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+:global([data-theme="dark"]) {
+  color-scheme: dark;
+
+  --body-bg: #111318;
+  --card-bg: #1b1e26;
+  --border: #303541;
+  --text-primary: #f3f4f6;
+  --text-secondary: #b0b7c3;
+  --text-muted: #858e9e;
+
+  --sidebar-bg: #151720;
+  --sidebar-text: #a1a8b6;
+
+  --surface-hover: #252a35;
+  --table-header-bg: #222631;
+  --table-border: #303541;
+
+  --orange-light: #3b2518;
+  --green-light: #173523;
+  --blue-light: #1c2e49;
+  --purple-light: #302448;
+  --yellow-light: #3a3219;
+  --red-light: #3b2025;
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+/* Main dashboard */
+:global([data-theme="dark"]) .dashboardLayout {
+  background: var(--body-bg);
+  color: var(--text-primary);
+}
+
+/* Cards and topbar */
+:global([data-theme="dark"]) .topbar,
+:global([data-theme="dark"]) .card,
+:global([data-theme="dark"]) .statCard {
+  background: var(--card-bg);
+  border-color: var(--border);
+}
+
+/* Text */
+:global([data-theme="dark"]) .topbarTitle,
+:global([data-theme="dark"]) .cardTitle,
+:global([data-theme="dark"]) .statValue,
+:global([data-theme="dark"]) .techName,
+:global([data-theme="dark"]) .jobId {
+  color: var(--text-primary);
+}
+
+/* Search */
+:global([data-theme="dark"]) .searchBox,
+:global([data-theme="dark"]) .chartDropdown,
+:global([data-theme="dark"]) .dateRangePicker {
+  background: var(--surface-hover);
+  border-color: var(--border);
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .searchInput {
+  color: var(--text-primary);
+}
+
+/* Tables */
+:global([data-theme="dark"]) .dataTable th,
+:global([data-theme="dark"]) .techTable th {
+  background: var(--table-header-bg);
+  color: var(--text-secondary);
+  border-color: var(--border);
+}
+
+:global([data-theme="dark"]) .dataTable td,
+:global([data-theme="dark"]) .techTable td {
+  color: var(--text-primary);
+  border-color: var(--table-border);
+}
+
+:global([data-theme="dark"]) .dataTable tr:hover td,
+:global([data-theme="dark"]) .techTable tr:hover td {
+  background: var(--surface-hover);
+}
+
+/* Notifications and summary */
+:global([data-theme="dark"]) .notifItem {
+  border-color: var(--border);
+}
+
+:global([data-theme="dark"]) .notifItem:hover,
+:global([data-theme="dark"]) .adminProfile:hover,
+:global([data-theme="dark"]) .notifBtn:hover {
+  background: var(--surface-hover);
+}
+
+:global([data-theme="dark"]) .notifBtn {
+  background: var(--card-bg);
+  border-color: var(--border);
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .summaryItem {
+  border-color: var(--border);
+}
+
+:global([data-theme="dark"]) .summaryLeft {
+  color: var(--text-secondary);
+}
+
+:global([data-theme="dark"]) .adminName {
+  color: var(--text-primary);
+}
+
+/* Neutral surfaces */
+:global([data-theme="dark"]) .summaryCard,
+:global([data-theme="dark"]) .statCard {
+  box-shadow: var(--shadow-sm);
+}
+
+:global([data-theme="dark"]) .detailedReportsBtn:hover {
+  color: #ffffff;
+}
+
+/* Chart grid */
+:global([data-theme="dark"]) .recharts-cartesian-grid line {
+  stroke: var(--border);
+}
+
+:global([data-theme="dark"]) .recharts-text {
+  fill: var(--text-muted);
+}

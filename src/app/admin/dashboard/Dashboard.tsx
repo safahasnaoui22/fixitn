@@ -153,31 +153,31 @@ function statusBadgeClass(status: string): string {
   const d = getStatusDisplay(status);
 
   if (d === "In Progress") {
-    return "bg-blue-100 text-blue-700";
+    return "bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300";
   }
 
   if (d === "Completed") {
-    return "bg-green-100 text-green-700";
+    return "bg-success-light text-success";
   }
 
   if (d === "Pending") {
-    return "bg-amber-100 text-amber-700";
+    return "bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300";
   }
 
-  return "bg-gray-100 text-gray-600";
+  return "bg-surface-alt text-muted";
 }
 
 function methodBadge(method: string) {
   const styles: Record<string, string> = {
-    D17: "bg-purple-100 text-purple-700",
-    FLOUCI: "bg-amber-100 text-amber-700",
-    BANK_TRANSFER: "bg-gray-100 text-gray-700",
-    CASH: "bg-green-100 text-green-700",
+    D17: "bg-purple-100 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300",
+    FLOUCI: "bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300",
+    BANK_TRANSFER: "bg-gray-100 text-ink",
+    CASH: "bg-success-light text-success",
   };
 
   return (
     styles[method] ??
-    "bg-gray-100 text-gray-600"
+    "bg-surface-alt text-muted"
   );
 }
 
@@ -209,7 +209,7 @@ function Avatar({
 
   return (
     <div
-      className="flex shrink-0 items-center justify-center overflow-hidden rounded-full text-xs font-bold text-gray-700"
+      className="flex shrink-0 items-center justify-center overflow-hidden rounded-full text-xs font-bold text-ink"
       style={{
         width: size,
         height: size,
@@ -239,8 +239,8 @@ const CustomTooltip = ({
 }: any) => {
   if (active && payload?.length) {
     return (
-      <div className="rounded-lg bg-brand-navy px-3 py-2 text-xs text-white shadow-lg">
-        <div className="mb-1 text-white/60">
+      <div className="rounded-lg border border-line bg-surface px-3 py-2 text-xs text-ink shadow-lg">
+        <div className="mb-1 text-white/70">
           {label}
         </div>
 
@@ -343,7 +343,7 @@ const DonutChart: React.FC<{
         cx="77.5"
         cy="77.5"
         r={R - sw / 2 + 2}
-        fill="white"
+        fill="var(--color-surface)"
       />
     </svg>
   );
@@ -396,7 +396,7 @@ export const Dashboard: React.FC<{
               stats.platformEarnings
             ),
             color:
-              "bg-green-100 text-green-600",
+              "bg-success-light text-success",
           },
 
           {
@@ -504,7 +504,7 @@ export const Dashboard: React.FC<{
 
                   <CartesianGrid
                     strokeDasharray="3 3"
-                    stroke="#f3f4f6"
+                    stroke="var(--color-line)"
                     vertical={false}
                   />
 
@@ -512,7 +512,7 @@ export const Dashboard: React.FC<{
                     dataKey="date"
                     tick={{
                       fontSize: 10,
-                      fill: "#9ca3af",
+                      fill: "var(--color-muted)",
                     }}
                     axisLine={false}
                     tickLine={false}
@@ -521,7 +521,7 @@ export const Dashboard: React.FC<{
                   <YAxis
                     tick={{
                       fontSize: 10,
-                      fill: "#9ca3af",
+                      fill: "var(--color-muted)",
                     }}
                     axisLine={false}
                     tickLine={false}
@@ -546,7 +546,7 @@ export const Dashboard: React.FC<{
                       fill: "#f97316",
                       r: 3,
                       strokeWidth: 2,
-                      stroke: "#fff",
+                      stroke: "var(--color-surface)",
                     }}
                     activeDot={{
                       r: 5,
