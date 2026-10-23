@@ -1,71 +1,90 @@
+
 "use client";
 
 import { useState } from "react";
 import { Navigation, Loader2, AlertCircle } from "lucide-react";
-import { Button } from "@/components/ui/Button";
 import { departAction } from "./actions";
 
 export function DepartButton({ requestId }: { requestId: string }) {
   const [locating, setLocating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [denied, setDenied] = useState(false);
 
   async function handleDepart() {
+    if (locating) return;
+
     if (!navigator.geolocation) {
-      setError("Geolocation is not supported on this device.");
+      setError("Location is not supported by this browser.");
       return;
     }
 
     setLocating(true);
     setError(null);
 
-    const onSuccess = async (pos: GeolocationPosition) => {
+    const submitLocation = async (pos: GeolocationPosition) => {
       try {
         await departAction(
           requestId,
           pos.coords.latitude,
           pos.coords.longitude
         );
-        // departAction redirects, so we only reach here on error
+        // Normally, departAction redirects after success.
       } catch {
-        setError("Failed to start navigation. Please try again.");
+        setError("Could not start navigation. Please try again.");
         setLocating(false);
       }
     };
 
-    const onFail = (err: GeolocationPositionError) => {
+    const handleLocationError = (
+      err: GeolocationPositionError
+    ) => {
       setLocating(false);
+
       if (err.code === err.PERMISSION_DENIED) {
-        setDenied(true);
         setError(
-          "Location access is blocked for this website. Follow the steps below, then press the button again."
+          "Location access is blocked by your browser. Please allow location access for this website."
+        );
+      } else if (err.code === err.POSITION_UNAVAILABLE) {
+        setError(
+          "Your location is temporarily unavailable. Check that Location Services are enabled and try again."
         );
       } else {
         setError(
-          "Could not get your position (weak GPS/network). Move near a window or turn on Wi-Fi, then try again."
+          "Could not get your location. Please try again in an area with a better GPS or network signal."
         );
       }
     };
 
-    // 1st try: high accuracy (GPS). If it is unavailable / times out,
-    // 2nd try: low accuracy (Wi-Fi / cell towers) which works indoors.
     navigator.geolocation.getCurrentPosition(
-      onSuccess,
+      submitLocation,
       (err) => {
-        if (err.code === err.PERMISSION_DENIED) return onFail(err);
-        navigator.geolocation.getCurrentPosition(onSuccess, onFail, {
-          timeout: 15000,
-          enableHighAccuracy: false,
-          maximumAge: 60000,
-        });
+        if (err.code === err.PERMISSION_DENIED) {
+          handleLocationError(err);
+          return;
+        }
+
+        // Retry using Wi-Fi or mobile network location.
+        navigator.geolocation.getCurrentPosition(
+          submitLocation,
+          handleLocationError,
+          {
+            enableHighAccuracy: false,
+            timeout: 20000,
+            maximumAge: 60000,
+          }
+        );
       },
-      { timeout: 10000, enableHighAccuracy: true }
+      {
+        enableHighAccuracy: true,
+        timeout: 12000,
+        maximumAge: 0,
+      }
     );
   }
 
   return (
     <div className="flex flex-col gap-2">
       <button
+        type="button"
         onClick={handleDepart}
         disabled={locating}
         className="flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-orange py-4 text-base font-bold text-white transition-all active:scale-[0.98] disabled:opacity-60"
@@ -82,31 +101,22 @@ export function DepartButton({ requestId }: { requestId: string }) {
           </>
         )}
       </button>
+
       {error && (
-        <div className="flex items-start gap-2 rounded-xl bg-danger-light px-3 py-2.5">
-          <AlertCircle size={14} className="text-danger shrink-0 mt-0.5" />
+        <div
+          role="alert"
+          className="flex items-start gap-2 rounded-xl bg-danger-light px-3 py-2.5"
+        >
+          <AlertCircle
+            size={16}
+            className="mt-0.5 shrink-0 text-danger"
+          />
           <p className="text-xs text-danger">{error}</p>
         </div>
       )}
-      {denied && (
-        <div className="rounded-xl border border-line bg-surface-alt px-3 py-3 text-xs text-ink leading-relaxed">
-          <p className="font-semibold mb-1">iPhone (Safari)</p>
-          <p className="mb-2">
-            1. Settings → Privacy &amp; Security → Location Services → ON, then
-            Safari Websites → &quot;While Using the App&quot;.
-            <br />
-            2. In Safari tap <b>aA</b> (address bar) → Website Settings →
-            Location → <b>Allow</b>. Reload the page.
-          </p>
-          <p className="font-semibold mb-1">Android (Chrome)</p>
-          <p>
-            Tap the lock icon next to the address → Permissions → Location →
-            <b> Allow</b>. Reload the page.
-          </p>
-        </div>
-      )}
+
       <p className="text-center text-xs text-muted">
-        Your location is used only to calculate transport fees
+        Your location is used only to calculate transport fees.
       </p>
     </div>
   );
