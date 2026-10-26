@@ -49,7 +49,6 @@ const ADMIN_NAV: Item[] = [
   { href: "/admin/team", label: "Team & Access", icon: ShieldCheck },
   { href: "/admin/activity", label: "Activity", icon: History },
   { href: "/admin/security", label: "Security", icon: ShieldAlert },
-  { href: "/admin/disputes", label: "Disputes", icon: Flag },
   { href: "/admin/quality", label: "Quality", icon: Gauge },
   { href: "/admin/subscriptions", label: "Plan alerts", icon: CalendarClock },
   { href: "/admin/broadcast", label: "Broadcast", icon: Megaphone },

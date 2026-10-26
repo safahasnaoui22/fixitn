@@ -224,3 +224,54 @@ export async function findSousAdminToContact(): Promise<{
   });
   return sousAdmin ?? null;
 }
+
+
+export interface DirectConversation {
+  userId: string;
+  fullName: string;
+  avatarUrl: string | null;
+  role: string;
+  lastMessage: string;
+  lastMessageAt: string;
+  unreadCount: number;
+}
+
+/** Direct messages between a user and TECHNICIAN/CLIENT counterparts (not support staff). */
+export async function listDirectConversations(
+  userId: string,
+  otherRole: "TECHNICIAN" | "CLIENT"
+): Promise<DirectConversation[]> {
+  const messages = await prisma.supportMessage.findMany({
+    where: {
+      OR: [
+        { toUserId: userId, fromUser: { role: otherRole } },
+        { fromUserId: userId, toUser: { role: otherRole } },
+      ],
+    },
+    include: {
+      fromUser: { select: { id: true, fullName: true, avatarUrl: true, role: true } },
+      toUser: { select: { id: true, fullName: true, avatarUrl: true, role: true } },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  const map = new Map<string, DirectConversation>();
+  for (const m of messages) {
+    const other = m.fromUserId === userId ? m.toUser : m.fromUser;
+    let c = map.get(other.id);
+    if (!c) {
+      c = {
+        userId: other.id,
+        fullName: other.fullName,
+        avatarUrl: other.avatarUrl,
+        role: other.role,
+        lastMessage: m.body,
+        lastMessageAt: m.createdAt.toISOString(),
+        unreadCount: 0,
+      };
+      map.set(other.id, c);
+    }
+    if (m.toUserId === userId && !m.read) c.unreadCount += 1;
+  }
+  return [...map.values()];
+}

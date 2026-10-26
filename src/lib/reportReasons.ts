@@ -1,8 +1,10 @@
 export const REPORT_REASONS = [
-  "Technician did not come",
+  "Harassment or bullying",
+  "Scam or fraud",
+  "Inappropriate messages",
+  "Threats or unsafe behaviour",
+  "Did not show up / no-show",
   "Bad work quality",
   "Wrong price / extra payment asked",
-  "Rude or unsafe behaviour",
-  "Client did not answer / no-show",
   "Other",
 ] as const;

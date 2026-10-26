@@ -22,6 +22,7 @@ import { StatusBadge } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { DepartButton } from "./DepartButton";
+import { ReportUserButton } from "@/components/ReportUserButton";
 import { formatDate, formatDT } from "@/lib/utils";
 import { DARK_BG, NAVY_ROW, NAVY_TILE, ORANGE_TILE } from "@/lib/theme";
 import {
@@ -528,6 +529,14 @@ export default async function RequestDetailPage({
               ✓ Review submitted
             </p>
           )}
+
+        <div className="flex justify-center pt-2">
+          <ReportUserButton
+            reportedUserId={isClient ? req.technicianUserId : req.clientId}
+            reportedName={isClient ? req.technicianFullName : req.clientFullName}
+            requestId={req.id}
+          />
+        </div>
       </div>
     </div>
     </div>

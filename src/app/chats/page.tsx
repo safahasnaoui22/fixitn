@@ -2,6 +2,7 @@ import Link from "next/link";
 import { MessageCircle } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { listChatsForUser } from "@/lib/db/requests";
+import { listDirectConversations } from "@/lib/db/supportChat";
 import { Avatar } from "@/components/ui/Avatar";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { EmptyState } from "@/components/ui/Card";
@@ -11,6 +12,7 @@ import { formatRelativeTime } from "@/lib/utils";
 export default async function ChatsPage() {
   const session = await requireUser();
   const chats = await listChatsForUser(session.userId);
+  const direct = session.role === "CLIENT" ? await listDirectConversations(session.userId, "TECHNICIAN") : [];
 
   return (
     <>
@@ -19,7 +21,7 @@ export default async function ChatsPage() {
           <p className="font-heading text-lg font-semibold text-ink">Messages</p>
         </div>
 
-        {chats.length === 0 ? (
+        {chats.length === 0 && direct.length === 0 ? (
           <EmptyState
             icon={MessageCircle}
             title="No conversations yet"
@@ -27,6 +29,27 @@ export default async function ChatsPage() {
           />
         ) : (
           <div className="flex flex-col divide-y divide-line">
+            {direct.map((d) => (
+              <Link
+                key={d.userId}
+                href={`/chats/direct/${d.userId}`}
+                className="flex items-center gap-3 px-5 py-4 transition-colors hover:bg-surface-alt active:bg-surface-alt"
+              >
+                <Avatar src={d.avatarUrl} name={d.fullName} size={48} />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="truncate font-heading text-sm font-semibold text-ink">{d.fullName}</p>
+                    <span className="shrink-0 text-[11px] text-muted">{formatRelativeTime(d.lastMessageAt)}</span>
+                  </div>
+                  <p className="truncate text-sm text-muted mt-0.5">{d.lastMessage}</p>
+                </div>
+                {d.unreadCount > 0 && (
+                  <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-orange px-1.5 text-[11px] font-semibold text-white">
+                    {d.unreadCount}
+                  </span>
+                )}
+              </Link>
+            ))}
             {chats.map((chat) => {
               const isClient = session.userId === chat.clientId;
               const otherName = isClient ? chat.technicianFullName : chat.clientFullName;

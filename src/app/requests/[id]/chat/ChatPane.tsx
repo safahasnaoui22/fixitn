@@ -13,10 +13,14 @@ export function ChatPane({
   requestId,
   messages,
   currentUserId,
+  otherUserId,
+  otherUserName,
 }: {
   requestId: string;
   messages: MessageWithSender[];
   currentUserId: string;
+  otherUserId: string;
+  otherUserName: string;
 }) {
   const router = useRouter();
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -71,7 +75,11 @@ export function ChatPane({
         <div ref={bottomRef} />
       </div>
 
-      <ReportParticipantForm requestId={requestId} />
+      <ReportParticipantForm
+        requestId={requestId}
+        reportedUserId={otherUserId}
+        reportedName={otherUserName}
+      />
 
       <form
         action={boundAction}

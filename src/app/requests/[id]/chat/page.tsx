@@ -42,7 +42,13 @@ export default async function ChatPage({
         </div>
       </div>
 
-      <ChatPane requestId={id} messages={messages} currentUserId={session.userId} />
+      <ChatPane
+        requestId={id}
+        messages={messages}
+        currentUserId={session.userId}
+        otherUserId={isClient ? req.technicianUserId : req.clientId}
+        otherUserName={otherName}
+      />
     </div>
   );
 }

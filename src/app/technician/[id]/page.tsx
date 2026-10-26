@@ -8,6 +8,8 @@ import { StarRating } from "@/components/ui/StarRating";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { Button } from "@/components/ui/Button";
 import { formatDT, formatRelativeTime } from "@/lib/utils";
+import { ReportUserButton } from "@/components/ReportUserButton";
+import { requireUser } from "@/lib/auth";
 import { DARK_BG, NAVY_ROW, NAVY_TILE, NAV_BG } from "@/lib/theme";
 
 export default async function TechnicianProfilePage({
@@ -17,6 +19,7 @@ export default async function TechnicianProfilePage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ category?: string }>;
 }) {
+  const session = await requireUser();
   const { id } = await params;
   const { category: categorySlug } = await searchParams;
   const technician = await getTechnicianById(id);
@@ -44,7 +47,10 @@ export default async function TechnicianProfilePage({
         >
           <ArrowLeft size={18} />
         </Link>
-        <p className="font-heading text-base font-semibold text-white">Technician Profile</p>
+        <p className="flex-1 font-heading text-base font-semibold text-white">Technician Profile</p>
+        {session.role === "CLIENT" && technician.userId !== session.userId && (
+          <ReportUserButton reportedUserId={technician.userId} reportedName={technician.fullName} />
+        )}
       </div>
 
       <div className="px-5 py-6">

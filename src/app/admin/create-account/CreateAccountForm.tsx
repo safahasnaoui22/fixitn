@@ -37,7 +37,7 @@ export function CreateAccountForm({
             <label
               key={r.value}
               className={cn(
-                "flex cursor-pointer items-center gap-2 rounded-xl border-2 px-3 py-2.5 transition-colors",
+                "relative flex cursor-pointer items-center gap-2 rounded-xl border-2 px-3 py-2.5 transition-colors",
                 role === r.value
                   ? "border-brand-orange bg-brand-orange-light"
                   : "border-line"
@@ -49,7 +49,7 @@ export function CreateAccountForm({
                 value={r.value}
                 checked={role === r.value}
                 onChange={() => setRole(r.value)}
-                className="sr-only"
+                className="pointer-events-none absolute h-0 w-0 opacity-0"
               />
               <span
                 className={cn(
@@ -129,13 +129,13 @@ export function CreateAccountForm({
               {categories.map((cat) => (
                 <label
                   key={cat.id}
-                  className="flex cursor-pointer flex-col items-center gap-1.5 rounded-xl border border-line bg-surface p-2 text-center has-[:checked]:border-brand-orange has-[:checked]:bg-brand-orange-light"
+                  className="relative flex cursor-pointer flex-col items-center gap-1.5 rounded-xl border border-line bg-surface p-2 text-center has-[:checked]:border-brand-orange has-[:checked]:bg-brand-orange-light"
                 >
                   <input
                     type="checkbox"
                     name="categoryIds"
                     value={cat.id}
-                    className="sr-only"
+                    className="pointer-events-none absolute h-0 w-0 opacity-0"
                   />
                   <CategoryIcon
                     icon={cat.icon}

@@ -57,7 +57,7 @@ export async function getAttentionItems(stuckHours = 24): Promise<AttentionItem[
     { key: "stuck", label: `Requests pending for more than ${stuckHours} h`, count: stuckPending, href: "/admin/requests", tone: "red" },
     { key: "active", label: "Jobs in progress with no update for 48 h", count: stuckActive, href: "/admin/requests", tone: "amber" },
     { key: "pay", label: "Payments pending or failed", count: badPayments, href: "/admin/payments", tone: "red" },
-    { key: "reports", label: "Open disputes / reports", count: openReports, href: "/admin/disputes", tone: "red" },
+    { key: "reports", label: "Open disputes / reports", count: openReports, href: "/admin/complaints", tone: "red" },
     { key: "faces", label: "Shared-face alerts (last 24 h)", count: sharedFaces, href: "/admin/security?type=FACE_SHARED", tone: "red" },
     { key: "subs", label: "Plans expiring in the next 7 days", count: expiring, href: "/admin/subscriptions", tone: "blue" },
   ];

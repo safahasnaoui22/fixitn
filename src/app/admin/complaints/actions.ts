@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requirePermission } from "@/lib/auth";
 import { prisma } from "@/lib/db/client";
+import { createNotification } from "@/lib/db/notifications";
 
 export async function updateComplaintAction(formData: FormData): Promise<void> {
   const session = await requirePermission("complaints");
@@ -21,6 +22,11 @@ export async function updateComplaintAction(formData: FormData): Promise<void> {
     throw new Error("Not authorized.");
   }
 
+  const before = await prisma.report.findUnique({
+    where: { id: reportId },
+    select: { status: true, reporterId: true, reason: true, requestId: true },
+  });
+
   await prisma.report.update({
     where: { id: reportId },
     data: {
@@ -30,6 +36,22 @@ export async function updateComplaintAction(formData: FormData): Promise<void> {
       resolvedAt: status === "RESOLVED" || status === "REJECTED" ? new Date() : null,
     },
   });
+
+  // tell the person who reported when the status changes
+  if (before && before.status !== status) {
+    await createNotification({
+      userId: before.reporterId,
+      type: "STATUS_UPDATE",
+      title:
+        status === "RESOLVED"
+          ? "✅ Your report was handled"
+          : status === "REJECTED"
+            ? "Your report was reviewed"
+            : "🔎 We are looking at your report",
+      body: before.reason,
+      requestId: before.requestId,
+    }).catch(() => undefined);
+  }
 
   await prisma.auditLog.create({
     data: {
