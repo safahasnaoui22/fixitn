@@ -27,6 +27,7 @@ export async function sendClientDirectMessageAction(
     title: `💬 Message de ${session.fullName}`,
     body: body.slice(0, 80),
     requestId: null,
+    url: `/t/messages/${session.userId}`,
   });
   revalidatePath(`/chats/direct/${toUserId}`);
 }

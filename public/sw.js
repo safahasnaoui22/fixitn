@@ -1,4 +1,4 @@
-const CACHE_NAME = "fixili-v2";
+const CACHE_NAME = "fixili-v3";
 const OFFLINE_URL = "/onboarding";
 
 const PRECACHE = [
@@ -85,33 +85,44 @@ self.addEventListener("fetch", (event) => {
 
 // ── Push notifications ─────────────────────────────────────────────────
 self.addEventListener("push", (event) => {
-  if (!event.data) return;
-
-  let data;
+  let data = {};
   try {
-    data = event.data.json();
+    data = event.data ? event.data.json() : {};
   } catch {
-    data = { title: "Fixili", body: event.data.text(), url: "/" };
+    data = { title: "Fixili", body: event.data ? event.data.text() : "" };
   }
 
+  // A notification MUST always be shown (iOS/Chrome drop the subscription otherwise)
   const options = {
-    body:             data.body ?? "",
-    icon:             "/icons/icon-192.png",
-    badge:            "/icons/icon-192.png",
-    tag:              data.tag ?? "fixili-notif",
-    data:             { url: data.url ?? "/" },
-    vibrate:          [200, 100, 200],
+    body:               data.body ?? "",
+    icon:               "/icons/icon-192.png",
+    badge:              "/icons/icon-192.png",
+    tag:                data.tag ?? "fixili-notif",
+    renotify:           true,
+    data:               { url: data.url ?? "/notifications" },
+    vibrate:            [200, 100, 200],
     requireInteraction: false,
-    actions: data.url
-      ? [
-          { action: "open",    title: "Voir" },
-          { action: "dismiss", title: "Ignorer" },
-        ]
-      : [],
   };
 
   event.waitUntil(
     self.registration.showNotification(data.title ?? "Fixili", options)
+  );
+});
+
+// The browser changed/renewed the subscription → save the new one
+self.addEventListener("pushsubscriptionchange", (event) => {
+  event.waitUntil(
+    self.registration.pushManager
+      .subscribe(event.oldSubscription ? event.oldSubscription.options : { userVisibleOnly: true })
+      .then((sub) => {
+        const json = sub.toJSON();
+        return fetch("/api/push/subscribe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ endpoint: sub.endpoint, keys: json.keys }),
+        });
+      })
+      .catch(() => {})
   );
 });
 
@@ -128,8 +139,7 @@ self.addEventListener("notificationclick", (event) => {
       .then((list) => {
         for (const client of list) {
           if ("navigate" in client) {
-            client.focus();
-            return client.navigate(url);
+            return client.navigate(url).then((c) => (c || client).focus());
           }
         }
         return clients.openWindow(url);

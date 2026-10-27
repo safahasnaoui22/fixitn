@@ -23,6 +23,7 @@ export async function sendTechMessageAction(
     title: `💬 Message de ${session.fullName}`,
     body: body.slice(0, 80),
     requestId: null,
+    url: `/chats/direct/${techUserId}`,
   });
 
   revalidatePath(`/t/messages/${toUserId}`);
