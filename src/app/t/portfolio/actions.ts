@@ -81,3 +81,38 @@ export async function deletePortfolioItemAction(
   revalidatePath("/t/portfolio");
   revalidatePath(`/technician/${technician.id}`);
 }
+
+export async function savePortfolioItemAction(input: {
+  url: string;
+  publicId: string;
+  type: "IMAGE" | "VIDEO";
+  caption: string;
+}): Promise<{ ok: boolean; error?: string }> {
+  const session = await requireRole("TECHNICIAN");
+  const technician = await getTechnicianByUserId(session.userId);
+  if (!technician) return { ok: false, error: "Technician profile not found." };
+
+  const cloud = process.env.CLOUDINARY_CLOUD_NAME;
+  if (
+    !cloud ||
+    !input.url.startsWith(`https://res.cloudinary.com/${cloud}/`) ||
+    !input.publicId.startsWith("fixitn/portfolio/")
+  ) {
+    return { ok: false, error: "Invalid file." };
+  }
+  if (input.type !== "IMAGE" && input.type !== "VIDEO") return { ok: false, error: "Invalid type." };
+
+  const count = await getPortfolioCount(technician.id);
+  if (count >= MAX_ITEMS) return { ok: false, error: `Maximum ${MAX_ITEMS} items allowed.` };
+
+  await createPortfolioItem({
+    technicianId: technician.id,
+    type: input.type,
+    url: input.url,
+    publicId: input.publicId,
+    caption: input.caption.trim().slice(0, 120) || null,
+  });
+  revalidatePath("/t/portfolio");
+  revalidatePath(`/technician/${technician.id}`);
+  return { ok: true };
+}

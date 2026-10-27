@@ -9,6 +9,7 @@ import { CategoryIcon } from "@/components/CategoryIcon";
 import { Button } from "@/components/ui/Button";
 import { formatDT, formatRelativeTime } from "@/lib/utils";
 import { ReportUserButton } from "@/components/ReportUserButton";
+import { listPortfolioItems } from "@/lib/db/portfolio";
 import { requireUser } from "@/lib/auth";
 import { DARK_BG, NAVY_ROW, NAVY_TILE, NAV_BG } from "@/lib/theme";
 
@@ -25,11 +26,12 @@ export default async function TechnicianProfilePage({
   const technician = await getTechnicianById(id);
   if (!technician) notFound();
 
-  const [stats, categories, ratingBreakdown, reviews] = await Promise.all([
+  const [stats, categories, ratingBreakdown, reviews, portfolio] = await Promise.all([
     getTechnicianStats(id),
     listCategoriesForTechnician(id),
     getRatingBreakdown(id),
     listReviewsForTechnician(id),
+    listPortfolioItems(id),
   ]);
 
   const effectiveSlug = categorySlug ?? categories[0]?.slug;
@@ -113,6 +115,26 @@ export default async function TechnicianProfilePage({
               {technician.galleryImages.map((src, i) => (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img key={i} src={src} alt="" className="h-28 w-full rounded-xl object-cover" />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {portfolio.length > 0 && (
+          <div className="mt-6">
+            <p className="font-heading text-sm font-semibold text-white">Portfolio</p>
+            <div className="mt-2 flex flex-col gap-3">
+              {portfolio.map((item) => (
+                <div key={item.id} className="overflow-hidden rounded-2xl" style={{ backgroundColor: NAVY_ROW }}>
+                  {item.type === "VIDEO" ? (
+                    // eslint-disable-next-line jsx-a11y/media-has-caption
+                    <video src={item.url} controls playsInline preload="metadata" className="max-h-72 w-full bg-black object-contain" />
+                  ) : (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={item.url} alt={item.caption ?? ""} className="max-h-72 w-full object-cover" />
+                  )}
+                  {item.caption && <p className="px-3 py-2 text-xs text-white/70">{item.caption}</p>}
+                </div>
               ))}
             </div>
           </div>

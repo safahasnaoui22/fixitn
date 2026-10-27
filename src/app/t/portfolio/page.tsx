@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
@@ -20,6 +19,7 @@ import {
   uploadPortfolioItemAction,
   deletePortfolioItemAction,
 } from "./actions";
+import { PortfolioUploader } from "./PortfolioUploader";
 
 const MAX_ITEMS = 20;
 
@@ -84,46 +84,7 @@ export default async function PortfolioPage({
                 <Plus size={15} className="inline mr-1" />
                 Add to Portfolio
               </p>
-              <Suspense fallback={null}>
-                <form
-                  action={uploadPortfolioItemAction}
-                  encType="multipart/form-data"
-                  className="flex flex-col gap-3"
-                >
-                  <div>
-                    <label className="text-sm font-medium text-ink">
-                      File (image or video)
-                    </label>
-                    <input
-                      name="file"
-                      type="file"
-                      required
-                      accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm"
-                      className="mt-1.5 w-full rounded-xl border border-line px-4 py-3 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-brand-orange-light file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-brand-orange-dark outline-none focus:border-brand-orange"
-                    />
-                    <p className="mt-1 text-xs text-muted">
-                      Images up to 10 MB · Videos up to 50 MB (MP4, MOV,
-                      WebM)
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-ink">
-                      Caption (optional)
-                    </label>
-                    <input
-                      name="caption"
-                      type="text"
-                      placeholder="e.g. AC repair completed in 1 hour"
-                      maxLength={120}
-                      className="mt-1.5 w-full rounded-xl border border-line px-4 py-3 text-[15px] outline-none focus:border-brand-orange"
-                    />
-                  </div>
-                  <Button type="submit" size="md">
-                    <Upload size={16} />
-                    Upload ({remaining} remaining)
-                  </Button>
-                </form>
-              </Suspense>
+              <PortfolioUploader remaining={remaining} />
             </div>
           ) : (
             <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
