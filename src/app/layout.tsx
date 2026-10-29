@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Sora, Inter, Noto_Sans_Arabic } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { PushNotificationManager } from "@/components/PushNotificationManager";
 import { InstallPrompt } from "@/components/InstallPrompt";
@@ -70,11 +71,14 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        {/* Anti-flash — must be first in head */}
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
       </head>
       <body className="bg-surface text-ink">
+        {/* Anti-flash: next/script runs it before the page is interactive
+            (a plain <script> inside a React component gives a React 19 warning) */}
+        <Script id="theme-init" strategy="beforeInteractive">
+          {themeScript}
+        </Script>
         <ThemeProvider>
           <I18nProvider locale={locale} messages={getMessages(locale)}>
           <div className="app-shell">{children}</div>

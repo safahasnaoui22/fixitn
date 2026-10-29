@@ -15,6 +15,8 @@ export async function createNotification(input: {
   title: string;
   body?: string | null;
   requestId?: string | null;
+  /** Page opened when the user taps the push notification. */
+  url?: string;
 }): Promise<void> {
   await prisma.notification.create({
     data: {
@@ -32,11 +34,12 @@ export async function createNotification(input: {
     await sendPushToUser(input.userId, {
       title: input.title,
       body: input.body ?? undefined,
-      url: input.requestId ? `/requests/${input.requestId}` : "/notifications",
+      url: input.url ?? (input.requestId ? `/requests/${input.requestId}` : "/notifications"),
       tag: input.type,
     });
-  } catch {
+  } catch (e) {
     // Push failure never breaks the main notification flow
+    console.error("[push] createNotification:", e);
   }
 }
 
