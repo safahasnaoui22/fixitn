@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import {
   Search,
@@ -10,7 +10,7 @@ import {
   SlidersHorizontal,
   ArrowRight,
 } from "lucide-react";
-import { CategoryIcon } from "@/components/CategoryIcon";
+import { ProCategoryIcon } from "@/components/ProCategoryIcon";
 import { HomeTechnicianCard } from "@/components/HomeTechnicianCard";
 import { NAVY_ROW, NAVY_TILE, ORANGE } from "@/lib/theme";
 import type { Category } from "@/lib/types";
@@ -36,23 +36,9 @@ export function CategoryGrid({
 }) {
   const [query, setQuery] = useState("");
   const [onlineOnly, setOnlineOnly] = useState(false);
-  const [slide, setSlide] = useState(0);
-  const heroRef = useRef<HTMLDivElement>(null);
 
   const q = query.trim().toLowerCase();
   const searching = q.length > 0;
-
-  // "Services populaires" = most reviewed / best rated first (falls back to admin order)
-  const byPopularity = [...categories]
-    .filter((c) => c.isActive)
-    .sort(
-      (a, b) =>
-        (b.ratingCount ?? 0) - (a.ratingCount ?? 0) ||
-        (b.ratingAvg ?? 0) - (a.ratingAvg ?? 0) ||
-        a.sortOrder - b.sortOrder
-    );
-  const inactive = categories.filter((c) => !c.isActive);
-  const slides = [...byPopularity, ...inactive];
 
   const visibleTechs = technicians.filter((t) => !onlineOnly || t.online);
 
@@ -61,12 +47,6 @@ export function CategoryGrid({
   const techResults = visibleTechs.filter(
     (t) => t.fullName.toLowerCase().includes(q) || t.title.toLowerCase().includes(q)
   );
-
-  function onHeroScroll() {
-    const el = heroRef.current;
-    if (!el || el.clientWidth === 0) return;
-    setSlide(Math.round(el.scrollLeft / el.clientWidth));
-  }
 
   return (
     <div className="flex flex-col gap-7">
@@ -84,7 +64,7 @@ export function CategoryGrid({
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Rechercher un service, un technicien…"
+            placeholder="Service ou technicien…"
             className="w-full rounded-2xl bg-transparent py-3.5 pl-11 pr-10 text-[14.5px] text-white outline-none placeholder:text-white/45"
           />
           {query && (
@@ -138,7 +118,12 @@ export function CategoryGrid({
                 {catResults.map((cat) => {
                   const row = (
                     <>
-                      <CategoryIcon icon={cat.icon} color={cat.color} size={22} badgeSize={48} variant="dark" />
+                      <div
+                        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border-[1.5px] border-brand-orange/70"
+                        style={{ backgroundColor: NAVY_TILE }}
+                      >
+                        <ProCategoryIcon icon={cat.icon} size={24} />
+                      </div>
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-[15px] font-medium text-white">{cat.name}</p>
                         <p className="truncate text-xs text-white/50">
@@ -189,24 +174,17 @@ export function CategoryGrid({
       ) : (
         <>
           {/* ── Quick categories: 4 + "Autres" ───────────────────────── */}
-          <div className="grid grid-cols-5 gap-2.5">
+          <div className="grid grid-cols-5 gap-2">
             {categories.slice(0, QUICK_COUNT).map((cat) => {
               const inner = (
                 <>
                   <div
-                    className="flex aspect-square w-full items-center justify-center rounded-2xl border border-white/[0.08]"
+                    className="flex aspect-square w-full items-center justify-center rounded-[20px] border-[1.5px] border-brand-orange/80 shadow-[0_0_18px_rgba(245,97,36,0.12)]"
                     style={{ backgroundColor: NAVY_TILE }}
                   >
-                    <CategoryIcon
-                      icon={cat.icon}
-                      color="#ffffff"
-                      size={24}
-                      badgeSize={40}
-                      variant="navy"
-                      className="!bg-transparent"
-                    />
+                    <ProCategoryIcon icon={cat.icon} size={30} />
                   </div>
-                  <span className="line-clamp-2 w-full text-center text-[10.5px] font-medium leading-tight text-white/80">
+                  <span className="line-clamp-2 w-full break-words text-center text-[10px] font-medium leading-tight tracking-tight text-white/80">
                     {cat.name}
                   </span>
                 </>
@@ -236,88 +214,69 @@ export function CategoryGrid({
               className="flex flex-col items-center gap-1.5 transition-transform active:scale-95"
             >
               <div
-                className="flex aspect-square w-full items-center justify-center rounded-2xl border border-brand-orange/40"
+                className="flex aspect-square w-full items-center justify-center rounded-[20px] border-[1.5px] border-brand-orange/80"
                 style={{ backgroundColor: "rgba(245,97,36,0.12)" }}
               >
                 <MoreHorizontal size={24} color={ORANGE} strokeWidth={2} />
               </div>
-              <span className="w-full text-center text-[10.5px] font-medium leading-tight text-white/80">
+              <span className="w-full text-center text-[10px] font-medium leading-tight tracking-tight text-white/80">
                 Autres
               </span>
             </Link>
           </div>
 
-          {/* ── Services populaires: slider ──────────────────────────── */}
-          {slides.length > 0 && (
-            <section>
-              <div className="mb-3 flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <span className="h-5 w-1 rounded-full" style={{ backgroundColor: ORANGE }} />
-                  <p className="font-heading text-[18px] font-semibold text-white">Services populaires</p>
-                </div>
-                <Link
-                  href="/categories"
-                  className="flex items-center gap-0.5 text-xs font-semibold"
-                  style={{ color: ORANGE }}
-                >
-                  Voir tout <ChevronRight size={14} />
-                </Link>
-              </div>
+          {/* ── One block per category: banner, then its technicians ───── */}
+          <div className="flex flex-col gap-9">
+            {categories
+              .slice()
+              .sort(
+                (a, b) =>
+                  Number(b.isActive) - Number(a.isActive) ||
+                  (b.ratingCount ?? 0) - (a.ratingCount ?? 0) ||
+                  (b.ratingAvg ?? 0) - (a.ratingAvg ?? 0) ||
+                  a.sortOrder - b.sortOrder
+              )
+              .map((cat) => {
+                const techs = visibleTechs
+                  .filter((t) => t.categorySlugs.includes(cat.slug))
+                  .slice(0, 12);
+                return (
+                  <section key={cat.id} className="flex flex-col gap-3.5">
+                    <CategoryBanner cat={cat} />
 
-              <div
-                ref={heroRef}
-                onScroll={onHeroScroll}
-                className="no-scrollbar -mx-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5"
-              >
-                {slides.map((cat) => (
-                  <HeroSlide key={cat.id} cat={cat} />
-                ))}
-              </div>
-
-              {slides.length > 1 && (
-                <div className="mt-3 flex justify-center gap-1.5">
-                  {slides.map((cat, i) => (
-                    <span
-                      key={cat.id}
-                      className="h-1.5 rounded-full transition-all"
-                      style={{
-                        width: i === slide ? 16 : 6,
-                        backgroundColor: i === slide ? ORANGE : "rgba(255,255,255,0.22)",
-                      }}
-                    />
-                  ))}
-                </div>
-              )}
-            </section>
-          )}
-
-          {/* ── One technician slider per category ───────────────────── */}
-          {byPopularity.map((cat) => {
-            const techs = visibleTechs.filter((t) => t.categorySlugs.includes(cat.slug)).slice(0, 12);
-            if (techs.length === 0) return null;
-            return (
-              <section key={cat.id}>
-                <div className="mb-3 flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <span className="h-5 w-1 rounded-full" style={{ backgroundColor: ORANGE }} />
-                    <p className="font-heading text-[17px] font-semibold text-white">{cat.name}</p>
-                  </div>
-                  <Link
-                    href={`/category/${cat.slug}/technicians`}
-                    className="flex items-center gap-0.5 text-xs font-semibold"
-                    style={{ color: ORANGE }}
-                  >
-                    Voir tout <ChevronRight size={14} />
-                  </Link>
-                </div>
-                <div className="no-scrollbar -mx-5 flex snap-x gap-3 overflow-x-auto px-5 pb-1">
-                  {techs.map((t) => (
-                    <HomeTechnicianCard key={t.id} tech={t} categorySlug={cat.slug} />
-                  ))}
-                </div>
-              </section>
-            );
-          })}
+                    {cat.isActive && (
+                      techs.length > 0 ? (
+                        <>
+                          <div className="flex items-center justify-between">
+                            <p className="text-[13px] font-semibold text-white/85">
+                              Techniciens · {cat.name}
+                            </p>
+                            <Link
+                              href={`/category/${cat.slug}/technicians`}
+                              className="flex items-center gap-0.5 text-xs font-semibold"
+                              style={{ color: ORANGE }}
+                            >
+                              Voir tout <ChevronRight size={14} />
+                            </Link>
+                          </div>
+                          <div className="no-scrollbar -mx-5 flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-pl-5 px-5 pb-1">
+                            {techs.map((t) => (
+                              <HomeTechnicianCard key={t.id} tech={t} categorySlug={cat.slug} />
+                            ))}
+                          </div>
+                        </>
+                      ) : (
+                        <p className="rounded-xl px-3 py-2.5 text-center text-xs text-white/45" style={{ backgroundColor: NAVY_ROW }}>
+                          {onlineOnly
+                            ? "Aucun technicien en ligne dans cette catégorie"
+                            : "Aucun technicien disponible pour le moment"}
+                        </p>
+                      )
+                    )}
+                  </section>
+                );
+              })}
+          </div>
 
           {onlineOnly && visibleTechs.length === 0 && (
             <div className="flex flex-col items-center gap-2 py-8 text-center">
@@ -331,13 +290,14 @@ export function CategoryGrid({
   );
 }
 
-/** Big slide: name + "Découvrir" on the left, category photo on the right. */
-function HeroSlide({ cat }: { cat: Category }) {
+/** Category banner: name + description + "Découvrir" on the left, photo on the right. */
+function CategoryBanner({ cat }: { cat: Category }) {
   const [failed, setFailed] = useState(false);
+
   const body = (
     <>
       {/* Photo on the right */}
-      <div className="absolute inset-y-0 right-0 w-[58%]">
+      <div className="absolute inset-y-0 right-0 w-[55%]">
         {cat.imageUrl && !failed ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -349,36 +309,34 @@ function HeroSlide({ cat }: { cat: Category }) {
         ) : (
           <div
             className="flex h-full w-full items-center justify-center"
-            style={{ background: `linear-gradient(135deg, ${cat.color}66 0%, #0F1821 100%)` }}
+            style={{ background: "linear-gradient(90deg, rgba(15,24,33,0) 0%, rgba(245,97,36,0.2) 100%)" }}
           >
-            <CategoryIcon icon={cat.icon} color="#ffffff" size={54} badgeSize={96} className="!bg-white/10" />
+            <ProCategoryIcon icon={cat.icon} size={72} className="ml-6" />
           </div>
         )}
-        {/* fade into the card colour */}
-        <div
-          className="absolute inset-0"
-          style={{ background: `linear-gradient(90deg, ${NAVY_ROW} 0%, rgba(15,24,33,0.55) 38%, rgba(15,24,33,0) 100%)` }}
-        />
+        {/* fade into the card colour so the text stays readable */}
+        {cat.imageUrl && !failed && (
+          <div
+            className="absolute inset-0"
+            style={{
+              background: `linear-gradient(90deg, ${NAVY_ROW} 0%, rgba(15,24,33,0.7) 35%, rgba(15,24,33,0.05) 100%)`,
+            }}
+          />
+        )}
       </div>
 
       {/* Text on the left */}
-      <div className="relative z-10 flex h-full w-[62%] flex-col justify-center gap-1 p-4">
-        <span
-          className="w-fit rounded-full px-2.5 py-0.5 text-[11px] font-semibold"
-          style={{ backgroundColor: "rgba(245,97,36,0.18)", color: ORANGE }}
-        >
-          {cat.name}
-        </span>
-        <p className="font-heading text-[19px] font-bold leading-tight text-white">
-          {cat.isActive ? "Un pro à portée de main" : "Bientôt disponible"}
+      <div className="relative z-10 flex h-full w-[64%] flex-col justify-center gap-1.5 p-4">
+        <p className="font-heading text-[21px] font-bold leading-tight text-white">{cat.name}</p>
+        <p className="line-clamp-3 text-[12.5px] leading-snug text-white/70">
+          {cat.isActive ? subtitle(cat) : "Temporairement indisponible"}
         </p>
-        <p className="line-clamp-2 text-[12px] leading-snug text-white/65">{subtitle(cat)}</p>
         {cat.isActive && (
           <span
-            className="mt-2 flex w-fit items-center gap-1.5 rounded-xl px-3.5 py-2 text-[13px] font-bold text-white shadow-md"
+            className="mt-1.5 flex w-fit items-center gap-1.5 rounded-xl px-4 py-2 text-[13px] font-bold text-white shadow-lg shadow-black/30"
             style={{ backgroundColor: ORANGE }}
           >
-            Découvrir <ArrowRight size={14} />
+            Découvrir <ArrowRight size={15} />
           </span>
         )}
       </div>
@@ -386,7 +344,7 @@ function HeroSlide({ cat }: { cat: Category }) {
   );
 
   const cls =
-    "relative h-[168px] w-full shrink-0 snap-center overflow-hidden rounded-3xl border border-white/10";
+    "relative block h-[158px] w-full overflow-hidden rounded-3xl border border-white/10";
 
   return cat.isActive ? (
     <Link
