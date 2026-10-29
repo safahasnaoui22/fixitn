@@ -32,6 +32,7 @@ export function SessionGuard() {
       }
     }
 
+    check(); // also marks the user as online right away
     const timer = setInterval(check, CHECK_EVERY_MS);
     const onVisible = () => {
       if (document.visibilityState === "visible") check();

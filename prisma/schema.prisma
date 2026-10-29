@@ -27,6 +27,8 @@ model User {
   permissions     String[] @default(["technicians", "support"])
   // Senior technicians' group chat: last time this user opened it (for the unread badge)
   seniorChatReadAt DateTime?
+  // Presence: refreshed while the app is open (used for the "En ligne" badge)
+  lastSeenAt      DateTime?
   createdAt       DateTime @default(now())
 
   technician              Technician?

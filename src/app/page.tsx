@@ -1,8 +1,10 @@
 import { redirect } from "next/navigation";
-import { Bell } from "lucide-react";
+import { Bell, MapPin, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { getSession } from "@/lib/auth";
 import { listCategories } from "@/lib/db/catalog";
+import { listHomeTechnicians } from "@/lib/db/homeTechnicians";
+import { getPublicUserById } from "@/lib/db/users";
 import { unreadNotificationCount } from "@/lib/db/notifications";
 import { Avatar } from "@/components/ui/Avatar";
 import { ClientBottomNav } from "@/components/ClientBottomNav";
@@ -17,10 +19,13 @@ export default async function HomePage() {
   if (session.role === "ADMIN") redirect("/admin");
   if (session.role === "SOUS_ADMIN") redirect("/sous-admin");
 
-  const [categories, unread] = await Promise.all([
+  const [categories, unread, technicians, me] = await Promise.all([
     listCategories(),
     unreadNotificationCount(session.userId),
+    listHomeTechnicians(),
+    getPublicUserById(session.userId),
   ]);
+  const city = me?.city?.trim() || "Tunis";
 
   const firstName = session.fullName.split(" ")[0];
 
@@ -31,18 +36,27 @@ export default async function HomePage() {
         className="app-content no-scrollbar"
         style={{ background: DARK_BG }}
       >
-        {/* Top bar: wordmark + bell + avatar */}
-        <div className="flex items-center justify-between px-5 pt-6">
-          <p className="font-heading text-[26px] font-black leading-none tracking-tight text-white">
+        {/* Top bar: wordmark + location + bell + avatar */}
+        <div className="flex items-center justify-between gap-2 px-5 pt-6">
+          <p className="font-heading text-[28px] font-black leading-none tracking-tight text-white">
             fi<span className="text-brand-orange">x</span>ili
           </p>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2">
+            <div
+              className="flex items-center gap-1.5 rounded-full border border-white/10 px-3 py-2 text-[13px] font-medium text-white"
+              style={{ backgroundColor: NAVY_TILE }}
+              title="Votre ville"
+            >
+              <MapPin size={15} className="text-brand-orange" />
+              <span className="max-w-[84px] truncate">{city}</span>
+              <ChevronDown size={14} className="text-white/50" />
+            </div>
             <Link
               href="/notifications"
               aria-label="Notifications"
               style={{ backgroundColor: NAVY_TILE }}
-              className="relative flex h-10 w-10 items-center justify-center rounded-full text-white/80"
+              className="relative flex h-10 w-10 items-center justify-center rounded-full border border-white/10 text-white/80"
             >
               <Bell size={18} />
               {unread > 0 && (
@@ -54,34 +68,30 @@ export default async function HomePage() {
             <Link
               href="/profile"
               aria-label="Mon profil"
-              className="rounded-full"
+              className="rounded-full border border-white/10"
               style={{ backgroundColor: NAVY_TILE }}
             >
               <Avatar
-                src={null}
+                src={me?.avatarUrl ?? null}
                 name={session.fullName}
-                size={40}
+                size={38}
                 className="!bg-transparent"
               />
             </Link>
           </div>
         </div>
 
-        {/* Greeting */}
-        <div className="px-5 pt-8">
-          <p className="font-heading text-[26px] font-bold leading-tight text-white">
-            Bonjour {firstName},
-          </p>
-          <p className="mt-1 text-[22px] font-medium leading-snug text-white/85">
-            Comment pouvons-nous
-            <br />
-            vous aider aujourd&apos;hui ?
+        {/* Greeting (small) */}
+        <div className="px-5 pt-5">
+          <p className="text-[13px] text-white/60">Bonjour {firstName} 👋</p>
+          <p className="font-heading text-[20px] font-bold leading-tight text-white">
+            Comment pouvons-nous vous aider ?
           </p>
         </div>
 
         {/* Search + categories + popular services */}
         <div className="px-5 pb-8 pt-6">
-          <CategoryGrid categories={categories} />
+          <CategoryGrid categories={categories} technicians={technicians} />
         </div>
       </div>
       <ClientBottomNav dark />
