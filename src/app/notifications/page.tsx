@@ -3,6 +3,8 @@ import Link from "next/link";
 import { ArrowLeft, Bell } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { listNotifications } from "@/lib/db/notifications";
+import { ClientBottomNav } from "@/components/ClientBottomNav";
+import { TechBottomNav } from "@/components/TechBottomNav";
 import { EmptyState } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { formatRelativeTime } from "@/lib/utils";
@@ -21,6 +23,7 @@ export default async function NotificationsPage() {
   const hasUnread = notifications.some((n) => !n.read);
 
   return (
+    <>
     <div
       className="app-content no-scrollbar min-h-full text-[#f1f5f9]"
       style={{ backgroundColor: "#081426", color: "#f1f5f9" }}
@@ -119,5 +122,8 @@ export default async function NotificationsPage() {
         </div>
       )}
     </div>
+    {session.role === "TECHNICIAN" && <TechBottomNav />}
+    {session.role === "CLIENT" && <ClientBottomNav />}
+    </>
   );
 }
