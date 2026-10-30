@@ -17,7 +17,7 @@ const TABS = [
   { href: "/",              icon: Home,          label: "nav.home" },
   { href: "/requests",      icon: ClipboardList, label: "nav.bookings" },
   { href: "/chats",         icon: MessageCircle, label: "nav.chat" },
-  { href: "/notifications", icon: Bell,          label: "nav.alerts" },
+
 ];
 
 export function ClientBottomNav({ dark = false }: { dark?: boolean }) {
