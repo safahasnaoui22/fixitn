@@ -1,4 +1,5 @@
-import { cn, initials } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { DefaultAvatar } from "./DefaultAvatar";
 
 interface AvatarProps {
   src?: string | null;
@@ -22,7 +23,7 @@ export function Avatar({ src, name, size = 40, className }: AvatarProps) {
         // eslint-disable-next-line @next/next/no-img-element
         <img src={src} alt={name} className="h-full w-full object-cover" />
       ) : (
-        <span>{initials(name)}</span>
+        <DefaultAvatar name={name} />
       )}
     </div>
   );

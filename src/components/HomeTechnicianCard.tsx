@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Star, CalendarDays } from "lucide-react";
 import { NAVY_ROW, ORANGE } from "@/lib/theme";
-import { initials } from "@/lib/utils";
+import { DefaultAvatar } from "@/components/ui/DefaultAvatar";
 import type { HomeTechnician } from "@/lib/db/homeTechnicians";
 
 /**
@@ -34,11 +34,7 @@ export function HomeTechnicianCard({
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#1B2C4F] to-[#0F1B33]">
-            <span className="font-heading text-3xl font-bold text-white/70">
-              {initials(tech.fullName)}
-            </span>
-          </div>
+          <DefaultAvatar name={tech.fullName} />
         )}
         <div className="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-black/50 to-transparent" />
 
