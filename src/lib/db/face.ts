@@ -1,4 +1,3 @@
-
 import { prisma } from "./client";
 
 // ── Face descriptor ────────────────────────────────────────────────────
@@ -20,9 +19,7 @@ export async function getFaceDescriptor(
     where: { id: userId },
     select: { faceDescriptor: true },
   });
-
   if (!user?.faceDescriptor) return null;
-
   try {
     return JSON.parse(user.faceDescriptor) as number[];
   } catch {
@@ -35,7 +32,6 @@ export async function hasFaceDescriptor(userId: string): Promise<boolean> {
     where: { id: userId },
     select: { faceDescriptor: true },
   });
-
   return !!user?.faceDescriptor;
 }
 
@@ -44,12 +40,12 @@ export async function resetFaceDescriptor(userId: string): Promise<void> {
     where: { id: userId },
     data: { faceDescriptor: null },
   });
-
   await prisma.knownDevice.deleteMany({ where: { userId } });
 }
 
 /**
- * Returns all stored face descriptors except the specified user.
+ * Returns ALL stored face descriptors EXCEPT the given userId.
+ * Used by /api/face/save to block one person from creating multiple accounts.
  */
 export async function getAllFaceDescriptors(
   excludeUserId?: string
@@ -63,28 +59,17 @@ export async function getAllFaceDescriptors(
   });
 
   const result: Array<{ userId: string; descriptor: number[] }> = [];
-
-  for (const user of users) {
-    if (!user.faceDescriptor) continue;
-
+  for (const u of users) {
+    if (!u.faceDescriptor) continue;
     try {
-      const parsed = JSON.parse(user.faceDescriptor) as number[];
-
-      if (
-        Array.isArray(parsed) &&
-        parsed.length === 128 &&
-        parsed.every((value) => typeof value === "number" && Number.isFinite(value))
-      ) {
-        result.push({
-          userId: user.id,
-          descriptor: parsed,
-        });
+      const parsed = JSON.parse(u.faceDescriptor) as number[];
+      if (Array.isArray(parsed) && parsed.length === 128) {
+        result.push({ userId: u.id, descriptor: parsed });
       }
     } catch {
-      // Skip corrupted descriptors.
+      // skip corrupted descriptors
     }
   }
-
   return result;
 }
 
@@ -97,16 +82,8 @@ export async function saveKnownDevice(
 ): Promise<void> {
   await prisma.knownDevice.upsert({
     where: { deviceToken },
-    update: {
-      userId,
-      lastSeenAt: new Date(),
-      userAgent: userAgent ?? null,
-    },
-    create: {
-      userId,
-      deviceToken,
-      userAgent: userAgent ?? null,
-    },
+    update: { userId, lastSeenAt: new Date(), userAgent: userAgent ?? null },
+    create: { userId, deviceToken, userAgent: userAgent ?? null },
   });
 }
 
@@ -115,24 +92,18 @@ export async function isKnownDevice(
   deviceToken: string
 ): Promise<boolean> {
   if (!deviceToken) return false;
-
   const device = await prisma.knownDevice.findFirst({
     where: { userId, deviceToken },
   });
-
   return !!device;
 }
 
 export async function removeKnownDevice(deviceToken: string): Promise<void> {
-  await prisma.knownDevice.deleteMany({
-    where: { deviceToken },
-  });
+  await prisma.knownDevice.deleteMany({ where: { deviceToken } });
 }
 
 export async function removeAllUserDevices(userId: string): Promise<void> {
-  await prisma.knownDevice.deleteMany({
-    where: { userId },
-  });
+  await prisma.knownDevice.deleteMany({ where: { userId } });
 }
 
 export async function listUserDevices(userId: string) {
@@ -140,66 +111,44 @@ export async function listUserDevices(userId: string) {
     where: { userId },
     orderBy: { lastSeenAt: "desc" },
   });
-
-  return devices.map((device) => ({
-    id: device.id,
-    deviceToken: device.deviceToken,
-    userAgent: device.userAgent,
-    createdAt: device.createdAt.toISOString(),
-    lastSeenAt: device.lastSeenAt.toISOString(),
+  return devices.map((d) => ({
+    id: d.id,
+    deviceToken: d.deviceToken,
+    userAgent: d.userAgent,
+    createdAt: d.createdAt.toISOString(),
+    lastSeenAt: d.lastSeenAt.toISOString(),
   }));
 }
 
-// ── ONE FACE = ONE ACCOUNT ─────────────────────────────────────────────
-
-// Distance threshold for identifying the same person.
+// ── ONE FACE = ONE ACCOUNT (do not remove, do not loosen) ─────────────────
+// Distance under which two descriptors are considered the SAME PERSON.
+// It is deliberately a bit LOOSER than the login threshold (0.5): a person who
+// can log in with face A must never be able to enrol as a "new" face B.
 export const SAME_PERSON_THRESHOLD = 0.55;
 
 function faceDistance(a: number[], b: number[]): number {
-  if (a.length !== b.length) return Infinity;
-
   let sum = 0;
-
-  for (let i = 0; i < a.length; i++) {
-    sum += (a[i] - b[i]) ** 2;
-  }
-
+  for (let i = 0; i < a.length; i++) sum += (a[i] - b[i]) ** 2;
   return Math.sqrt(sum);
 }
 
 /**
- * Returns another account that already owns this face, or null.
- *
- * Local development: duplicate faces are allowed.
- * Production: duplicate-face protection remains enabled.
+ * Returns the id of ANOTHER account that already owns this face (closest one
+ * under SAME_PERSON_THRESHOLD), or null if the face belongs to nobody else.
+ * There is NO bypass (no env flag, no dev mode) on purpose.
  */
 export async function findOtherAccountWithFace(
   descriptor: number[],
   excludeUserId: string
 ): Promise<{ userId: string; distance: number } | null> {
-  // Allow duplicate faces only when NODE_ENV is development.
-  if (process.env.NODE_ENV === "development") {
-    return null;
-  }
-
   const others = await getAllFaceDescriptors(excludeUserId);
-
   let best: { userId: string; distance: number } | null = null;
-
-  for (const other of others) {
-    const distance = faceDistance(descriptor, other.descriptor);
-
-    if (
-      distance < SAME_PERSON_THRESHOLD &&
-      (!best || distance < best.distance)
-    ) {
-      best = {
-        userId: other.userId,
-        distance,
-      };
+  for (const o of others) {
+    const d = faceDistance(descriptor, o.descriptor);
+    if (d < SAME_PERSON_THRESHOLD && (!best || d < best.distance)) {
+      best = { userId: o.userId, distance: d };
     }
   }
-
   return best;
 }
 
