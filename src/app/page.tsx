@@ -81,13 +81,7 @@ export default async function HomePage() {
           </div>
         </div>
 
-        {/* Greeting (small) */}
-        <div className="px-5 pt-5">
-          <p className="text-[13px] text-white/60">Bonjour {firstName} 👋</p>
-          <p className="font-heading text-[20px] font-bold leading-tight text-white">
-            Comment pouvons-nous vous aider ?
-          </p>
-        </div>
+    
 
         {/* Search + categories + popular services */}
         <div className="px-5 pb-8 pt-6">
