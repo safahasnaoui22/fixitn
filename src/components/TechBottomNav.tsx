@@ -12,15 +12,13 @@ import { useState } from "react";
 import { useTheme } from "./ThemeProvider";
 import { cn } from "@/lib/utils";
 
-// Change TABS array to include Messages:
 const TABS = [
-  { href: "/t/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/t/requests",  icon: ClipboardList,   label: "Missions" },
-  { href: "/t/messages",  icon: MessageCircle,   label: "Messages" },  // ← ADD
   { href: "/t/earnings",  icon: Wallet,          label: "Gains" },
+  { href: "/t/messages",  icon: MessageCircle,   label: "Chat" },
+  { href: "/t/dashboard", icon: LayoutDashboard, label: "Dashboard" },
 ];
 
-// Add MessageCircle to imports
 export function TechBottomNav() {
   const pathname = usePathname();
   const router   = useRouter();

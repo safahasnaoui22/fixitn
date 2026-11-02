@@ -66,6 +66,7 @@ export async function updateComplaintAction(formData: FormData): Promise<void> {
   }).catch(() => undefined);
 
   revalidatePath("/admin/complaints");
+  revalidatePath(`/admin/complaints/${reportId}`);
 }
 
 export async function moderateConversationAction(formData: FormData): Promise<void> {
@@ -95,5 +96,8 @@ export async function moderateConversationAction(formData: FormData): Promise<vo
     });
   }
   revalidatePath("/admin/complaints");
+  const reportId = String(formData.get("reportId") ?? "").trim();
+  if (reportId) revalidatePath(`/admin/complaints/${reportId}`);
+  revalidatePath(`/admin/requests/${requestId}`);
   revalidatePath(`/requests/${requestId}/chat`);
 }

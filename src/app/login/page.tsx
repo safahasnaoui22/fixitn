@@ -13,7 +13,7 @@ export default async function LoginPage() {
   const t = await getT();
   const session = await getSession();
   if (session) {
-    if (session.role === "TECHNICIAN") redirect("/t/dashboard");
+    if (session.role === "TECHNICIAN") redirect("/t/requests");
     if (session.role === "ADMIN") redirect("/admin");
     redirect("/");
   }

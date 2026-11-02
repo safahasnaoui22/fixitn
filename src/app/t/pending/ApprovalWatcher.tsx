@@ -22,7 +22,7 @@ export function ApprovalWatcher() {
         const data = await res.json();
         if (!stopped && data.approved) {
           stopped = true;
-          router.replace("/t/dashboard");
+          router.replace("/t/requests");
           router.refresh();
         }
       } catch {

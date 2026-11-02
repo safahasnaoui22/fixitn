@@ -8,7 +8,7 @@ import { RegisterForm } from "./RegisterForm";
 
 export default async function RegisterPage() {
   const session = await getSession();
-  if (session) redirect(session.role === "TECHNICIAN" ? "/t/dashboard" : "/");
+  if (session) redirect(session.role === "TECHNICIAN" ? "/t/requests" : "/");
 
   const categories = await listCategories();
 

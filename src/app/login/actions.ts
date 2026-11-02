@@ -19,7 +19,7 @@ import type { Role } from "@/lib/constants";
 const ALWAYS_VERIFY_FACE = true;
 
 function homeFor(role: string): string {
-  if (role === "TECHNICIAN") return "/t/dashboard";
+  if (role === "TECHNICIAN") return "/t/requests";
   if (role === "ADMIN") return "/admin";
   if (role === "SOUS_ADMIN") return "/sous-admin";
   return "/";

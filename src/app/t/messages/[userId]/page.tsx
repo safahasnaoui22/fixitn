@@ -5,6 +5,7 @@ import { ArrowLeft, ShieldCheck } from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import { findUserById } from "@/lib/db/users";
 import { listSupportMessages, markMessagesRead } from "@/lib/db/supportChat";
+import { areBothActiveSeniors } from "@/lib/db/seniorChat";
 import { Avatar } from "@/components/ui/Avatar";
 import { TechBottomNav } from "@/components/TechBottomNav";
 import { getTechnicianByUserId } from "@/lib/db/catalog";
@@ -14,13 +15,15 @@ const ROLE_LABEL: Record<string, string> = {
   ADMIN:      "Administrateur",
   SOUS_ADMIN: "Support Fixili",
   CLIENT:     "Client",
-  TECHNICIAN: "Technicien",
+  TECHNICIAN: "Technicien Senior",
 };
 
 export default async function TechMessageChatPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ userId: string }>;
+  searchParams: Promise<{ from?: string }>;
 }) {
   const session    = await requireRole("TECHNICIAN");
   const technician = await getTechnicianByUserId(session.userId);
@@ -29,6 +32,13 @@ export default async function TechMessageChatPage({
   const { userId } = await params;
   const otherUser  = await findUserById(userId);
   if (!otherUser) notFound();
+
+  // Technician <-> technician private chat is only for Senior technicians.
+  if (otherUser.role === "TECHNICIAN" && !(await areBothActiveSeniors(session.userId, userId))) {
+    notFound();
+  }
+  const { from } = await searchParams;
+  const backHref = otherUser.role === "TECHNICIAN" || from === "senior" ? "/t/senior" : "/t/messages";
 
   await markMessagesRead(session.userId, userId);
   const messages = await listSupportMessages(session.userId, userId);
@@ -42,7 +52,7 @@ export default async function TechMessageChatPage({
         {/* Header */}
         <div className="flex items-center gap-3 border-b border-line px-4 py-3 shrink-0 bg-surface">
           <Link
-            href="/t/messages"
+            href={backHref}
             className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-alt shrink-0"
           >
             <ArrowLeft size={18} />

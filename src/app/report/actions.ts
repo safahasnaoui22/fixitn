@@ -86,6 +86,26 @@ export async function createUserReportAction(formData: FormData): Promise<Report
     },
   });
 
+  // Open the conversation: the complaint text is the first message of the support chat,
+  // so the person lands in a chat with the team (admin / sous-admin) right after reporting.
+  const support = await prisma.user.findMany({
+    where: { role: { in: ["ADMIN", "SOUS_ADMIN"] } },
+    select: { id: true, role: true },
+    orderBy: { createdAt: "asc" },
+  });
+  const preferred = support.find((u) => u.role === "SOUS_ADMIN") ?? support[0];
+  if (preferred) {
+    await prisma.supportMessage
+      .create({
+        data: {
+          fromUserId: session.userId,
+          toUserId: preferred.id,
+          body: `🚩 Signalement contre ${reported.fullName}\nMotif : ${reason}\n${message}`,
+        },
+      })
+      .catch(() => undefined);
+  }
+
   const moderators = await prisma.user.findMany({
     where: {
       OR: [{ role: "ADMIN" }, { role: "SOUS_ADMIN", permissions: { has: "complaints" } }],

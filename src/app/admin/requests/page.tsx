@@ -54,7 +54,7 @@ export default async function AdminRequestsPage({
                 </td>
                 <td className="px-4 py-3 text-muted">{formatDate(req.createdAt)}</td>
                 <td className="px-4 py-3">
-                  <Link href={`/requests/${req.id}`} className="text-xs font-semibold text-brand-orange hover:underline">View</Link>
+                  <Link href={`/admin/requests/${req.id}`} className="text-xs font-semibold text-brand-orange hover:underline">View</Link>
                 </td>
               </tr>
             ))}

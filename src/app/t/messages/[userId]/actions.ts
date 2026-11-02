@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth";
+import { prisma } from "@/lib/db/client";
+import { areBothActiveSeniors } from "@/lib/db/seniorChat";
 import { sendSupportMessage } from "@/lib/db/supportChat";
 import { createNotification } from "@/lib/db/notifications";
 
@@ -15,6 +17,12 @@ export async function sendTechMessageAction(
   const body = String(formData.get("body") ?? "").trim();
   if (!body) return;
 
+  // never trust the id coming from the browser
+  if (techUserId !== session.userId) return;
+  const target = await prisma.user.findUnique({ where: { id: toUserId }, select: { role: true } });
+  if (!target) return;
+  if (target.role === "TECHNICIAN" && !(await areBothActiveSeniors(session.userId, toUserId))) return;
+
   await sendSupportMessage(techUserId, toUserId, body);
 
   await createNotification({
@@ -23,7 +31,7 @@ export async function sendTechMessageAction(
     title: `💬 Message de ${session.fullName}`,
     body: body.slice(0, 80),
     requestId: null,
-    url: `/chats/direct/${techUserId}`,
+    url: target.role === "TECHNICIAN" ? `/t/messages/${techUserId}?from=senior` : `/chats/direct/${techUserId}`,
   });
 
   revalidatePath(`/t/messages/${toUserId}`);

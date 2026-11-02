@@ -1,5 +1,10 @@
 import { prisma } from "./client";
 
+export type TechnicianAvailability = "AVAILABLE" | "BUSY" | "OFFLINE";
+
+// Job statuses that mean the technician accepted a job and is still on it.
+const ACTIVE_JOB_STATUSES = ["ACCEPTED", "ON_THE_WAY", "ARRIVED", "IN_PROGRESS"];
+
 /** A technician shown on a card of the client home page. */
 export interface HomeTechnician {
   id: string;
@@ -11,6 +16,13 @@ export interface HomeTechnician {
   ratingAvg: number | null;
   ratingCount: number;
   online: boolean;
+  /**
+   * AVAILABLE = online and free ("Dispo")
+   * BUSY      = has accepted a job that is not finished yet ("En mission")
+   * OFFLINE   = app closed ("Hors ligne")
+   * A job that is only PENDING (not accepted yet) does NOT make him busy.
+   */
+  availability: TechnicianAvailability;
   categorySlugs: string[];
 }
 
@@ -33,6 +45,11 @@ export async function listHomeTechnicians(): Promise<HomeTechnician[]> {
       user: { select: { fullName: true, avatarUrl: true, lastSeenAt: true } },
       categories: { select: { slug: true } },
       reviews: { select: { rating: true } },
+      requestsReceived: {
+        where: { status: { in: ACTIVE_JOB_STATUSES } },
+        select: { id: true },
+        take: 1,
+      },
     },
   });
 
@@ -42,6 +59,8 @@ export async function listHomeTechnicians(): Promise<HomeTechnician[]> {
       const count = t.reviews.length;
       const avg = count ? t.reviews.reduce((s, r) => s + r.rating, 0) / count : null;
       const seen = t.user.lastSeenAt?.getTime() ?? 0;
+      const online = now - seen < ONLINE_WINDOW_MS;
+      const busy = t.requestsReceived.length > 0;
       return {
         id: t.id,
         fullName: t.user.fullName,
@@ -51,7 +70,8 @@ export async function listHomeTechnicians(): Promise<HomeTechnician[]> {
         startingPrice: t.startingPrice,
         ratingAvg: avg,
         ratingCount: count,
-        online: now - seen < ONLINE_WINDOW_MS,
+        online,
+        availability: (busy ? "BUSY" : online ? "AVAILABLE" : "OFFLINE") as TechnicianAvailability,
         categorySlugs: t.categories.map((c) => c.slug),
       };
     })

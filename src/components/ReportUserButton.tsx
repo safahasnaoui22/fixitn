@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Flag, CheckCircle2, X } from "lucide-react";
 import { createUserReportAction } from "@/app/report/actions";
 import { REPORT_REASONS } from "@/lib/reportReasons";
@@ -27,6 +28,7 @@ export function ReportUserButton({
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
+  const router = useRouter();
 
   const dark = variant === "dark";
 
@@ -88,7 +90,12 @@ export function ReportUserButton({
                   setError(null);
                   start(async () => {
                     const r = await createUserReportAction(fd);
-                    if (r.ok) setDone(true);
+                    if (r.ok) {
+                      // go straight to the chat with the Admin / Sous-admin team
+                      router.push(
+                        `/support?report=1${requestId ? `&request=${encodeURIComponent(requestId)}` : ""}`
+                      );
+                    }
                     else setError(r.error ?? "Something went wrong.");
                   });
                 }}

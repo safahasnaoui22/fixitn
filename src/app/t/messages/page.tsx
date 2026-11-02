@@ -5,7 +5,7 @@ import { requireRole } from "@/lib/auth";
 import { getTechnicianByUserId } from "@/lib/db/catalog";
 import { prisma } from "@/lib/db/client";
 import { Users } from "lucide-react";
-import { isActiveSenior, seniorUnreadCount, countSeniorMembers } from "@/lib/db/seniorChat";
+import { isActiveSenior, seniorUnreadCount, countSeniorMembers, seniorDirectUnreadCount } from "@/lib/db/seniorChat";
 import { Avatar } from "@/components/ui/Avatar";
 import { TechBottomNav } from "@/components/TechBottomNav";
 import { formatRelativeTime } from "@/lib/utils";
@@ -103,7 +103,12 @@ export default async function TechMessagesPage() {
   const totalUnread = contacts.reduce((s, c) => s + c.unreadCount, 0);
   const isSenior = await isActiveSenior(session.userId);
   const [seniorUnread, seniorMembers] = isSenior
-    ? await Promise.all([seniorUnreadCount(session.userId), countSeniorMembers()])
+    ? await Promise.all([
+        Promise.all([seniorUnreadCount(session.userId), seniorDirectUnreadCount(session.userId)]).then(
+          ([group, direct]) => group + direct
+        ),
+        countSeniorMembers(),
+      ])
     : [0, 0];
 
   return (
@@ -138,7 +143,7 @@ export default async function TechMessagesPage() {
             <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold text-ink">Cercle Senior</p>
               <p className="text-xs text-muted">
-                Discutez et entraidez-vous avec les {seniorMembers} techniciens Senior
+                Choisissez un des {seniorMembers} techniciens Senior pour discuter
               </p>
             </div>
             {seniorUnread > 0 && (

@@ -15,7 +15,7 @@ export default async function HomePage() {
   const session = await getSession();
 
   if (!session) redirect("/onboarding");
-  if (session.role === "TECHNICIAN") redirect("/t/dashboard");
+  if (session.role === "TECHNICIAN") redirect("/t/requests");
   if (session.role === "ADMIN") redirect("/admin");
   if (session.role === "SOUS_ADMIN") redirect("/sous-admin");
 

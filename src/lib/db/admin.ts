@@ -726,6 +726,32 @@ export async function getDashboardData() {
     })),
   };
 }
+function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+export type AdminConversationItem = {
+  id: string;
+  source: "JOB_CHAT" | "DIRECT";
+  senderId: string;
+  senderName: string;
+  senderRole: string;
+  body: string | null;
+  imageUrl: string | null;
+  createdAt: string;
+};
+
+/**
+ * Everything the admin needs to follow ONE job from the request to the end:
+ * who, when (every step), distance, money, map points, complaints and the
+ * whole discussion between the client and the technician.
+ */
 export async function getAdminRequestDetail(requestId: string) {
   const req = await prisma.serviceRequest.findUnique({
     where: { id: requestId },
@@ -743,6 +769,102 @@ export async function getAdminRequestDetail(requestId: string) {
     },
   });
   if (!req) return null;
+
+  const techUserId = req.technician.user.id;
+
+  const [jobMessages, directMessages, reports, restriction] = await Promise.all([
+    prisma.message.findMany({
+      where: { requestId },
+      orderBy: { createdAt: "asc" },
+      take: 500,
+      select: {
+        id: true,
+        body: true,
+        imageUrl: true,
+        createdAt: true,
+        sender: { select: { id: true, fullName: true, role: true } },
+      },
+    }),
+    // private messages between exactly these two people (outside the job chat)
+    prisma.supportMessage.findMany({
+      where: {
+        OR: [
+          { fromUserId: req.client.id, toUserId: techUserId },
+          { fromUserId: techUserId, toUserId: req.client.id },
+        ],
+      },
+      orderBy: { createdAt: "asc" },
+      take: 500,
+      select: {
+        id: true,
+        body: true,
+        createdAt: true,
+        fromUser: { select: { id: true, fullName: true, role: true } },
+      },
+    }),
+    prisma.report.findMany({
+      where: { requestId },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        reason: true,
+        details: true,
+        status: true,
+        reporterName: true,
+        reportedName: true,
+        createdAt: true,
+      },
+    }),
+    prisma.chatRestriction.findUnique({
+      where: { requestId },
+      select: { active: true, reason: true },
+    }),
+  ]);
+
+  const conversation: AdminConversationItem[] = [
+    ...jobMessages.map((m) => ({
+      id: m.id,
+      source: "JOB_CHAT" as const,
+      senderId: m.sender.id,
+      senderName: m.sender.fullName,
+      senderRole: m.sender.role,
+      body: m.body,
+      imageUrl: m.imageUrl,
+      createdAt: m.createdAt.toISOString(),
+    })),
+    ...directMessages.map((m) => ({
+      id: m.id,
+      source: "DIRECT" as const,
+      senderId: m.fromUser.id,
+      senderName: m.fromUser.fullName,
+      senderRole: m.fromUser.role,
+      body: m.body,
+      imageUrl: null,
+      createdAt: m.createdAt.toISOString(),
+    })),
+  ].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+
+  // The departure point / distance are stored on the technician and are overwritten by
+  // his next job. They belong to THIS job only if the departure happened when this job
+  // went "on the way" (same moment, +/- 2 minutes).
+  const t = req.technician;
+  const departureBelongsToJob =
+    !!req.onTheWayAt &&
+    !!t.departureAt &&
+    Math.abs(t.departureAt.getTime() - req.onTheWayAt.getTime()) < 2 * 60_000 &&
+    t.departureLatitude != null &&
+    t.departureLongitude != null;
+
+  const departure = departureBelongsToJob
+    ? { latitude: t.departureLatitude as number, longitude: t.departureLongitude as number }
+    : null;
+
+  const hasClientPoint = req.latitude != null && req.longitude != null;
+  const distanceKm =
+    departure && hasClientPoint
+      ? haversineKm(departure.latitude, departure.longitude, req.latitude as number, req.longitude as number)
+      : null;
+
   return {
     id: req.id,
     status: req.status,
@@ -750,6 +872,7 @@ export async function getAdminRequestDetail(requestId: string) {
     address: req.address,
     phone: req.phone,
     fullName: req.fullName,
+    photos: req.photos,
     clientConfirmedSolved: req.clientConfirmedSolved,
     pendingAt: req.pendingAt.toISOString(),
     acceptedAt: req.acceptedAt?.toISOString() ?? null,
@@ -760,16 +883,21 @@ export async function getAdminRequestDetail(requestId: string) {
     declinedAt: req.declinedAt?.toISOString() ?? null,
     cancelledAt: req.cancelledAt?.toISOString() ?? null,
     createdAt: req.createdAt.toISOString(),
-    category: { name: req.category.name, icon: req.category.icon, color: req.category.color },
+    category: {
+      name: req.category.name,
+      icon: req.category.icon,
+      color: req.category.color,
+      visitPrice: req.category.visitPrice,
+    },
     client: { ...req.client },
     technician: {
-      id: req.technician.id,
-      userId: req.technician.user.id,
-      fullName: req.technician.user.fullName,
-      phone: req.technician.user.phone,
-      avatarUrl: req.technician.user.avatarUrl,
-      planKey: req.technician.plan?.key ?? "FREE",
-      commissionRate: req.technician.plan?.commissionRate ?? 0.15,
+      id: t.id,
+      userId: techUserId,
+      fullName: t.user.fullName,
+      phone: t.user.phone,
+      avatarUrl: t.user.avatarUrl,
+      planKey: t.plan?.key ?? "FREE",
+      commissionRate: t.plan?.commissionRate ?? 0.15,
     },
     payment: req.payment
       ? {
@@ -783,6 +911,17 @@ export async function getAdminRequestDetail(requestId: string) {
     review: req.review
       ? { rating: req.review.rating, comment: req.review.comment, authorFullName: req.review.author.fullName }
       : null,
+    // --- trip / distance / map ---
+    clientPoint: hasClientPoint ? { latitude: req.latitude as number, longitude: req.longitude as number } : null,
+    departure,
+    technicianBase: { latitude: t.latitude, longitude: t.longitude },
+    distanceKm,
+    // The stored fee is the technician's LAST computed one: only trust it for this job.
+    transportFee: departureBelongsToJob ? t.transportFee : null,
+    // --- complaints + discussion ---
+    reports: reports.map((r) => ({ ...r, createdAt: r.createdAt.toISOString() })),
+    chatRestricted: restriction?.active ?? false,
+    conversation,
   };
 }
 

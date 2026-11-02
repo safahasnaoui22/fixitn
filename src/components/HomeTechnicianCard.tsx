@@ -4,8 +4,17 @@ import { NAVY_ROW, ORANGE } from "@/lib/theme";
 import { DefaultAvatar } from "@/components/ui/DefaultAvatar";
 import type { HomeTechnician } from "@/lib/db/homeTechnicians";
 
+const AVAILABILITY_BADGE: Record<
+  HomeTechnician["availability"],
+  { label: string; bg: string; fg: string; dot: string }
+> = {
+  AVAILABLE: { label: "Dispo", bg: "#16a34a", fg: "#fff", dot: "#fff" },
+  BUSY: { label: "En mission", bg: ORANGE, fg: "#fff", dot: "#fff" },
+  OFFLINE: { label: "Hors ligne", bg: "rgba(9,18,25,0.85)", fg: "rgba(255,255,255,0.65)", dot: "#7b8794" },
+};
+
 /**
- * Slider card of a technician: photo, En ligne / Hors ligne, name, stars,
+ * Slider card of a technician: photo, Dispo / En mission / Hors ligne, name, stars,
  * years of experience and starting price. The whole card opens his profile.
  */
 export function HomeTechnicianCard({
@@ -17,6 +26,7 @@ export function HomeTechnicianCard({
   categorySlug?: string;
   width?: number | string;
 }) {
+  const badge = AVAILABILITY_BADGE[tech.availability];
   const href = `/technician/${tech.id}${categorySlug ? `?category=${categorySlug}` : ""}`;
 
   return (
@@ -38,20 +48,13 @@ export function HomeTechnicianCard({
         )}
         <div className="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-black/50 to-transparent" />
 
-        {/* En ligne / Hors ligne */}
+        {/* Dispo / En mission / Hors ligne */}
         <span
           className="absolute right-2 top-2 flex items-center gap-1 rounded-full px-2 py-[3px] text-[10px] font-bold"
-          style={
-            tech.online
-              ? { backgroundColor: ORANGE, color: "#fff" }
-              : { backgroundColor: "rgba(9,18,25,0.85)", color: "rgba(255,255,255,0.65)" }
-          }
+          style={{ backgroundColor: badge.bg, color: badge.fg }}
         >
-          <span
-            className="h-1.5 w-1.5 rounded-full"
-            style={{ backgroundColor: tech.online ? "#fff" : "#7b8794" }}
-          />
-          {tech.online ? "En ligne" : "Hors ligne"}
+          <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: badge.dot }} />
+          {badge.label}
         </span>
       </div>
 

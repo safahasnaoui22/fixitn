@@ -40,7 +40,7 @@ export function CategoryGrid({
   const q = query.trim().toLowerCase();
   const searching = q.length > 0;
 
-  const visibleTechs = technicians.filter((t) => !onlineOnly || t.online);
+  const visibleTechs = technicians.filter((t) => !onlineOnly || t.availability === "AVAILABLE");
 
   // Search results
   const catResults = categories.filter((c) => c.name.toLowerCase().includes(q));
@@ -84,8 +84,8 @@ export function CategoryGrid({
           type="button"
           onClick={() => setOnlineOnly((v) => !v)}
           aria-pressed={onlineOnly}
-          aria-label="Afficher seulement les techniciens en ligne"
-          title="Techniciens en ligne seulement"
+          aria-label="Afficher seulement les techniciens disponibles"
+          title="Techniciens disponibles seulement"
           className="flex h-[50px] w-[50px] shrink-0 items-center justify-center rounded-2xl border transition-colors"
           style={
             onlineOnly
@@ -100,7 +100,7 @@ export function CategoryGrid({
       {onlineOnly && (
         <p className="-mt-3 flex items-center gap-1.5 text-xs text-white/60">
           <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: ORANGE }} />
-          Seulement les techniciens en ligne
+          Seulement les techniciens disponibles
         </p>
       )}
 
@@ -268,7 +268,7 @@ export function CategoryGrid({
                       ) : (
                         <p className="rounded-xl px-3 py-2.5 text-center text-xs text-white/45" style={{ backgroundColor: NAVY_ROW }}>
                           {onlineOnly
-                            ? "Aucun technicien en ligne dans cette catégorie"
+                            ? "Aucun technicien disponible dans cette catégorie"
                             : "Aucun technicien disponible pour le moment"}
                         </p>
                       )
@@ -280,7 +280,7 @@ export function CategoryGrid({
 
           {onlineOnly && visibleTechs.length === 0 && (
             <div className="flex flex-col items-center gap-2 py-8 text-center">
-              <p className="text-sm font-medium text-white">Aucun technicien en ligne pour le moment</p>
+              <p className="text-sm font-medium text-white">Aucun technicien disponible pour le moment</p>
               <p className="text-xs text-white/50">Désactivez le filtre pour voir tout le monde.</p>
             </div>
           )}

@@ -48,7 +48,7 @@ async function parseJwt(token: string): Promise<Record<string, unknown> | null> 
 }
 
 function homeFor(role: string | undefined): string {
-  if (role === "TECHNICIAN") return "/t/dashboard";
+  if (role === "TECHNICIAN") return "/t/requests";
   if (role === "ADMIN") return "/admin";
   if (role === "SOUS_ADMIN") return "/sous-admin";
   return "/";
@@ -179,7 +179,7 @@ if (
     (isRequestsList || CLIENT_ONLY.some((p) => pathname.startsWith(p))) &&
     role === "TECHNICIAN"
   ) {
-    return NextResponse.redirect(new URL("/t/dashboard", req.url));
+    return NextResponse.redirect(new URL("/t/requests", req.url));
   }
 
   return NextResponse.next();
