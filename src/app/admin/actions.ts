@@ -28,7 +28,9 @@ export async function verifyTechnicianAction(technicianId: string, verified: boo
 
 // Deleting a user is destructive: ADMIN only, never grantable.
 export async function deleteUserAction(userId: string): Promise<void> {
-  await requireRole("ADMIN");
+  const session = await requireRole("ADMIN");
+  // never let an admin delete his own account by mistake
+  if (session.userId === userId) redirect(`/admin/users/${userId}`);
   await deleteUser(userId);
   redirect("/admin/users");
 }

@@ -89,8 +89,60 @@ export async function getAdminUserDetail(userId: string) {
   };
 }
 
+/**
+ * Permanently delete a user and everything tied to him.
+ *
+ * A plain `user.delete` fails with a foreign-key error as soon as the user has a
+ * request, a review, a payment, a subscription or sent a message, because those
+ * relations are not "on delete cascade". So we remove them first, in order, inside
+ * ONE transaction (all or nothing).
+ */
 export async function deleteUser(userId: string): Promise<void> {
-  await prisma.user.delete({ where: { id: userId } });
+  const tech = await prisma.technician.findUnique({
+    where: { userId },
+    select: { id: true },
+  });
+
+  await prisma.$transaction(async (tx) => {
+    // every job where he is the client or the technician
+    const jobs = await tx.serviceRequest.findMany({
+      where: {
+        OR: [{ clientId: userId }, ...(tech ? [{ technicianId: tech.id }] : [])],
+      },
+      select: { id: true },
+    });
+    const jobIds = jobs.map((j) => j.id);
+
+    await tx.review.deleteMany({
+      where: {
+        OR: [
+          { authorId: userId },
+          { requestId: { in: jobIds } },
+          ...(tech ? [{ technicianId: tech.id }] : []),
+        ],
+      },
+    });
+    await tx.payment.deleteMany({
+      where: {
+        OR: [{ requestId: { in: jobIds } }, ...(tech ? [{ technicianId: tech.id }] : [])],
+      },
+    });
+    // job chat messages (the ones inside the deleted jobs go away with the job)
+    await tx.message.deleteMany({
+      where: { OR: [{ senderId: userId }, { requestId: { in: jobIds } }] },
+    });
+    // plain-id tables (no relation): clean what points to the deleted jobs
+    await tx.chatRestriction.deleteMany({ where: { requestId: { in: jobIds } } });
+    await tx.serviceRequest.deleteMany({ where: { id: { in: jobIds } } });
+
+    if (tech) {
+      await tx.subscription.deleteMany({ where: { technicianId: tech.id } });
+    }
+
+    // the user: technician profile, notifications, devices, support + senior
+    // messages are removed by their own "on delete cascade"
+    await tx.user.delete({ where: { id: userId } });
+  });
 }
 
 // --- Technicians -------------------------------------------------------
