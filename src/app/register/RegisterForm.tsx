@@ -143,9 +143,11 @@ export function RegisterForm({
 }: {
   categories: Category[];
 }) {
+  // No default on purpose: the person MUST choose (this avoids technicians
+  // registering as clients by mistake).
   const [role, setRole] = useState<
-    "CLIENT" | "TECHNICIAN"
-  >("CLIENT");
+    "CLIENT" | "TECHNICIAN" | null
+  >(null);
 
   const [cin, setCin] = useState<DocState>(EMPTY_DOC);
   const [diplome, setDiplome] =
@@ -200,15 +202,22 @@ export function RegisterForm({
       ? "/terms/technician"
       : "/terms/client";
 
+  const roleLabel =
+    role === "TECHNICIAN" ? "technicien" : "client";
+
   return (
     <form
       action={registerAction}
+      onSubmit={(e) => {
+        // Safety net: never send the form without a chosen account type.
+        if (!role) e.preventDefault();
+      }}
       className="flex flex-col gap-5"
     >
       <input
         type="hidden"
         name="role"
-        value={role}
+        value={role ?? ""}
       />
 
       <input
@@ -233,65 +242,6 @@ export function RegisterForm({
           {safeDecode(error)}
         </p>
       )}
-
-      {/* Role picker */}
-      <div>
-        <p className="mb-2 text-sm font-medium text-white">
-          Je suis...
-        </p>
-
-        <div className="grid grid-cols-2 gap-3">
-          {(["CLIENT", "TECHNICIAN"] as const).map(
-            (r) => (
-              <button
-                key={r}
-                type="button"
-                onClick={() => {
-                  setRole(r);
-                  setAgreed(false);
-                }}
-                className={`flex flex-col items-center gap-2 rounded-xl border-2 px-4 py-4 transition-colors ${
-                  role === r
-                    ? "border-brand-orange bg-brand-orange/15"
-                    : "border-white/40 bg-black/30"
-                }`}
-              >
-                {r === "CLIENT" ? (
-                  <UserIcon
-                    size={20}
-                    className={
-                      role === r
-                        ? "text-brand-orange"
-                        : "text-white/60"
-                    }
-                  />
-                ) : (
-                  <Wrench
-                    size={20}
-                    className={
-                      role === r
-                        ? "text-brand-orange"
-                        : "text-white/60"
-                    }
-                  />
-                )}
-
-                <span
-                  className={`text-sm font-semibold ${
-                    role === r
-                      ? "text-brand-orange"
-                      : "text-white"
-                  }`}
-                >
-                  {r === "CLIENT"
-                    ? "Client"
-                    : "Technicien"}
-                </span>
-              </button>
-            )
-          )}
-        </div>
-      </div>
 
       {/* Common fields */}
       <Field
@@ -347,6 +297,52 @@ export function RegisterForm({
         name="city"
         placeholder="Tunis"
       />
+
+      {/* Account type: chosen AFTER the common fields, nothing pre-selected */}
+      <div>
+        <p className="mb-1 text-sm font-medium text-white">
+          Vous êtes ? <span className="text-brand-orange">*</span>
+        </p>
+        {!role && (
+          <p className="mb-2 text-xs text-white/60">
+            Choisissez votre type de compte pour continuer.
+          </p>
+        )}
+
+        <div className="grid grid-cols-2 gap-3">
+          {(
+            [
+              { r: "CLIENT", title: "Client", hint: "Je cherche un technicien" },
+              { r: "TECHNICIAN", title: "Technicien", hint: "Je propose mes services" },
+            ] as const
+          ).map(({ r, title, hint }) => (
+            <button
+              key={r}
+              type="button"
+              aria-pressed={role === r}
+              onClick={() => {
+                setRole(r);
+                setAgreed(false);
+              }}
+              className={`flex flex-col items-center gap-1.5 rounded-xl border-2 px-3 py-4 text-center transition-colors ${
+                role === r
+                  ? "border-brand-orange bg-brand-orange/15"
+                  : "border-white/40 bg-black/30"
+              }`}
+            >
+              {r === "CLIENT" ? (
+                <UserIcon size={22} className={role === r ? "text-brand-orange" : "text-white/60"} />
+              ) : (
+                <Wrench size={22} className={role === r ? "text-brand-orange" : "text-white/60"} />
+              )}
+              <span className={`text-sm font-semibold ${role === r ? "text-brand-orange" : "text-white"}`}>
+                {title}
+              </span>
+              <span className="text-[11px] leading-tight text-white/60">{hint}</span>
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* Technician-only */}
       {role === "TECHNICIAN" && (
@@ -491,6 +487,8 @@ export function RegisterForm({
         </div>
       )}
 
+      {role && (
+        <>
       {/* Terms */}
       <div className="rounded-2xl border border-white/15 bg-black/35 p-4 backdrop-blur-sm">
         <div className="mb-3 flex items-start gap-3">
@@ -582,8 +580,11 @@ export function RegisterForm({
         fullWidth
         disabled={!agreed}
       >
-        Créer mon compte
+        Créer mon compte {roleLabel}
       </Button>
+
+        </>
+      )}
 
       <p className="text-center text-sm text-white/60">
         Déjà inscrit ?{" "}
