@@ -24,6 +24,7 @@ import { CategoryIcon } from "@/components/CategoryIcon";
 import { DepartButton } from "./DepartButton";
 import { ReportUserButton } from "@/components/ReportUserButton";
 import { formatDate, formatDT } from "@/lib/utils";
+import { getT, getLocale } from "@/lib/i18n/server";
 import { DARK_BG, NAVY_ROW, NAVY_TILE, ORANGE_TILE } from "@/lib/theme";
 import {
   acceptAction,
@@ -41,6 +42,8 @@ export default async function RequestDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const session = await requireUser();
+  const t = await getT();
+  const locale = await getLocale();
   const { id } = await params;
 
   const req = await getRequestById(id);
@@ -98,14 +101,14 @@ export default async function RequestDetailPage({
           className="flex h-9 w-9 items-center justify-center rounded-full text-white"
           style={{ backgroundColor: NAVY_TILE }}
         >
-          <ArrowLeft size={18} />
+          <ArrowLeft size={18} className="rtl:rotate-180" />
         </Link>
 
         <div className="min-w-0 flex-1">
           <p className="truncate font-heading text-base font-semibold text-white">
             {req.categoryName}
           </p>
-          <p className="text-xs text-white/60">{formatDate(req.createdAt)}</p>
+          <p className="text-xs text-white/60">{formatDate(req.createdAt, locale)}</p>
         </div>
 
         <StatusBadge status={req.status} dark />
@@ -129,7 +132,7 @@ export default async function RequestDetailPage({
             </p>
 
             <p className="text-xs text-white/60">
-              {isTechnician ? "Client" : req.technicianTitle}
+              {isTechnician ? t("booking.detail.client") : req.technicianTitle}
             </p>
           </div>
 
@@ -146,7 +149,7 @@ export default async function RequestDetailPage({
         {(visitPrice > 0 || transportFee != null) && (
           <div className="overflow-hidden rounded-2xl" style={{ backgroundColor: NAVY_ROW }}>
             <p className="px-4 pt-3 pb-2 text-xs font-semibold text-white/60 uppercase tracking-wider">
-              Service Fees
+              {t("booking.detail.serviceFees")}
             </p>
 
             <div className="divide-y divide-white/10">
@@ -161,16 +164,16 @@ export default async function RequestDetailPage({
 
                   <div className="flex-1">
                     <p className="text-sm font-medium text-white">
-                      Visit fee (prix de visite)
+                      {t("booking.detail.visitFee")}
                     </p>
 
                     <p className="text-xs text-white/60">
-                      Fixed fee for this category
+                      {t("booking.detail.visitFeeDesc")}
                     </p>
                   </div>
 
                   <p className="font-heading text-base font-bold text-white">
-                    {formatDT(visitPrice)}
+                    {formatDT(visitPrice, locale)}
                   </p>
                 </div>
               )}
@@ -182,23 +185,23 @@ export default async function RequestDetailPage({
 
                 <div className="flex-1">
                   <p className="text-sm font-medium text-white">
-                    Transport fee
+                    {t("booking.detail.transportFee")}
                   </p>
 
                   {distanceKm != null ? (
                     <p className="text-xs text-white/60">
-                      {distanceKm.toFixed(1)} km × 1 DT/km
+                      {t("booking.detail.kmRate", { km: distanceKm.toFixed(1) })}
                     </p>
                   ) : (
                     <p className="text-xs text-white/60">
-                      Calculated on arrival (1 DT/km)
+                      {t("booking.detail.calcOnArrival")}
                     </p>
                   )}
                 </div>
 
                 <p className="font-heading text-base font-bold text-white">
                   {transportFee != null
-                    ? formatDT(transportFee)
+                    ? formatDT(transportFee, locale)
                     : "—"}
                 </p>
               </div>
@@ -206,11 +209,11 @@ export default async function RequestDetailPage({
               {visitPrice > 0 && transportFee != null && (
                 <div className="flex items-center justify-between px-4 py-3" style={{ backgroundColor: NAVY_TILE }}>
                   <p className="text-sm font-bold text-white">
-                    Total fees
+                    {t("booking.detail.totalFees")}
                   </p>
 
                   <p className="font-heading text-base font-bold text-brand-orange">
-                    {formatDT(visitPrice + transportFee)}
+                    {formatDT(visitPrice + transportFee, locale)}
                   </p>
                 </div>
               )}
@@ -221,16 +224,16 @@ export default async function RequestDetailPage({
         {/* Request details */}
         <div>
           <p className="font-heading text-sm font-semibold text-white mb-2">
-            Request details
+            {t("booking.detail.requestDetails")}
           </p>
 
           <div className="rounded-2xl divide-y divide-white/10" style={{ backgroundColor: NAVY_ROW }}>
-            <Row label="Address" value={req.address} />
-            <Row label="Phone" value={req.phone} />
+            <Row label={t("booking.detail.address")} value={req.address} />
+            <Row label={t("booking.detail.phone")} value={req.phone} />
 
             <div className="px-4 py-3">
               <p className="text-xs text-white/60 mb-1">
-                Description
+                {t("booking.detail.description")}
               </p>
 
               <p className="text-sm text-white">
@@ -241,7 +244,7 @@ export default async function RequestDetailPage({
             {req.photos.length > 0 && (
               <div className="px-4 py-3">
                 <p className="text-xs text-white/60 mb-2">
-                  Photos
+                  {t("booking.detail.photos")}
                 </p>
 
                 <div className="flex gap-2 flex-wrap">
@@ -263,7 +266,7 @@ export default async function RequestDetailPage({
         {/* Timeline */}
         <div>
           <p className="font-heading text-sm font-semibold text-white mb-4">
-            Job progress
+            {t("booking.detail.jobProgress")}
           </p>
 
           <JobStatusTimeline
@@ -293,12 +296,12 @@ export default async function RequestDetailPage({
             />
 
             <span className="flex-1 text-sm font-medium text-white">
-              Message
+              {t("booking.detail.message")}
             </span>
 
             <ChevronRight
               size={16}
-              className="text-white/60"
+              className="text-white/60 rtl:rotate-180"
             />
           </Link>
         )}
@@ -320,7 +323,7 @@ export default async function RequestDetailPage({
                 size="lg"
               >
                 <XCircle size={18} />
-                Decline
+                {t("booking.detail.decline")}
               </Button>
             </form>
 
@@ -334,7 +337,7 @@ export default async function RequestDetailPage({
                 size="lg"
               >
                 <CheckCircle2 size={18} />
-                Accept
+                {t("booking.detail.accept")}
               </Button>
             </form>
           </div>
@@ -354,7 +357,7 @@ export default async function RequestDetailPage({
               size="lg"
             >
               <MapPin size={18} />
-              Mark as Arrived
+              {t("jobStatusAction.ON_THE_WAY")}
             </Button>
           </form>
         )}
@@ -367,7 +370,7 @@ export default async function RequestDetailPage({
               fullWidth
               size="lg"
             >
-              Start Work
+              {t("jobStatusAction.ARRIVED")}
             </Button>
           </form>
         )}
@@ -381,7 +384,7 @@ export default async function RequestDetailPage({
               size="lg"
             >
               <CheckCircle2 size={18} />
-              Mark as Completed
+              {t("jobStatusAction.IN_PROGRESS")}
             </Button>
           </form>
         )}
@@ -398,7 +401,7 @@ export default async function RequestDetailPage({
               fullWidth
               size="lg"
             >
-              Cancel Request
+              {t("booking.detail.cancelRequest")}
             </Button>
           </form>
         )}
@@ -413,11 +416,11 @@ export default async function RequestDetailPage({
 
             <div>
               <p className="text-sm font-semibold text-blue-200">
-                Technician is on the way
+                {t("booking.detail.onTheWayTitle")}
               </p>
 
               <p className="text-xs text-blue-300">
-                Transport fee will be confirmed on arrival
+                {t("booking.detail.onTheWayDesc")}
               </p>
             </div>
           </div>
@@ -438,19 +441,19 @@ export default async function RequestDetailPage({
 
                 <div>
                   <p className="text-sm font-semibold text-emerald-300">
-                    Transport fee confirmed
+                    {t("booking.detail.transportConfirmed")}
                   </p>
 
                   {distanceKm != null && (
                     <p className="text-xs text-emerald-300/70">
-                      {distanceKm.toFixed(1)} km × 1 DT/km
+                      {t("booking.detail.kmRate", { km: distanceKm.toFixed(1) })}
                     </p>
                   )}
                 </div>
               </div>
 
               <p className="font-heading text-base font-bold text-emerald-300">
-                {formatDT(transportFee)}
+                {formatDT(transportFee, locale)}
               </p>
             </div>
           )}
@@ -461,7 +464,7 @@ export default async function RequestDetailPage({
           req.clientConfirmedSolved === null && (
             <div>
               <p className="font-heading text-sm font-semibold text-white mb-3 text-center">
-                Was the problem solved?
+                {t("booking.detail.wasSolved")}
               </p>
 
               <div className="flex gap-3">
@@ -481,7 +484,7 @@ export default async function RequestDetailPage({
                     size="lg"
                   >
                     <XCircle size={18} />
-                    Not really
+                    {t("booking.detail.notReally")}
                   </Button>
                 </form>
 
@@ -499,7 +502,7 @@ export default async function RequestDetailPage({
                     size="lg"
                   >
                     <CheckCircle2 size={18} />
-                    Yes, fixed!
+                    {t("booking.detail.yesFixed")}
                   </Button>
                 </form>
               </div>
@@ -517,7 +520,7 @@ export default async function RequestDetailPage({
                 fullWidth
                 size="lg"
               >
-                Leave a Review
+                {t("booking.detail.leaveReview")}
               </Button>
             </Link>
           )}
@@ -526,7 +529,7 @@ export default async function RequestDetailPage({
           req.status === "COMPLETED" &&
           existingReview && (
             <p className="text-center text-sm text-emerald-300 font-medium">
-              ✓ Review submitted
+              {t("booking.detail.reviewSubmitted")}
             </p>
           )}
 
@@ -556,7 +559,7 @@ function Row({
         {label}
       </span>
 
-      <span className="text-sm text-white text-right">
+      <span className="text-sm text-white text-end">
         {value}
       </span>
     </div>

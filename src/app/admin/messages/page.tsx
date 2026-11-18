@@ -4,6 +4,8 @@ import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/db/client";
 import { Avatar } from "@/components/ui/Avatar";
 import { formatRelativeTime } from "@/lib/utils";
+import { getT, getLocale } from "@/lib/i18n/server";
+import { tOr } from "@/lib/i18n/translate";
 
 async function getTechniciansWithLastMessage(adminId: string) {
   // Get all technicians
@@ -88,6 +90,8 @@ export default async function AdminMessagesPage({
 }: {
   searchParams: Promise<{ q?: string }>;
 }) {
+  const t = await getT();
+  const locale = await getLocale();
   const session = await requireRole("ADMIN");
   const { q = "" } = await searchParams;
 
@@ -108,7 +112,7 @@ export default async function AdminMessagesPage({
       {/* Header */}
       <div>
         <h1 className="font-heading text-2xl font-bold text-ink flex items-center gap-2">
-          Messages Techniciens
+          {t("adminSup.messages.title")}
           {totalUnread > 0 && (
             <span className="flex h-6 min-w-6 items-center justify-center rounded-full bg-brand-orange px-1.5 text-xs font-bold text-white">
               {totalUnread}
@@ -116,18 +120,18 @@ export default async function AdminMessagesPage({
           )}
         </h1>
         <p className="text-sm text-muted mt-0.5">
-          {technicians.length} technicien{technicians.length !== 1 ? "s" : ""}
+          {t(technicians.length !== 1 ? "adminSup.messages.countMany" : "adminSup.messages.countOne", { n: technicians.length })}
         </p>
       </div>
 
       {/* Search */}
       <form method="GET" className="relative">
-        <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
+        <Search size={15} className="absolute start-4 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
         <input
           name="q"
           defaultValue={q}
-          placeholder="Rechercher un technicien..."
-          className="w-full rounded-2xl border border-line bg-surface pl-10 pr-4 py-3 text-sm outline-none focus:border-brand-orange"
+          placeholder={t("adminSup.messages.searchPlaceholder")}
+          className="w-full rounded-2xl border border-line bg-surface ps-10 pe-4 py-3 text-sm outline-none focus:border-brand-orange"
         />
       </form>
 
@@ -136,7 +140,7 @@ export default async function AdminMessagesPage({
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-line bg-surface py-16 text-center">
           <Wrench size={32} className="text-muted" />
           <p className="text-sm font-semibold text-ink">
-            {q ? "Aucun résultat" : "Aucun technicien enregistré"}
+            {q ? t("adminSup.messages.noResult") : t("adminSup.messages.noTech")}
           </p>
         </div>
       ) : (
@@ -157,7 +161,7 @@ export default async function AdminMessagesPage({
                   size={46}
                 />
                 {tech.unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-orange px-1 text-[10px] font-bold text-white">
+                  <span className="absolute -top-1 -end-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-orange px-1 text-[10px] font-bold text-white">
                     {tech.unreadCount > 9 ? "9+" : tech.unreadCount}
                   </span>
                 )}
@@ -176,19 +180,19 @@ export default async function AdminMessagesPage({
                   <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
                     PLAN_BADGE[tech.planKey] ?? "bg-gray-100 text-gray-600"
                   }`}>
-                    {tech.planName}
+                    {tOr(t, `plan.${tech.planKey}`, tech.planName)}
                   </span>
                   <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
                     STATUS_BADGE[tech.accountStatus] ?? "bg-gray-100 text-gray-500"
                   }`}>
-                    {tech.accountStatus}
+                    {t(`accountStatus.${tech.accountStatus}`)}
                   </span>
                 </div>
                 <p className={`text-xs truncate ${
                   tech.unreadCount > 0 ? "font-medium text-ink" : "text-muted"
                 }`}>
                   {tech.lastMessage ?? (
-                    <span className="italic text-muted">Aucun message — cliquez pour démarrer</span>
+                    <span className="italic text-muted">{t("adminSup.messages.noMsgStart")}</span>
                   )}
                 </p>
               </div>
@@ -197,7 +201,7 @@ export default async function AdminMessagesPage({
               <div className="shrink-0 flex flex-col items-end gap-1">
                 {tech.lastMessageAt && (
                   <span className="text-[10px] text-muted">
-                    {formatRelativeTime(tech.lastMessageAt)}
+                    {formatRelativeTime(tech.lastMessageAt, t, locale)}
                   </span>
                 )}
                 {tech.unreadCount > 0 && (

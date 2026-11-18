@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { Flag, CheckCircle2, X } from "lucide-react";
 import { createUserReportAction } from "@/app/report/actions";
 import { REPORT_REASONS } from "@/lib/reportReasons";
+import { useT } from "@/lib/i18n/I18nProvider";
+import { tDb } from "@/lib/i18n/translate";
 
 /**
  * "Signaler" button (like on social networks). Opens a small sheet: reason + a written
@@ -16,7 +18,7 @@ export function ReportUserButton({
   reportedName,
   requestId,
   variant = "dark",
-  label = "Signaler",
+  label,
 }: {
   reportedUserId: string;
   reportedName: string;
@@ -24,6 +26,7 @@ export function ReportUserButton({
   variant?: "dark" | "light";
   label?: string;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -52,7 +55,7 @@ export function ReportUserButton({
         }`}
       >
         <Flag size={13} />
-        {label}
+        {label ?? t("comp.report.button")}
       </button>
 
       {open && (
@@ -65,8 +68,8 @@ export function ReportUserButton({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between">
-              <p className="font-heading text-base font-bold">Signaler {reportedName}</p>
-              <button onClick={close} aria-label="Close" className="text-white/60">
+              <p className="font-heading text-base font-bold">{t("comp.report.title", { name: reportedName })}</p>
+              <button onClick={close} aria-label={t("common.close")} className="text-white/60">
                 <X size={18} />
               </button>
             </div>
@@ -75,13 +78,13 @@ export function ReportUserButton({
               <div className="mt-4 flex flex-col items-center gap-3 py-4 text-center">
                 <CheckCircle2 size={40} className="text-emerald-400" />
                 <p className="text-sm text-white/80">
-                  Report sent. Our moderators will look at it and may contact you.
+                  {t("comp.report.sent")}
                 </p>
                 <button
                   onClick={close}
                   className="rounded-xl bg-brand-orange px-5 py-2.5 text-sm font-bold text-white"
                 >
-                  OK
+                  {t("comp.report.ok")}
                 </button>
               </div>
             ) : (
@@ -96,7 +99,7 @@ export function ReportUserButton({
                         `/support?report=1${requestId ? `&request=${encodeURIComponent(requestId)}` : ""}`
                       );
                     }
-                    else setError(r.error ?? "Something went wrong.");
+                    else setError(r.error ?? t("common.somethingWrong"));
                   });
                 }}
                 className="mt-4 flex flex-col gap-3"
@@ -111,11 +114,11 @@ export function ReportUserButton({
                   className="rounded-xl border border-white/15 bg-[#0F1821] px-3 py-2.5 text-sm text-white outline-none"
                 >
                   <option value="" disabled>
-                    Why are you reporting this person?
+                    {t("comp.report.reasonPlaceholder")}
                   </option>
                   {REPORT_REASONS.map((r) => (
                     <option key={r} value={r}>
-                      {r}
+                      {tDb(t, "reportReason", r)}
                     </option>
                   ))}
                 </select>
@@ -126,7 +129,7 @@ export function ReportUserButton({
                   minLength={5}
                   rows={4}
                   maxLength={1500}
-                  placeholder="Write your message to the moderators: what happened?"
+                  placeholder={t("comp.report.messagePlaceholder")}
                   className="rounded-xl border border-white/15 bg-[#0F1821] px-3 py-2.5 text-sm text-white outline-none placeholder:text-white/40"
                 />
 
@@ -138,14 +141,14 @@ export function ReportUserButton({
                     onClick={close}
                     className="flex-1 rounded-xl border border-white/20 py-2.5 text-sm font-semibold text-white"
                   >
-                    Cancel
+                    {t("common.cancel")}
                   </button>
                   <button
                     type="submit"
                     disabled={pending}
                     className="flex-1 rounded-xl bg-red-600 py-2.5 text-sm font-bold text-white disabled:opacity-60"
                   >
-                    {pending ? "Sending…" : "Send report"}
+                    {pending ? t("comp.report.sending") : t("comp.report.send")}
                   </button>
                 </div>
               </form>

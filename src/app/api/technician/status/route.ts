@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSession, createSession } from "@/lib/auth";
+import { getT } from "@/lib/i18n/server";
 import { prisma } from "@/lib/db/client";
 
 export const dynamic = "force-dynamic";
@@ -8,9 +9,10 @@ export const dynamic = "force-dynamic";
 // When the admin has approved the technician (DB status ACTIVE) we re-issue
 // the session with accountApproved:true so the middleware lets them into /t/*.
 export async function GET() {
+  const t = await getT();
   const session = await getSession();
   if (!session || session.role !== "TECHNICIAN") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: t("common.unauthorized") }, { status: 401 });
   }
 
   const [user, tech] = await Promise.all([
@@ -26,7 +28,7 @@ export async function GET() {
 
   // Logged in elsewhere / deleted → session no longer valid
   if (!user || user.sessionVersion !== session.sessionVersion) {
-    return NextResponse.json({ error: "Session ended" }, { status: 401 });
+    return NextResponse.json({ error: t("tech.api.sessionEnded") }, { status: 401 });
   }
 
   const status = tech?.accountStatus ?? "PENDING";

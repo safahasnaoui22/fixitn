@@ -16,3 +16,8 @@ export function isLocale(v: unknown): v is Locale {
 export function dirOf(locale: Locale): "ltr" | "rtl" {
   return locale === "ar" ? "rtl" : "ltr";
 }
+
+/** BCP-47 tag for Intl / toLocale*String. Arabic keeps Latin digits (usual in Tunisia). */
+export function intlLocale(locale: Locale): string {
+  return locale === "ar" ? "ar-TN-u-nu-latn" : locale === "en" ? "en-GB" : "fr-FR";
+}

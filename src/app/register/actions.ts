@@ -6,12 +6,14 @@ import { findUserByPhone, createUser } from "@/lib/db/users";
 import { createTechnicianProfile } from "@/lib/db/catalog";
 import { prisma } from "@/lib/db/client";
 import type { Role } from "@/lib/constants";
+import { getT } from "@/lib/i18n/server";
 
 function fail(message: string): never {
   redirect(`/register?error=${encodeURIComponent(message)}`);
 }
 
 export async function registerAction(formData: FormData): Promise<void> {
+  const t = await getT();
   const role     = String(formData.get("role")     ?? "CLIENT") as Role;
   const fullName = String(formData.get("fullName") ?? "").trim();
   const phone    = String(formData.get("phone")    ?? "").trim();
@@ -20,17 +22,17 @@ export async function registerAction(formData: FormData): Promise<void> {
   const agreed   = String(formData.get("agreed")   ?? "") === "true";
 
   // ── Validation ─────────────────────────────────────────────────────
-  if (!fullName) fail("Veuillez saisir votre nom complet.");
-  if (!phone)    fail("Veuillez saisir votre numéro de téléphone.");
+  if (!fullName) fail(t("auth.register.err.fullName"));
+  if (!phone)    fail(t("auth.register.err.phone"));
   if (password.length < 6)
-    fail("Le mot de passe doit contenir au moins 6 caractères.");
+    fail(t("auth.register.err.password"));
   if (!agreed)
-    fail("Vous devez accepter les conditions d'utilisation.");
+    fail(t("auth.register.err.terms"));
 
   // ── Duplicate check ────────────────────────────────────────────────
   const existing = await findUserByPhone(phone);
   if (existing)
-    fail("Ce numéro est déjà inscrit. Essayez de vous connecter.");
+    fail(t("auth.register.err.duplicate"));
 
   // ── Technician-specific ────────────────────────────────────────────
   let techInput: {
@@ -56,9 +58,9 @@ export async function registerAction(formData: FormData): Promise<void> {
       .filter(Boolean);
 
     if (!title)
-      fail("Veuillez saisir votre titre professionnel.");
+      fail(t("auth.register.err.title"));
     if (categoryIds.length === 0)
-      fail("Veuillez sélectionner au moins un service.");
+      fail(t("auth.register.err.services"));
 
     // ── Get BEGINNER plan ────────────────────────────────────────────
     const beginnerPlan = await prisma.plan.findFirst({
@@ -69,10 +71,7 @@ export async function registerAction(formData: FormData): Promise<void> {
       // Try any plan as fallback
       const anyPlan = await prisma.plan.findFirst();
       if (!anyPlan) {
-        fail(
-          "Erreur de configuration: aucun plan disponible. " +
-          "Veuillez contacter support@fixili.tn"
-        );
+        fail(t("auth.register.err.noPlan"));
       }
       console.warn("[register] BEGINNER plan not found, using:", anyPlan?.key);
     }
@@ -102,10 +101,7 @@ export async function registerAction(formData: FormData): Promise<void> {
           cinUrl = result.url;
         } catch (err) {
           console.error("[register] CIN upload failed:", err);
-          fail(
-            "Échec du téléchargement du CIN. " +
-            "Vérifiez votre connexion et réessayez."
-          );
+          fail(t("auth.register.err.cinUpload"));
         }
       }
       if (diplomeFile instanceof File && diplomeFile.size > 0) {
@@ -115,10 +111,7 @@ export async function registerAction(formData: FormData): Promise<void> {
           diplomeUrl = result.url;
         } catch (err) {
           console.error("[register] Diplome upload failed:", err);
-          fail(
-            "Échec du téléchargement du diplôme. " +
-            "Vérifiez votre connexion et réessayez."
-          );
+          fail(t("auth.register.err.diplomaUpload"));
         }
       }
     } else {
@@ -144,7 +137,7 @@ export async function registerAction(formData: FormData): Promise<void> {
     user = await createUser({ fullName, phone, password, role, city });
   } catch (err) {
     console.error("[register] createUser failed:", err);
-    fail("Erreur lors de la création du compte. Réessayez.");
+    fail(t("auth.register.err.createUser"));
   }
 
   // ── Create technician profile ─────────────────────────────────────
@@ -174,10 +167,7 @@ export async function registerAction(formData: FormData): Promise<void> {
       console.error("[register] createTechnicianProfile failed:", err);
       // Delete the user we just created to avoid orphaned records
       await prisma.user.delete({ where: { id: user!.id } }).catch(() => {});
-      fail(
-        "Erreur lors de la création du profil technicien. " +
-        "Contactez support@fixili.tn"
-      );
+      fail(t("auth.register.err.createTech"));
     }
   }
 

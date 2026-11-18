@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/db/client";
 import { logAudit } from "@/lib/db/audit";
+import { getT } from "@/lib/i18n/server";
+import { i18nText } from "@/lib/i18n/translate";
 import { PERMISSIONS, PERMISSION_KEYS } from "@/lib/permissions";
 
 // ADMIN only, never grantable: a sous-admin cannot give himself more rights.
@@ -13,6 +15,7 @@ export async function updatePermissionsAction(
   formData: FormData
 ): Promise<void> {
   const actor = await requireRole("ADMIN");
+  const t = await getT();
 
   const target = await prisma.user.findUnique({
     where: { id: userId },
@@ -31,12 +34,12 @@ export async function updatePermissionsAction(
     data: { permissions: selected },
   });
 
-  const labels = PERMISSIONS.filter((p) => selected.includes(p.key)).map((p) => p.label);
+  const labels = PERMISSIONS.filter((p) => selected.includes(p.key)).map((p) => t(`adminOps.team.perm.${p.key}.label`));
   await logAudit(actor, {
     action: "team.permissions",
     entityType: "user",
     entityId: userId,
-    summary: `Set access of ${target.fullName}: ${labels.length ? labels.join(", ") : "nothing"}`,
+    summary: i18nText("adminOps.team.audit.set", { name: target.fullName, list: labels.length ? labels.join(", ") : t("adminOps.team.audit.nothing") }),
   });
 
   revalidatePath("/admin/team");

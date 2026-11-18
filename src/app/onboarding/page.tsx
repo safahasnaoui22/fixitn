@@ -77,13 +77,13 @@ export default async function OnboardingPage() {
         {/* Service icons */}
         <div className="mb-12 flex items-center justify-center gap-7">
           {[
-            { icon: Droplets, label: "Plomberie" },
-            { icon: Zap,      label: "Électricité" },
-            { icon: Wrench,   label: "Réparation" },
-            { icon: Home,     label: "Maison" },
-            { icon: Sparkles, label: "Nettoyage" },
+            { icon: Droplets, label: "auth.onboarding.svc.plumbing" },
+            { icon: Zap,      label: "auth.onboarding.svc.electricity" },
+            { icon: Wrench,   label: "auth.onboarding.svc.repair" },
+            { icon: Home,     label: "auth.onboarding.svc.home" },
+            { icon: Sparkles, label: "auth.onboarding.svc.cleaning" },
           ].map(({ icon: Icon, label }) => (
-            <div key={label} className="flex flex-col items-center gap-1.5">
+            <div key={label} className="flex flex-col items-center gap-1.5" title={t(label)} aria-label={t(label)}>
               <Icon
                 size={22}
                 color="rgba(255,255,255,0.65)"

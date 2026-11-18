@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { getRequestById } from "@/lib/db/requests";
+import { getT } from "@/lib/i18n/server";
 import { createReview, getReviewByRequestId } from "@/lib/db/reviews";
 
 export async function submitReviewAction(
@@ -19,11 +20,12 @@ export async function submitReviewAction(
   const existing = await getReviewByRequestId(requestId);
   if (existing) redirect(`/requests/${requestId}`);
 
+  const t = await getT();
   const rating = Number(formData.get("rating") ?? 0);
   const comment = String(formData.get("comment") ?? "").trim() || null;
 
   if (rating < 1 || rating > 5) {
-    redirect(`/requests/${requestId}/rate?error=Pick a star rating before submitting.`);
+    redirect(`/requests/${requestId}/rate?error=${encodeURIComponent(t("booking.rate.errorPickStar"))}`);
   }
 
   await createReview({

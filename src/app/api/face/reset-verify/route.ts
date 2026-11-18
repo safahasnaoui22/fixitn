@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db/client";
-import { getFaceDescriptor, findOtherAccountWithFace, FACE_SHARED_MESSAGE } from "@/lib/db/face";
+import { getFaceDescriptor, findOtherAccountWithFace } from "@/lib/db/face";
+import { getT } from "@/lib/i18n/server";
 
 const THRESHOLD = 0.5;
 
@@ -11,12 +12,13 @@ function euclidean(a: number[], b: number[]): number {
 }
 
 export async function POST(req: NextRequest) {
+  const t = await getT();
   const body = await req.json().catch(() => null);
   const phone: string = body?.phone ?? "";
   const descriptor: number[] = body?.descriptor ?? [];
 
   if (!phone || descriptor.length !== 128) {
-    return NextResponse.json({ error: "Données invalides" }, { status: 400 });
+    return NextResponse.json({ error: t("auth.api.invalidData") }, { status: 400 });
   }
 
   const user = await prisma.user.findUnique({
@@ -27,7 +29,7 @@ export async function POST(req: NextRequest) {
   // Always return 403 on no match — don't reveal if phone exists
   if (!user?.faceDescriptor) {
     return NextResponse.json(
-      { error: "Visage non reconnu pour ce numéro." },
+      { error: t("auth.api.faceNotRecognizedPhone") },
       { status: 403 }
     );
   }
@@ -35,7 +37,7 @@ export async function POST(req: NextRequest) {
   const stored = await getFaceDescriptor(user.id);
   if (!stored) {
     return NextResponse.json(
-      { error: "Aucun visage enregistré pour ce compte." },
+      { error: t("auth.api.noFaceForAccount") },
       { status: 403 }
     );
   }
@@ -45,7 +47,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         error:
-          "Visage non reconnu. Essayez dans un endroit mieux éclairé.",
+          t("auth.api.faceNotRecognized"),
         distance: Number(distance.toFixed(4)),
       },
       { status: 403 }
@@ -53,7 +55,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (await findOtherAccountWithFace(descriptor, user.id)) {
-    return NextResponse.json({ error: FACE_SHARED_MESSAGE }, { status: 403 });
+    return NextResponse.json({ error: t("auth.api.faceShared") }, { status: 403 });
   }
 
   return NextResponse.json({ ok: true, userId: user.id });

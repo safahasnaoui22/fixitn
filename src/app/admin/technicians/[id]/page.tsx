@@ -31,6 +31,7 @@ import {
   resetFaceAction,
 } from "../../actions";
 import type { JobStatus } from "@/lib/constants";
+import { getT, getLocale } from "@/lib/i18n/server";
 
 export default async function AdminTechnicianDetailPage({
   params,
@@ -39,6 +40,8 @@ export default async function AdminTechnicianDetailPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ success?: string }>;
 }) {
+  const t = await getT();
+  const locale = await getLocale();
   await requirePermission("technicians");
   const { id } = await params;
   const { success } = await searchParams;
@@ -60,11 +63,11 @@ export default async function AdminTechnicianDetailPage({
           href="/admin/technicians"
           className="flex h-9 w-9 items-center justify-center rounded-full bg-surface border border-line"
         >
-          <ArrowLeft size={18} />
+          <ArrowLeft size={18} className="rtl:rotate-180" />
         </Link>
         <div>
           <h1 className="font-heading text-2xl font-bold text-ink">
-            Technician Detail
+            {t("admin.techDetail.title")}
           </h1>
           <p className="text-xs text-muted font-mono">{id.slice(0, 20)}...</p>
           <ModifiedBy change={lastChange} />
@@ -76,10 +79,10 @@ export default async function AdminTechnicianDetailPage({
         <div className="flex items-center gap-2 rounded-xl bg-success-light px-4 py-3">
           <CheckCircle2 size={16} className="text-success shrink-0" />
           <p className="text-sm font-medium text-success">
-            {success === "promoted" && "Technician promoted to Senior Pro."}
-            {success === "demoted" && "Technician moved back to Beginner."}
-            {success === "verified" && "Technician marked as verified."}
-            {success === "unverified" && "Verification removed."}
+            {success === "promoted" && t("admin.techDetail.promoted")}
+            {success === "demoted" && t("admin.techDetail.demoted")}
+            {success === "verified" && t("admin.techDetail.verified")}
+            {success === "unverified" && t("admin.techDetail.unverified")}
           </p>
         </div>
       )}
@@ -95,30 +98,30 @@ export default async function AdminTechnicianDetailPage({
               </p>
               {tech.verified && (
                 <span className="rounded-full bg-success-light px-2 py-0.5 text-[10px] font-bold text-success">
-                  Verified
+                  {t("admin.techDetail.verifiedBadge")}
                 </span>
               )}
               {tech.isSenior && <SeniorBadge size="sm" />}
             </div>
             <p className="text-sm text-muted">{tech.title}</p>
-            <p className="text-sm text-muted">{tech.phone}</p>
+            <p className="text-sm text-muted" dir="ltr">{tech.phone}</p>
             {tech.email && (
-              <p className="text-sm text-muted">{tech.email}</p>
+              <p className="text-sm text-muted" dir="ltr">{tech.email}</p>
             )}
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3 mb-5">
-          <InfoRow label="City" value={tech.city ?? "—"} />
-          <InfoRow label="Years exp." value={String(tech.yearsExperience)} />
+          <InfoRow label={t("common.city")} value={tech.city ?? "—"} />
+          <InfoRow label={t("admin.techDetail.yearsExp")} value={String(tech.yearsExperience)} />
           <InfoRow
-            label="Starting price"
-            value={formatDT(tech.startingPrice)}
+            label={t("admin.techDetail.startingPrice")}
+            value={formatDT(tech.startingPrice, locale)}
           />
-          <InfoRow label="Joined" value={formatDate(tech.createdAt)} />
-          <InfoRow label="Plan" value={tech.planName ?? "Beginner"} />
+          <InfoRow label={t("admin.userDetail.joined")} value={formatDate(tech.createdAt, locale)} />
+          <InfoRow label={t("admin.techDetail.plan")} value={tech.planName ?? t("plan.BEGINNER")} />
           <InfoRow
-            label="Commission"
+            label={t("admin.techDetail.commission")}
             value={
               tech.commissionRate != null
                 ? `${Math.round(tech.commissionRate * 100)}%`
@@ -138,7 +141,7 @@ export default async function AdminTechnicianDetailPage({
       {tech.categories.length > 0 && (
         <div>
           <p className="font-heading text-sm font-semibold text-ink mb-2">
-            Services
+            {t("admin.techDetail.services")}
           </p>
           <div className="flex flex-wrap gap-2">
             {tech.categories.map((cat) => (
@@ -158,7 +161,7 @@ export default async function AdminTechnicianDetailPage({
         <div className="flex items-center gap-2 mb-4">
           <FileText size={18} className="text-muted" />
           <p className="font-heading text-base font-semibold text-ink">
-            Identity Documents
+            {t("admin.techDetail.identityDocs")}
           </p>
         </div>
 
@@ -169,10 +172,10 @@ export default async function AdminTechnicianDetailPage({
               <FileText size={15} className="text-muted shrink-0" />
               <div>
                 <p className="text-sm font-medium text-ink">
-                  CIN / Passport
+                  {t("admin.techDetail.cinPassport")}
                 </p>
                 <p className="text-xs text-muted">
-                  Identity verification document
+                  {t("admin.techDetail.cinHint")}
                 </p>
               </div>
             </div>
@@ -184,11 +187,11 @@ export default async function AdminTechnicianDetailPage({
                 className="flex items-center gap-1.5 rounded-lg bg-brand-orange-light px-3 py-1.5 text-xs font-semibold text-brand-orange-dark hover:bg-brand-orange hover:text-white transition-colors"
               >
                 <ExternalLink size={12} />
-                View
+                {t("common.view")}
               </a>
             ) : (
               <span className="rounded-full bg-danger-light px-2.5 py-1 text-[11px] font-semibold text-danger">
-                Not uploaded
+                {t("admin.techDetail.notUploaded")}
               </span>
             )}
           </div>
@@ -199,10 +202,10 @@ export default async function AdminTechnicianDetailPage({
               <FileText size={15} className="text-muted shrink-0" />
               <div>
                 <p className="text-sm font-medium text-ink">
-                  Diploma / Certificate
+                  {t("admin.techDetail.diplomaCert")}
                 </p>
                 <p className="text-xs text-muted">
-                  Professional qualification
+                  {t("admin.techDetail.diplomaHint")}
                 </p>
               </div>
             </div>
@@ -214,11 +217,11 @@ export default async function AdminTechnicianDetailPage({
                 className="flex items-center gap-1.5 rounded-lg bg-brand-orange-light px-3 py-1.5 text-xs font-semibold text-brand-orange-dark hover:bg-brand-orange hover:text-white transition-colors"
               >
                 <ExternalLink size={12} />
-                View
+                {t("common.view")}
               </a>
             ) : (
               <span className="rounded-full bg-danger-light px-2.5 py-1 text-[11px] font-semibold text-danger">
-                Not uploaded
+                {t("admin.techDetail.notUploaded")}
               </span>
             )}
           </div>
@@ -227,7 +230,7 @@ export default async function AdminTechnicianDetailPage({
         {/* Verify / Unverify toggle */}
         <div className="mt-4 pt-4 border-t border-line">
           <p className="text-xs text-muted mb-2">
-            After reviewing documents, mark the account as verified:
+            {t("admin.techDetail.verifyPrompt")}
           </p>
           <form
             action={verifyTechnicianAction.bind(null, id, !tech.verified)}
@@ -240,12 +243,12 @@ export default async function AdminTechnicianDetailPage({
               {tech.verified ? (
                 <>
                   <ShieldOff size={15} />
-                  Remove Verification
+                  {t("admin.techDetail.removeVerification")}
                 </>
               ) : (
                 <>
                   <ShieldCheck size={15} />
-                  Mark as Verified
+                  {t("admin.techDetail.markVerified")}
                 </>
               )}
             </Button>
@@ -261,7 +264,7 @@ export default async function AdminTechnicianDetailPage({
             className={tech.isSenior ? "text-amber-500" : "text-muted"}
           />
           <p className="font-heading text-base font-semibold text-ink">
-            Senior Pro Status
+            {t("admin.techDetail.seniorStatus")}
           </p>
           {tech.isSenior && <SeniorBadge size="sm" />}
         </div>
@@ -275,45 +278,43 @@ export default async function AdminTechnicianDetailPage({
                 {ratingBreakdown.avg?.toFixed(1) ?? "—"}
               </p>
             </div>
-            <p className="text-[10px] text-muted">Avg rating</p>
+            <p className="text-[10px] text-muted">{t("admin.techDetail.avgRating")}</p>
           </div>
           <div className="rounded-xl bg-surface-alt px-3 py-2.5 text-center">
             <p className="font-heading text-base font-bold text-ink">
               {ratingBreakdown.counts[5] ?? 0}
             </p>
-            <p className="text-[10px] text-muted">5-star reviews</p>
+            <p className="text-[10px] text-muted">{t("admin.techDetail.fiveStar")}</p>
           </div>
           <div className="rounded-xl bg-surface-alt px-3 py-2.5 text-center">
             <p className="font-heading text-base font-bold text-ink">
               {ratingBreakdown.total}
             </p>
-            <p className="text-[10px] text-muted">Total reviews</p>
+            <p className="text-[10px] text-muted">{t("admin.techDetail.totalReviews")}</p>
           </div>
         </div>
 
         {tech.isSenior ? (
           <div className="flex flex-col gap-3">
             <p className="text-sm text-success font-medium">
-              ✓ This technician has Senior Pro status
+              ✓ {t("admin.techDetail.isSenior")}
             </p>
             <form action={promoteSeniorAction.bind(null, id, false)}>
               <Button type="submit" variant="outline" size="sm">
                 <ShieldOff size={15} />
-                Demote to Beginner
+                {t("admin.techDetail.demote")}
               </Button>
             </form>
           </div>
         ) : (
           <div className="flex flex-col gap-3">
             <p className="text-sm text-muted">
-              This technician is on the Beginner plan. You can manually
-              promote them to Senior Pro, or let the automatic system
-              handle it when they meet the criteria.
+              {t("admin.techDetail.notSeniorText")}
             </p>
             <form action={promoteSeniorAction.bind(null, id, true)}>
               <Button type="submit" size="sm">
                 <Crown size={15} />
-                Manually Promote to Senior Pro
+                {t("admin.techDetail.promote")}
               </Button>
             </form>
           </div>
@@ -328,33 +329,30 @@ export default async function AdminTechnicianDetailPage({
             className={faceRegistered ? "text-success" : "text-muted"}
           />
           <p className="font-heading text-base font-semibold text-ink">
-            Face ID Security
+            {t("admin.techDetail.faceSecurity")}
           </p>
         </div>
 
         {faceRegistered ? (
           <div className="flex flex-col gap-3">
             <p className="text-sm text-success font-medium">
-              ✓ Face ID is registered for this account
+              ✓ {t("admin.techDetail.faceRegistered")}
             </p>
             <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5">
               <p className="text-xs text-amber-700">
-                Only reset if the technician has genuinely lost access and
-                cannot verify their identity. They will need to re-register
-                their face on next login.
+                {t("admin.techDetail.faceResetWarn")}
               </p>
             </div>
             <form action={resetFaceAction.bind(null, tech.userId)}>
               <Button type="submit" variant="danger" size="sm">
                 <AlertTriangle size={15} />
-                Reset Face ID &amp; All Devices
+                {t("admin.userDetail.resetBtn")}
               </Button>
             </form>
           </div>
         ) : (
           <p className="text-sm text-amber-600">
-            Face ID not yet registered — technician will be prompted on
-            next login.
+            {t("admin.techDetail.faceNone")}
           </p>
         )}
       </div>
@@ -364,19 +362,19 @@ export default async function AdminTechnicianDetailPage({
         <div className="rounded-2xl border border-line bg-surface p-4">
           <div className="flex items-center gap-1.5 mb-1">
             <Briefcase size={14} className="text-success" />
-            <p className="text-xs text-muted">Net Earnings</p>
+            <p className="text-xs text-muted">{t("admin.techDetail.netEarnings")}</p>
           </div>
           <p className="font-heading text-xl font-bold text-ink">
-            {formatDT(tech.netEarnings)}
+            {formatDT(tech.netEarnings, locale)}
           </p>
         </div>
         <div className="rounded-2xl border border-line bg-surface p-4">
           <div className="flex items-center gap-1.5 mb-1">
             <ThumbsUp size={14} className="text-brand-orange" />
-            <p className="text-xs text-muted">Platform Fees</p>
+            <p className="text-xs text-muted">{t("admin.techDetail.platformFees")}</p>
           </div>
           <p className="font-heading text-xl font-bold text-success">
-            {formatDT(tech.feesCollected)}
+            {formatDT(tech.feesCollected, locale)}
           </p>
         </div>
       </div>
@@ -385,7 +383,7 @@ export default async function AdminTechnicianDetailPage({
       {tech.recentRequests.length > 0 && (
         <div>
           <p className="font-heading text-base font-semibold text-ink mb-3">
-            Recent Jobs
+            {t("admin.techDetail.recentJobs")}
           </p>
           <div className="rounded-2xl border border-line bg-surface divide-y divide-line overflow-hidden">
             {tech.recentRequests.map((req) => (
@@ -399,7 +397,7 @@ export default async function AdminTechnicianDetailPage({
                     {req.categoryName}
                   </p>
                   <p className="text-xs text-muted">
-                    Client: {req.clientName} · {formatDate(req.createdAt)}
+                    {t("admin.techDetail.clientLine", { name: req.clientName, date: formatDate(req.createdAt, locale) })}
                   </p>
                 </div>
                 <StatusBadge status={req.status as JobStatus} />

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CheckCircle2, Home, ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { getT } from "@/lib/i18n/server";
 
 export default async function PaymentSuccessPage({
   params,
@@ -8,6 +9,7 @@ export default async function PaymentSuccessPage({
   params: Promise<{ requestId: string }>;
 }) {
   const { requestId } = await params;
+  const t = await getT();
 
   return (
     <div className="app-content flex flex-col">
@@ -18,36 +20,35 @@ export default async function PaymentSuccessPage({
         </div>
 
         <h1 className="font-heading text-2xl font-bold text-ink">
-          Payment Confirmed!
+          {t("booking.payment.successTitle")}
         </h1>
         <p className="mt-2 text-[15px] text-muted leading-relaxed max-w-xs">
-          Your payment has been recorded. Thank you for using FixiTN — we hope the job
-          went smoothly!
+          {t("booking.payment.successBody")}
         </p>
 
         {/* Divider */}
         <div className="my-8 w-16 h-0.5 rounded-full bg-line" />
 
         <p className="text-sm text-muted">
-          Don't forget to leave a review to help other clients find great technicians.
+          {t("booking.payment.reviewHint")}
         </p>
 
         <div className="mt-6 flex flex-col gap-3 w-full max-w-xs">
           <Link href={`/requests/${requestId}/rate`}>
             <Button fullWidth size="lg">
-              Leave a Review
+              {t("booking.payment.leaveReview")}
             </Button>
           </Link>
           <Link href={`/requests/${requestId}`}>
             <Button fullWidth size="lg" variant="outline">
               <ClipboardList size={18} />
-              View Job Details
+              {t("booking.payment.viewJob")}
             </Button>
           </Link>
           <Link href="/">
             <Button fullWidth size="lg" variant="ghost">
               <Home size={18} />
-              Back to Home
+              {t("booking.payment.backHome")}
             </Button>
           </Link>
         </div>

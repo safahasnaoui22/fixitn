@@ -1,6 +1,9 @@
+"use client";
+
 import { Check, Clock, X } from "lucide-react";
 import { cn, formatDate, formatTime } from "@/lib/utils";
-import { JOB_STATUS_FLOW, JOB_STATUS_LABEL, type JobStatus } from "@/lib/constants";
+import { JOB_STATUS_FLOW, type JobStatus } from "@/lib/constants";
+import { useI18n } from "@/lib/i18n/I18nProvider";
 
 type FlowStatus = (typeof JOB_STATUS_FLOW)[number];
 type TimestampKey = "pendingAt" | "acceptedAt" | "onTheWayAt" | "arrivedAt" | "inProgressAt" | "completedAt";
@@ -30,6 +33,7 @@ const TIMESTAMP_KEY: Record<FlowStatus, TimestampKey> = {
 };
 
 export function JobStatusTimeline(props: JobStatusTimelineProps) {
+  const { t, locale } = useI18n();
   const { status, declinedAt, cancelledAt, className, dark } = props;
   const inkCls = dark ? "text-white" : "text-ink";
   const mutedCls = dark ? "text-white/60" : "text-muted";
@@ -46,11 +50,11 @@ export function JobStatusTimeline(props: JobStatusTimelineProps) {
         </div>
         <div className="pt-1.5">
           <p className={cn("font-heading text-sm font-semibold", inkCls)}>
-            {isDeclined ? "Request Declined" : "Request Cancelled"}
+            {isDeclined ? t("comp.timeline.declined") : t("comp.timeline.cancelled")}
           </p>
           {ts && (
             <p className={cn("text-xs", mutedCls)}>
-              {formatDate(ts)} · {formatTime(ts)}
+              {formatDate(ts, locale)} · {formatTime(ts, locale)}
             </p>
           )}
         </div>
@@ -92,14 +96,14 @@ export function JobStatusTimeline(props: JobStatusTimelineProps) {
                   isDone || isCurrent ? inkCls : mutedCls
                 )}
               >
-                {JOB_STATUS_LABEL[step]}
+                {t(`jobStatus.${step}`)}
               </p>
               {ts ? (
                 <p className={cn("text-xs", mutedCls)}>
-                  {formatDate(ts)} · {formatTime(ts)}
+                  {formatDate(ts, locale)} · {formatTime(ts, locale)}
                 </p>
               ) : isCurrent ? (
-                <p className="text-xs font-medium text-brand-orange">In progress…</p>
+                <p className="text-xs font-medium text-brand-orange">{t("comp.timeline.inProgress")}</p>
               ) : null}
             </div>
           </div>

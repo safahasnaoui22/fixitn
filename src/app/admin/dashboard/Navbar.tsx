@@ -8,33 +8,36 @@ import {
   ClipboardList, CreditCard, BadgeDollarSign,
   RefreshCcw, Globe, UserPlus,
 } from "lucide-react";
+import { useT } from "@/lib/i18n/I18nProvider";
 
 const MANAGEMENT_ITEMS = [
-  { label: "Users",          icon: Users,            href: "/admin/users" },
-  { label: "Technicians",    icon: Wrench,            href: "/admin/technicians" },
-  { label: "Categories",     icon: LayoutGrid,        href: "/admin/categories" },
-  { label: "Jobs/Requests",  icon: ClipboardList,     href: "/admin/requests" },
+  { label: "admin.nav.users",          icon: Users,            href: "/admin/users" },
+  { label: "admin.nav.technicians",    icon: Wrench,            href: "/admin/technicians" },
+  { label: "admin.nav.categories",     icon: LayoutGrid,        href: "/admin/categories" },
+  { label: "admin.dashNav.jobsRequests",  icon: ClipboardList,     href: "/admin/requests" },
 ];
 
 const FINANCIAL_ITEMS = [
-  { label: "Payments",       icon: CreditCard,        href: "/admin/payments" },
-  { label: "Revenue",        icon: BadgeDollarSign,   href: "/admin/revenue" },
-  { label: "Plans",          icon: RefreshCcw,        href: "/admin/plans" },
-  { label: "Plan Config",    icon: RefreshCcw,        href: "/admin/plan-config" },
+  { label: "admin.nav.payments",       icon: CreditCard,        href: "/admin/payments" },
+  { label: "admin.nav.revenue",        icon: BadgeDollarSign,   href: "/admin/revenue" },
+  { label: "admin.nav.plans",          icon: RefreshCcw,        href: "/admin/plans" },
+  { label: "admin.nav.planConfig",    icon: RefreshCcw,        href: "/admin/plan-config" },
 ];
 
 const ADMIN_ITEMS = [
-  { label: "Create Account", icon: UserPlus,          href: "/admin/create-account" },
+  { label: "admin.nav.createAccount", icon: UserPlus,          href: "/admin/create-account" },
 ];
 
 function NavSection({
   title,
   items,
   pathname,
+  t,
 }: {
   title: string;
   items: { label: string; icon: React.ElementType; href: string }[];
   pathname: string;
+  t: (key: string) => string;
 }) {
   return (
     <div className="mb-2">
@@ -54,7 +57,7 @@ function NavSection({
             }`}
           >
             <Icon size={16} className="shrink-0" />
-            <span className="truncate">{label}</span>
+            <span className="truncate">{t(label)}</span>
           </Link>
         );
       })}
@@ -69,6 +72,7 @@ interface NavbarProps {
 
 const Navbar: React.FC<NavbarProps> = () => {
   const pathname = usePathname();
+  const t = useT();
 
   return (
     <aside className="flex flex-col h-full">
@@ -83,15 +87,15 @@ const Navbar: React.FC<NavbarProps> = () => {
           }`}
         >
           <LayoutDashboard size={16} className="shrink-0" />
-          <span>Dashboard</span>
+          <span>{t("admin.nav.dashboard")}</span>
         </Link>
       </div>
 
       {/* Scrollable sections */}
       <nav className="flex-1 overflow-y-auto no-scrollbar px-3">
-        <NavSection title="Management" items={MANAGEMENT_ITEMS} pathname={pathname} />
-        <NavSection title="Financial"  items={FINANCIAL_ITEMS}  pathname={pathname} />
-        <NavSection title="Admin"      items={ADMIN_ITEMS}      pathname={pathname} />
+        <NavSection title={t("admin.dashNav.management")} items={MANAGEMENT_ITEMS} pathname={pathname} t={t} />
+        <NavSection title={t("admin.dashNav.financial")} items={FINANCIAL_ITEMS} pathname={pathname} t={t} />
+        <NavSection title={t("admin.dashNav.admin")} items={ADMIN_ITEMS} pathname={pathname} t={t} />
       </nav>
 
       {/* Footer */}
@@ -101,7 +105,7 @@ const Navbar: React.FC<NavbarProps> = () => {
           className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium text-[color:var(--sidebar-text)] hover:bg-[color:var(--sidebar-hover)] hover:text-white transition-colors"
         >
           <Globe size={15} />
-          <span>View Website</span>
+          <span>{t("admin.dashNav.viewWebsite")}</span>
         </Link>
       </div>
     </aside>

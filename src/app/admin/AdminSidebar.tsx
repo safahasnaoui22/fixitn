@@ -22,6 +22,7 @@ import {
   BarChart3,
   type LucideIcon,
 } from "lucide-react";
+import { getT } from "@/lib/i18n/server";
 import { panelLogout } from "./logout";
 import type { PermissionKey } from "@/lib/permissions";
 
@@ -33,39 +34,39 @@ interface Item {
 }
 
 const ADMIN_NAV: Item[] = [
-  { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/users", label: "Users", icon: Users },
-  { href: "/admin/technicians", label: "Technicians", icon: Wrench },
-  { href: "/admin/support", label: "Support", icon: MessageCircle },
-  { href: "/admin/complaints", label: "Complaints", icon: Flag },
-  { href: "/admin/messages", label: "Messages", icon: MessageCircle },
-  { href: "/admin/requests", label: "Requests", icon: ClipboardList },
-  { href: "/admin/revenue", label: "Revenue", icon: TrendingUp },
-  { href: "/admin/payments", label: "Payments", icon: CreditCard },
-  { href: "/admin/plans", label: "Plans", icon: Star },
-  { href: "/admin/plan-config", label: "Plan Config", icon: Settings2 },
-  { href: "/admin/categories", label: "Categories", icon: Layers },
-  { href: "/admin/create-account", label: "Create Account", icon: UserPlus },
-  { href: "/admin/team", label: "Team & Access", icon: ShieldCheck },
-  { href: "/admin/activity", label: "Activity", icon: History },
-  { href: "/admin/security", label: "Security", icon: ShieldAlert },
-  { href: "/admin/quality", label: "Quality", icon: Gauge },
-  { href: "/admin/subscriptions", label: "Plan alerts", icon: CalendarClock },
-  { href: "/admin/broadcast", label: "Broadcast", icon: Megaphone },
-  { href: "/admin/reports", label: "Reports", icon: BarChart3 },
+  { href: "/admin", label: "admin.nav.dashboard", icon: LayoutDashboard },
+  { href: "/admin/users", label: "admin.nav.users", icon: Users },
+  { href: "/admin/technicians", label: "admin.nav.technicians", icon: Wrench },
+  { href: "/admin/support", label: "admin.nav.support", icon: MessageCircle },
+  { href: "/admin/complaints", label: "admin.nav.complaints", icon: Flag },
+  { href: "/admin/messages", label: "admin.nav.messages", icon: MessageCircle },
+  { href: "/admin/requests", label: "admin.nav.requests", icon: ClipboardList },
+  { href: "/admin/revenue", label: "admin.nav.revenue", icon: TrendingUp },
+  { href: "/admin/payments", label: "admin.nav.payments", icon: CreditCard },
+  { href: "/admin/plans", label: "admin.nav.plans", icon: Star },
+  { href: "/admin/plan-config", label: "admin.nav.planConfig", icon: Settings2 },
+  { href: "/admin/categories", label: "admin.nav.categories", icon: Layers },
+  { href: "/admin/create-account", label: "admin.nav.createAccount", icon: UserPlus },
+  { href: "/admin/team", label: "admin.nav.team", icon: ShieldCheck },
+  { href: "/admin/activity", label: "admin.nav.activity", icon: History },
+  { href: "/admin/security", label: "admin.nav.security", icon: ShieldAlert },
+  { href: "/admin/quality", label: "admin.nav.quality", icon: Gauge },
+  { href: "/admin/subscriptions", label: "admin.nav.planAlerts", icon: CalendarClock },
+  { href: "/admin/broadcast", label: "admin.nav.broadcast", icon: Megaphone },
+  { href: "/admin/reports", label: "admin.nav.reports", icon: BarChart3 },
 ];
 
 // What a sous-admin sees: his own home + only the functions the admin allowed.
 const SOUS_NAV: Record<PermissionKey, Item> = {
-  technicians: { href: "/sous-admin/technicians", label: "Technicians", icon: Wrench },
-  support: { href: "/sous-admin/support", label: "Support", icon: MessageCircle, badge: true },
-  complaints: { href: "/admin/complaints", label: "Complaints", icon: Flag },
-  users: { href: "/admin/users", label: "Users", icon: Users },
-  requests: { href: "/admin/requests", label: "Requests", icon: ClipboardList },
-  categories: { href: "/admin/categories", label: "Categories", icon: Layers },
-  plans: { href: "/admin/plans", label: "Plans", icon: Star },
-  payments: { href: "/admin/payments", label: "Payments", icon: CreditCard },
-  revenue: { href: "/admin/revenue", label: "Revenue", icon: TrendingUp },
+  technicians: { href: "/sous-admin/technicians", label: "admin.nav.technicians", icon: Wrench },
+  support: { href: "/sous-admin/support", label: "admin.nav.support", icon: MessageCircle, badge: true },
+  complaints: { href: "/admin/complaints", label: "admin.nav.complaints", icon: Flag },
+  users: { href: "/admin/users", label: "admin.nav.users", icon: Users },
+  requests: { href: "/admin/requests", label: "admin.nav.requests", icon: ClipboardList },
+  categories: { href: "/admin/categories", label: "admin.nav.categories", icon: Layers },
+  plans: { href: "/admin/plans", label: "admin.nav.plans", icon: Star },
+  payments: { href: "/admin/payments", label: "admin.nav.payments", icon: CreditCard },
+  revenue: { href: "/admin/revenue", label: "admin.nav.revenue", icon: TrendingUp },
 };
 
 const SOUS_ORDER: PermissionKey[] = [
@@ -79,7 +80,7 @@ const SOUS_ORDER: PermissionKey[] = [
   "revenue",
 ];
 
-export function AdminSidebar({
+export async function AdminSidebar({
   role,
   permissions = [],
   unreadCount = 0,
@@ -88,11 +89,12 @@ export function AdminSidebar({
   permissions?: string[];
   unreadCount?: number;
 }) {
+  const t = await getT();
   const items: Item[] =
     role === "ADMIN"
       ? ADMIN_NAV
       : [
-          { href: "/sous-admin", label: "Dashboard", icon: LayoutDashboard },
+          { href: "/sous-admin", label: "admin.nav.dashboard", icon: LayoutDashboard },
           ...SOUS_ORDER.filter((k) => permissions.includes(k)).map((k) => SOUS_NAV[k]),
         ];
 
@@ -102,7 +104,7 @@ export function AdminSidebar({
       <div className="mt-8 shrink-0 px-5 py-6 lg:mt-0">
         <p className="font-heading text-lg font-bold text-white">FixiTN</p>
         <p className="text-xs text-white/50">
-          {role === "ADMIN" ? "Admin Panel" : "Sous-Admin Panel"}
+          {role === "ADMIN" ? t("admin.shell.adminPanel") : t("admin.shell.sousPanel")}
         </p>
       </div>
 
@@ -114,7 +116,7 @@ export function AdminSidebar({
             className="flex shrink-0 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-white/70 transition-colors hover:bg-white/10 hover:text-white"
           >
             <Icon size={16} className="shrink-0" />
-            <span className="flex-1 truncate">{label}</span>
+            <span className="flex-1 truncate">{t(label)}</span>
             {badge && unreadCount > 0 && (
               <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-orange px-1 text-[10px] font-bold text-white">
                 {unreadCount > 9 ? "9+" : unreadCount}
@@ -130,7 +132,7 @@ export function AdminSidebar({
           className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-white/50 transition-colors hover:bg-white/10 hover:text-white"
         >
           <LogOut size={16} className="shrink-0" />
-          <span>Log Out</span>
+          <span>{t("admin.nav.logout")}</span>
         </button>
       </form>
     </div>

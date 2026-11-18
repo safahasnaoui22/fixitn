@@ -76,8 +76,8 @@ export function ClientBottomNav({ dark = false }: { dark?: boolean }) {
                 theme === "dark" ? "bg-brand-orange" : "bg-line"
               )}>
                 <div className={cn(
-                  "absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-transform",
-                  theme === "dark" ? "translate-x-6" : "translate-x-1"
+                  "absolute start-0 top-1 h-4 w-4 rounded-full bg-white shadow transition-transform",
+                  theme === "dark" ? "translate-x-6 rtl:-translate-x-6" : "translate-x-1 rtl:-translate-x-1"
                 )} />
               </div>
             </button>

@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { requirePermission } from "@/lib/auth";
 import { logAudit } from "@/lib/db/audit";
 import { updateAdminPlan } from "@/lib/db/admin";
+import { i18nText } from "@/lib/i18n/translate";
 
 export async function updatePlanAction(formData: FormData) {
   const actor = await requirePermission("plans");
@@ -20,7 +21,7 @@ export async function updatePlanAction(formData: FormData) {
     action: "plan.update",
     entityType: "plan",
     entityId: id,
-    summary: `Updated plan (price ${price} DT, commission ${(commissionRate * 100).toFixed(0)}%)`,
+    summary: i18nText("adminOps.plans.audit.update", { price, rate: (commissionRate * 100).toFixed(0) }),
   });
   revalidatePath("/admin/plans");
   redirect("/admin/plans?success=1");

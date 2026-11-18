@@ -11,6 +11,7 @@ import { hasFaceDescriptor, isKnownDevice } from "@/lib/db/face";
 import { prisma } from "@/lib/db/client";
 import { isTechnicianApproved } from "@/lib/db/technicianApproval";
 import type { Role } from "@/lib/constants";
+import { getT } from "@/lib/i18n/server";
 
 // SECURITY POLICY (set to false to go back to "trusted device skips the face scan"):
 // true  = EVERY login (after a logout, or on another device) must pass the face
@@ -29,10 +30,11 @@ export async function loginAction(formData: FormData): Promise<void> {
   const phone = String(formData.get("phone") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const deviceToken = String(formData.get("deviceToken") ?? "").trim();
+  const t = await getT();
 
   if (!phone || !password) {
     redirect(
-      `/login?error=${encodeURIComponent("Veuillez saisir votre numéro et mot de passe.")}`
+      `/login?error=${encodeURIComponent(t("auth.login.err.missing"))}`
     );
   }
 
@@ -40,7 +42,7 @@ export async function loginAction(formData: FormData): Promise<void> {
   const user = await findUserByPhone(phone);
   if (!user || !(await verifyPassword(password, user.passwordHash))) {
     redirect(
-      `/login?error=${encodeURIComponent("Numéro ou mot de passe incorrect.")}`
+      `/login?error=${encodeURIComponent(t("auth.login.err.invalid"))}`
     );
   }
 

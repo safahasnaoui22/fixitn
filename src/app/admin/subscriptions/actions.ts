@@ -5,6 +5,7 @@ import { requireRole } from "@/lib/auth";
 import { logAudit } from "@/lib/db/audit";
 import { prisma } from "@/lib/db/client";
 import { createNotification } from "@/lib/db/notifications";
+import { i18nText } from "@/lib/i18n/translate";
 
 async function notifyOne(subId: string): Promise<boolean> {
   const sub = await prisma.subscription.findUnique({
@@ -20,8 +21,8 @@ async function notifyOne(subId: string): Promise<boolean> {
   await createNotification({
     userId: sub.technician.userId,
     type: "STATUS_UPDATE",
-    title: expired ? `Your ${sub.plan.name} plan has expired` : `Your ${sub.plan.name} plan expires soon`,
-    body: "Renew your plan to keep your visibility and your commission rate.",
+    title: i18nText(expired ? "adminOps.subs.notif.expired.title" : "adminOps.subs.notif.soon.title", { plan: sub.plan.name }),
+    body: i18nText("adminOps.subs.notif.body"),
   });
   return true;
 }
@@ -33,7 +34,7 @@ export async function notifySubscriptionAction(subId: string): Promise<void> {
       action: "subscription.notify",
       entityType: "plan",
       entityId: subId,
-      summary: "Sent a plan renewal reminder",
+      summary: i18nText("adminOps.subs.audit.notify"),
     });
   }
   revalidatePath("/admin/subscriptions");
@@ -52,7 +53,7 @@ export async function notifyAllExpiringAction(): Promise<void> {
     action: "subscription.notifyAll",
     entityType: "plan",
     entityId: "all",
-    summary: `Sent plan renewal reminders to ${subs.length} technician(s)`,
+    summary: i18nText("adminOps.subs.audit.notifyAll", { n: subs.length }),
   });
   revalidatePath("/admin/subscriptions");
 }

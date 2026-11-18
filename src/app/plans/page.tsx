@@ -12,6 +12,8 @@ import { getRatingBreakdown } from "@/lib/db/reviews";
 import { SeniorBadge } from "@/components/SeniorBadge";
 import { Button } from "@/components/ui/Button";
 import { formatDT } from "@/lib/utils";
+import { getT, getLocale } from "@/lib/i18n/server";
+import { tDb, tOr } from "@/lib/i18n/translate";
 import { cn } from "@/lib/utils";
 import { PLAN_RADIUS } from "@/lib/constants";
 import { subscribePlanAction } from "./actions";
@@ -24,7 +26,7 @@ const PLAN_STYLE: Record<string, {
 }> = {
   FREE:     { headerBg: "bg-surface-alt", border: "border-line" },
   BEGINNER: { headerBg: "bg-blue-50",     border: "border-blue-200" },
-  PRO:      { headerBg: "bg-brand-navy",  border: "border-brand-navy", badge: "Most Popular" },
+  PRO:      { headerBg: "bg-brand-navy",  border: "border-brand-navy", badge: "booking.plans.mostPopular" },
 };
 
 export default async function PlansPage({
@@ -34,6 +36,8 @@ export default async function PlansPage({
 }) {
   const session = await requireRole("TECHNICIAN");
   const { success } = await searchParams;
+  const t = await getT();
+  const locale = await getLocale();
 
   const technician = await getTechnicianByUserId(session.userId);
   if (!technician) redirect("/onboarding");
@@ -65,14 +69,14 @@ export default async function PlansPage({
           href="/t/dashboard"
           className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-alt"
         >
-          <ArrowLeft size={18} />
+          <ArrowLeft size={18} className="rtl:rotate-180" />
         </Link>
         <div>
           <p className="font-heading text-base font-semibold text-ink">
-            Plans & Pricing
+            {t("booking.plans.title")}
           </p>
           <p className="text-xs text-muted">
-            Current: {currentPlan?.name ?? "Beginner"}
+            {t("booking.plans.current", { name: currentPlan ? tOr(t, `plan.${currentPlan.key}`, currentPlan.name) : t("plan.BEGINNER") })}
           </p>
         </div>
       </div>
@@ -84,7 +88,7 @@ export default async function PlansPage({
           <div className="flex items-center gap-2 rounded-xl bg-success-light px-4 py-3">
             <CheckCircle2 size={16} className="text-success shrink-0" />
             <p className="text-sm font-medium text-success">
-              Plan updated successfully!
+              {t("booking.plans.updated")}
             </p>
           </div>
         )}
@@ -97,7 +101,7 @@ export default async function PlansPage({
               <SeniorBadge size="sm" />
             </div>
             <p className="text-sm text-white/80 mt-1">
-              You have the Senior Pro badge — clients see it next to your name.
+              {t("booking.plans.seniorYou")}
             </p>
           </div>
         )}
@@ -110,7 +114,8 @@ export default async function PlansPage({
           const radius = plan.radiusKm;
 
        
-         const features = plan.features; 
+          const features = plan.features;
+          const planName = tOr(t, `plan.${plan.key}`, plan.name);
           return (
             <div
               key={plan.id}
@@ -135,11 +140,11 @@ export default async function PlansPage({
                           isPro && !isCurrent ? "text-white" : "text-ink"
                         )}
                       >
-                        {plan.name}
+                        {planName}
                       </p>
                       {plan.badge && !isCurrent && (
                         <span className="rounded-full bg-brand-orange px-2 py-0.5 text-[10px] font-bold text-white">
-                          {plan.badge}
+                          {tDb(t, "planBadge", plan.badge)}
                         </span>
                       )}
                     </div>
@@ -150,7 +155,7 @@ export default async function PlansPage({
                           isPro && !isCurrent ? "text-white" : "text-ink"
                         )}
                       >
-                        {plan.price === 0 ? "Free" : formatDT(plan.price)}
+                        {plan.price === 0 ? t("common.free") : formatDT(plan.price, locale)}
                       </span>
                       {plan.price > 0 && (
                         <span
@@ -159,14 +164,14 @@ export default async function PlansPage({
                             isPro && !isCurrent ? "text-white/60" : "text-muted"
                           )}
                         >
-                          /mo
+                          {t("booking.plans.perMonthShort")}
                         </span>
                       )}
                     </div>
                   </div>
                   {isCurrent && (
                     <span className="rounded-full bg-brand-orange px-2.5 py-1 text-[11px] font-bold text-white shrink-0">
-                      Current plan
+                      {t("booking.plans.currentBadge")}
                     </span>
                   )}
                 </div>
@@ -185,7 +190,7 @@ export default async function PlansPage({
                         isPro && !isCurrent ? "text-white/60" : "text-muted"
                       )}
                     >
-                      Commission
+                      {t("booking.plans.commission")}
                     </p>
                     <p
                       className={cn(
@@ -209,7 +214,7 @@ export default async function PlansPage({
                       )}
                     >
                       <MapPin size={9} />
-                      Visibility radius
+                      {t("booking.plans.radius")}
                     </div>
                     <p
                       className={cn(
@@ -217,7 +222,7 @@ export default async function PlansPage({
                         isPro && !isCurrent ? "text-white" : "text-ink"
                       )}
                     >
-                      {radius} km
+                      {radius} {t("common.km")}
                     </p>
                   </div>
                 </div>
@@ -233,7 +238,7 @@ export default async function PlansPage({
                         className="mt-0.5 shrink-0 text-success"
                         strokeWidth={2.5}
                       />
-                      <span className="text-sm text-ink">{f}</span>
+                      <span className="text-sm text-ink">{tDb(t, "planFeature", f)}</span>
                     </li>
                   ))}
                 </ul>
@@ -241,14 +246,14 @@ export default async function PlansPage({
                 {/* Max requests note */}
                 {plan.maxRequestsPerMonth != null && (
                   <p className="text-xs text-muted mb-3">
-                    Limited to {plan.maxRequestsPerMonth} requests/month
+                    {t("booking.plans.limited", { n: plan.maxRequestsPerMonth })}
                   </p>
                 )}
 
                 {/* Action button */}
                 {isCurrent ? (
                   <p className="text-center text-sm font-medium text-success py-2">
-                    ✓ Your current plan
+                    {t("booking.plans.yourCurrent")}
                   </p>
                 ) : (
                   <form action={subscribePlanAction}>
@@ -260,8 +265,8 @@ export default async function PlansPage({
                       variant={isPro ? "primary" : "outline"}
                     >
                       {plan.price === 0
-                        ? `Switch to ${plan.name}`
-                        : `Upgrade to ${plan.name}`}
+                        ? t("booking.plans.switchTo", { name: planName })
+                        : t("booking.plans.upgradeTo", { name: planName })}
                     </Button>
                   </form>
                 )}
@@ -276,34 +281,32 @@ export default async function PlansPage({
             <div className="flex items-center gap-2 mb-3">
               <Crown size={16} className="text-amber-600" />
               <p className="font-heading text-sm font-semibold text-amber-800">
-                Earn the Senior Pro Badge
+                {t("booking.plans.earnTitle")}
               </p>
             </div>
             <p className="text-xs text-amber-700 mb-3 leading-relaxed">
-              Senior Pro is automatically granted when you meet the star
-              criteria below. It&apos;s free and gives you priority visibility
-              in search results.
+              {t("booking.plans.earnDesc")}
             </p>
 
             {/* Gate */}
             <ProgressItem
-              label={`Reviews gate: ${totalReviews} / ${config.minTotalReviews}`}
+              label={t("booking.plans.gate", { n: totalReviews, min: config.minTotalReviews })}
               done={gateReached}
               pct={Math.min((totalReviews / config.minTotalReviews) * 100, 100)}
             />
 
             <div className={cn("mt-2 flex flex-col gap-2", !gateReached && "opacity-40 pointer-events-none")}>
               <p className="text-[10px] font-semibold text-amber-700 uppercase tracking-wider">
-                Then meet either:
+                {t("booking.plans.thenMeet")}
               </p>
               <ProgressItem
-                label={`Route 1 — ${fiveStarCount} / ${config.minFiveStarCount} five-star reviews`}
+                label={t("booking.plans.route1", { n: fiveStarCount, min: config.minFiveStarCount })}
                 done={route1Done}
                 pct={Math.min((fiveStarCount / config.minFiveStarCount) * 100, 100)}
               />
-              <p className="text-[10px] text-amber-600 text-center">— or —</p>
+              <p className="text-[10px] text-amber-600 text-center">{t("booking.plans.or")}</p>
               <ProgressItem
-                label={`Route 2 — Avg ${avgRating.toFixed(1)} / ${config.minAverageRating}★ + ${fourPlusCount} / ${config.minFourStarCount} reviews ≥ 4★`}
+                label={t("booking.plans.route2", { avg: avgRating.toFixed(1), minAvg: config.minAverageRating, n: fourPlusCount, min: config.minFourStarCount })}
                 done={route2Done}
                 pct={Math.min(((avgRating / config.minAverageRating) * 50 + (fourPlusCount / config.minFourStarCount) * 50), 100)}
               />
@@ -311,14 +314,14 @@ export default async function PlansPage({
 
             {qualifiesForSenior && (
               <p className="mt-3 text-xs font-semibold text-success text-center">
-                ✓ You qualify! Senior Pro will be granted automatically after your next review.
+                {t("booking.plans.qualify")}
               </p>
             )}
           </div>
         )}
 
         <p className="text-center text-xs text-muted px-4">
-          Payments via D17 or Flouci — real billing coming in Phase 2.
+          {t("booking.plans.billingNote")}
         </p>
       </div>
     </div>

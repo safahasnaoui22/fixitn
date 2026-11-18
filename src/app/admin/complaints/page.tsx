@@ -4,15 +4,12 @@ import { requirePermission } from "@/lib/auth";
 import { prisma } from "@/lib/db/client";
 import { ClickableRow } from "@/components/admin/ClickableRow";
 import { formatDateTime } from "@/lib/utils";
+import { tDb } from "@/lib/i18n/translate";
+import { getT, getLocale } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
-const COMPLAINT_STATUS_LABEL: Record<string, string> = {
-  OPEN: "Pending",
-  INVESTIGATING: "Under review",
-  RESOLVED: "Resolved",
-  REJECTED: "Rejected",
-};
+const COMPLAINT_STATUSES = ["OPEN", "INVESTIGATING", "RESOLVED", "REJECTED"];
 
 const STATUS_CLS: Record<string, string> = {
   RESOLVED: "bg-emerald-50 text-emerald-700",
@@ -26,9 +23,11 @@ export default async function ComplaintsPage({
 }: {
   searchParams: Promise<{ status?: string }>;
 }) {
+  const t = await getT();
+  const locale = await getLocale();
   await requirePermission("complaints");
   const { status } = await searchParams;
-  const filter = status && status in COMPLAINT_STATUS_LABEL ? status : undefined;
+  const filter = status && COMPLAINT_STATUSES.includes(status) ? status : undefined;
 
   const [reports, allStatuses] = await Promise.all([
     prisma.report.findMany({
@@ -56,20 +55,20 @@ export default async function ComplaintsPage({
       <div>
         <div className="flex items-center gap-2">
           <Flag size={22} className="text-brand-orange" />
-          <h1 className="font-heading text-2xl font-bold text-ink">Complaints</h1>
+          <h1 className="font-heading text-2xl font-bold text-ink">{t("adminSup.complaints.title")}</h1>
         </div>
         <p className="mt-1 text-sm text-muted">
-          Reports sent by clients and technicians. Click a complaint to see the details.
+          {t("adminSup.complaints.subtitle")}
         </p>
       </div>
 
       <div className="flex flex-wrap gap-2">
         {[
-          { key: undefined, label: `All (${total})` },
-          { key: "OPEN", label: `Pending (${count("OPEN")})` },
-          { key: "INVESTIGATING", label: `Under review (${count("INVESTIGATING")})` },
-          { key: "RESOLVED", label: `Resolved (${count("RESOLVED")})` },
-          { key: "REJECTED", label: `Rejected (${count("REJECTED")})` },
+          { key: undefined, label: t("adminSup.complaints.filterAll", { n: total }) },
+          ...COMPLAINT_STATUSES.map((s) => ({
+            key: s as string | undefined,
+            label: t("adminSup.complaints.filter", { label: t(`adminSup.complaints.status.${s}`), n: count(s) }),
+          })),
         ].map((f) => (
           <Link
             key={f.label}
@@ -89,17 +88,17 @@ export default async function ComplaintsPage({
         {reports.length === 0 ? (
           <div className="p-10 text-center">
             <MessageSquareWarning size={28} className="mx-auto text-muted" />
-            <p className="mt-3 font-semibold text-ink">No complaints</p>
-            <p className="mt-1 text-sm text-muted">New complaints will appear here.</p>
+            <p className="mt-3 font-semibold text-ink">{t("adminSup.complaints.emptyTitle")}</p>
+            <p className="mt-1 text-sm text-muted">{t("adminSup.complaints.emptyDesc")}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] text-sm">
               <thead className="border-b border-line bg-surface-alt">
                 <tr>
-                  {["Date", "Reported by", "Against", "Reason", "Request", "Status"].map((h) => (
-                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted">
-                      {h}
+                  {["date", "reportedBy", "against", "reason", "request", "status"].map((h) => (
+                    <th key={h} className="px-4 py-3 text-start text-xs font-semibold text-muted">
+                      {t(`adminSup.complaints.col.${h}`)}
                     </th>
                   ))}
                 </tr>
@@ -107,16 +106,16 @@ export default async function ComplaintsPage({
               <tbody className="divide-y divide-line">
                 {reports.map((r) => (
                   <ClickableRow key={r.id} href={`/admin/complaints/${r.id}`}>
-                    <td className="whitespace-nowrap px-4 py-3 text-muted">{formatDateTime(r.createdAt.toISOString())}</td>
+                    <td className="whitespace-nowrap px-4 py-3 text-muted">{formatDateTime(r.createdAt.toISOString(), locale)}</td>
                     <td className="px-4 py-3 font-medium text-ink">{r.reporterName}</td>
                     <td className="px-4 py-3 text-muted">{r.reportedName ?? "—"}</td>
-                    <td className="px-4 py-3 text-ink">{r.reason}</td>
+                    <td className="px-4 py-3 text-ink">{tDb(t, "reportReason", r.reason)}</td>
                     <td className="px-4 py-3 font-mono text-xs text-muted">
                       {r.requestId ? `#${r.requestId.slice(-6)}` : "—"}
                     </td>
                     <td className="px-4 py-3">
                       <span className={`whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold ${STATUS_CLS[r.status] ?? "bg-surface-alt text-muted"}`}>
-                        {COMPLAINT_STATUS_LABEL[r.status] ?? r.status}
+                        {COMPLAINT_STATUSES.includes(r.status) ? t(`adminSup.complaints.status.${r.status}`) : r.status}
                       </span>
                     </td>
                   </ClickableRow>

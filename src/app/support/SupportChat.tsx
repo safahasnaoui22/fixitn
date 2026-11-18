@@ -3,6 +3,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Send } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
+import { useI18n } from "@/lib/i18n/I18nProvider";
+import { formatTime } from "@/lib/utils";
+import { renderText } from "@/lib/i18n/translate";
 
 type Msg = {
   id: string;
@@ -14,13 +17,14 @@ type Msg = {
   fromUserRole: string;
 };
 
-const STAFF_LABEL: Record<string, string> = {
-  ADMIN: "Administrateur",
-  SOUS_ADMIN: "Support",
+const STAFF_LABEL_KEY: Record<string, string> = {
+  ADMIN: "booking.support.staffAdmin",
+  SOUS_ADMIN: "booking.support.staffSupport",
 };
 
 /** Live chat with the Admin / Sous-admin team (polls /api/support/messages). */
 export function SupportChat() {
+  const { t, locale } = useI18n();
   const [messages, setMessages] = useState<Msg[]>([]);
   const [myId, setMyId] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
@@ -71,7 +75,7 @@ export function SupportChat() {
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        setError(data.error ?? "Message non envoyé.");
+        setError(data.error ?? t("booking.support.sendFailed"));
       } else {
         setText("");
         await load();
@@ -86,7 +90,7 @@ export function SupportChat() {
       <div className="no-scrollbar flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-4">
         {loaded && messages.length === 0 && (
           <p className="py-12 text-center text-sm text-muted">
-            Écrivez votre message : un administrateur ou le support vous répondra ici.
+            {t("booking.support.empty")}
           </p>
         )}
 
@@ -100,20 +104,20 @@ export function SupportChat() {
               <div className={`flex max-w-[78%] flex-col gap-1 ${isMe ? "items-end" : "items-start"}`}>
                 {!isMe && (
                   <span className="px-1 text-[11px] font-semibold text-brand-orange">
-                    {m.fromUserName} · {STAFF_LABEL[m.fromUserRole] ?? m.fromUserRole}
+                    {m.fromUserName} · {STAFF_LABEL_KEY[m.fromUserRole] ? t(STAFF_LABEL_KEY[m.fromUserRole]) : m.fromUserRole}
                   </span>
                 )}
                 <div
                   className={`whitespace-pre-wrap break-words rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
                     isMe
-                      ? "rounded-br-sm bg-brand-orange text-white"
-                      : "rounded-bl-sm border border-line bg-surface-alt text-ink"
+                      ? "rounded-ee-sm bg-brand-orange text-white"
+                      : "rounded-es-sm border border-line bg-surface-alt text-ink"
                   }`}
                 >
-                  {m.body}
+                  {renderText(t, m.body)}
                 </div>
                 <span className="px-1 text-[10px] text-muted">
-                  {new Date(m.createdAt).toLocaleTimeString("fr-TN", { hour: "2-digit", minute: "2-digit" })}
+                  {formatTime(m.createdAt, locale)}
                 </span>
               </div>
             </div>
@@ -130,16 +134,16 @@ export function SupportChat() {
           onChange={(e) => setText(e.target.value)}
           maxLength={2000}
           autoComplete="off"
-          placeholder="Écrire à l'équipe Fixili…"
+          placeholder={t("booking.support.placeholder")}
           className="flex-1 rounded-full border border-line bg-surface-alt px-4 py-2.5 text-sm text-ink outline-none focus:border-brand-orange"
         />
         <button
           type="submit"
           disabled={sending || !text.trim()}
-          aria-label="Envoyer"
+          aria-label={t("booking.support.send")}
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-orange text-white disabled:opacity-50"
         >
-          <Send size={16} />
+          <Send size={16} className="rtl:-scale-x-100" />
         </button>
       </form>
     </div>

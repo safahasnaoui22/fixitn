@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db/client";
-import { getFaceDescriptor, findOtherAccountWithFace, FACE_SHARED_MESSAGE } from "@/lib/db/face";
+import { getFaceDescriptor, findOtherAccountWithFace } from "@/lib/db/face";
 import { hashPassword } from "@/lib/auth";
+import { getT } from "@/lib/i18n/server";
 
 const THRESHOLD = 0.5;
 
@@ -12,13 +13,14 @@ function euclidean(a: number[], b: number[]): number {
 }
 
 export async function POST(req: NextRequest) {
+  const t = await getT();
   const body = await req.json().catch(() => null);
   const phone: string       = body?.phone ?? "";
   const descriptor: number[] = body?.descriptor ?? [];
   const newPassword: string = body?.newPassword ?? "";
 
   if (!phone || descriptor.length !== 128 || newPassword.length < 6) {
-    return NextResponse.json({ error: "Données invalides" }, { status: 400 });
+    return NextResponse.json({ error: t("auth.api.invalidData") }, { status: 400 });
   }
 
   const user = await prisma.user.findUnique({
@@ -28,7 +30,7 @@ export async function POST(req: NextRequest) {
 
   if (!user) {
     return NextResponse.json(
-      { error: "Compte introuvable." },
+      { error: t("auth.api.accountNotFound") },
       { status: 404 }
     );
   }
@@ -37,7 +39,7 @@ export async function POST(req: NextRequest) {
   const stored = await getFaceDescriptor(user.id);
   if (!stored) {
     return NextResponse.json(
-      { error: "Aucun visage enregistré." },
+      { error: t("auth.api.noFace") },
       { status: 403 }
     );
   }
@@ -45,13 +47,13 @@ export async function POST(req: NextRequest) {
   const distance = euclidean(descriptor, stored);
   if (distance > THRESHOLD) {
     return NextResponse.json(
-      { error: "Vérification du visage échouée." },
+      { error: t("auth.api.faceVerifyFailed") },
       { status: 403 }
     );
   }
 
   if (await findOtherAccountWithFace(descriptor, user.id)) {
-    return NextResponse.json({ error: FACE_SHARED_MESSAGE }, { status: 403 });
+    return NextResponse.json({ error: t("auth.api.faceShared") }, { status: 403 });
   }
 
   // Update password + bump sessionVersion → logs out ALL devices

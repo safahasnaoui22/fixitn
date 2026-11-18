@@ -50,7 +50,7 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
       fetch(event.request).catch(() =>
         caches.match(OFFLINE_URL).then(
-          (cached) => cached ?? new Response("Offline", { status: 503 })
+          (cached) => cached ?? new Response(OFFLINE_TEXT[swLang()], { status: 503 })
         )
       )
     );
@@ -84,6 +84,22 @@ self.addEventListener("fetch", (event) => {
 });
 
 // ── Push notifications ─────────────────────────────────────────────────
+// Fallback texts when the push payload has no title/body (the server normally sends them translated)
+const FALLBACK_BODY = {
+  fr: "Vous avez une nouvelle notification",
+  en: "You have a new notification",
+  ar: "لديك إشعار جديد",
+};
+const OFFLINE_TEXT = {
+  fr: "Hors ligne",
+  en: "Offline",
+  ar: "لا يوجد اتصال بالإنترنت",
+};
+function swLang() {
+  const l = ((self.navigator && self.navigator.language) || "fr").slice(0, 2).toLowerCase();
+  return l === "ar" || l === "en" ? l : "fr";
+}
+
 self.addEventListener("push", (event) => {
   let data = {};
   try {
@@ -94,7 +110,7 @@ self.addEventListener("push", (event) => {
 
   // A notification MUST always be shown (iOS/Chrome drop the subscription otherwise)
   const options = {
-    body:               data.body ?? "",
+    body:               data.body || FALLBACK_BODY[swLang()],
     icon:               "/icons/icon-192.png",
     badge:              "/icons/icon-192.png",
     tag:                data.tag ?? "fixili-notif",

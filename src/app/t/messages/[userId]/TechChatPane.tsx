@@ -6,6 +6,9 @@ import { Send } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { sendTechMessageAction } from "./actions";
 import type { SupportMessage } from "@/lib/db/supportChat";
+import { useI18n } from "@/lib/i18n/I18nProvider";
+import { renderText } from "@/lib/i18n/translate";
+import { formatTime } from "@/lib/utils";
 
 export function TechChatPane({
   myId,
@@ -21,6 +24,7 @@ export function TechChatPane({
   initialMessages: SupportMessage[];
 }) {
   const router    = useRouter();
+  const { t, locale } = useI18n();
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -41,10 +45,10 @@ export function TechChatPane({
         {initialMessages.length === 0 && (
           <div className="flex flex-col items-center gap-2 py-12 text-center">
             <p className="text-sm font-semibold text-ink">
-              Démarrez la conversation
+              {t("tech.chat.start")}
             </p>
             <p className="text-xs text-muted max-w-xs">
-              Envoyez un message à {otherUserName}.
+              {t("tech.chat.sendTo", { name: otherUserName })}
             </p>
           </div>
         )}
@@ -71,15 +75,13 @@ export function TechChatPane({
               }`}>
                 <div className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
                   isMe
-                    ? "bg-brand-orange text-white rounded-br-sm"
-                    : "bg-surface-alt text-ink border border-line rounded-bl-sm"
+                    ? "bg-brand-orange text-white rounded-ee-sm"
+                    : "bg-surface-alt text-ink border border-line rounded-es-sm"
                 }`}>
-                  {msg.body}
+                  {renderText(t, msg.body)}
                 </div>
                 <span className="text-[10px] text-muted px-1">
-                  {new Date(msg.createdAt).toLocaleTimeString("fr-TN", {
-                    hour: "2-digit", minute: "2-digit",
-                  })}
+                  {formatTime(msg.createdAt, locale)}
                 </span>
               </div>
             </div>
@@ -97,15 +99,16 @@ export function TechChatPane({
           name="body"
           type="text"
           required
-          placeholder={`Écrire à ${otherUserName}…`}
+          placeholder={t("tech.chat.writeTo", { name: otherUserName })}
           autoComplete="off"
           className="flex-1 rounded-full border border-line bg-surface-alt px-4 py-2.5 text-sm outline-none focus:border-brand-orange text-ink"
         />
         <button
           type="submit"
+          aria-label={t("common.send")}
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-orange text-white"
         >
-          <Send size={16} />
+          <Send size={16} className="rtl:-scale-x-100" />
         </button>
       </form>
     </div>

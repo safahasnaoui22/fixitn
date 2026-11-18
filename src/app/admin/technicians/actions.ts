@@ -10,6 +10,7 @@ import {
   archiveTechnician,
   updateTechnicianPlan,
 } from "@/lib/db/technicianApproval";
+import { i18nText } from "@/lib/i18n/translate";
 
 async function techName(technicianId: string): Promise<string> {
   const t = await prisma.technician.findUnique({
@@ -28,7 +29,7 @@ export async function approveTechnicianAction(
     action: "technician.approve",
     entityType: "technician",
     entityId: technicianId,
-    summary: `Approved technician ${await techName(technicianId)}`,
+    summary: i18nText("sys.audit.techApproved", { name: await techName(technicianId) }),
   });
   revalidatePath("/admin/technicians");
   revalidatePath("/admin");
@@ -43,7 +44,7 @@ export async function declineTechnicianAction(
     action: "technician.decline",
     entityType: "technician",
     entityId: technicianId,
-    summary: `Declined technician ${await techName(technicianId)}`,
+    summary: i18nText("sys.audit.techDeclined", { name: await techName(technicianId) }),
   });
   revalidatePath("/admin/technicians");
   revalidatePath("/admin");
@@ -58,7 +59,7 @@ export async function archiveTechnicianAction(
     action: "technician.archive",
     entityType: "technician",
     entityId: technicianId,
-    summary: `Archived technician ${await techName(technicianId)}`,
+    summary: i18nText("sys.audit.techArchived", { name: await techName(technicianId) }),
   });
   revalidatePath("/admin/technicians");
   revalidatePath("/admin");
@@ -75,7 +76,7 @@ export async function updateTechnicianPlanAction(
     action: "technician.plan",
     entityType: "technician",
     entityId: technicianId,
-    summary: `Changed plan of technician ${await techName(technicianId)}`,
+    summary: i18nText("sys.audit.techPlan", { name: await techName(technicianId) }),
   });
   revalidatePath("/admin/technicians");
 }

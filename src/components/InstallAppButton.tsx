@@ -83,7 +83,7 @@ export function InstallAppButton() {
           >
             <div className="flex items-center justify-between">
               <p className="font-heading text-base font-bold">{t("install.title")}</p>
-              <button onClick={() => setHelp(false)} aria-label="Close" className="text-white/60">
+              <button onClick={() => setHelp(false)} aria-label={t("common.close")} className="text-white/60">
                 <X size={18} />
               </button>
             </div>

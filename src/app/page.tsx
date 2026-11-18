@@ -9,9 +9,11 @@ import { unreadNotificationCount } from "@/lib/db/notifications";
 import { Avatar } from "@/components/ui/Avatar";
 import { ClientBottomNav } from "@/components/ClientBottomNav";
 import { CategoryGrid } from "./CategoryGrid";
+import { getT } from "@/lib/i18n/server";
 import { DARK_BG, NAVY_TILE } from "@/lib/theme";
 
 export default async function HomePage() {
+  const t = await getT();
   const session = await getSession();
 
   if (!session) redirect("/onboarding");
@@ -25,7 +27,7 @@ export default async function HomePage() {
     listHomeTechnicians(),
     getPublicUserById(session.userId),
   ]);
-  const city = me?.city?.trim() || "Tunis";
+  const city = me?.city?.trim() || t("client.home.defaultCity");
 
   const firstName = session.fullName.split(" ")[0];
 
@@ -46,7 +48,7 @@ export default async function HomePage() {
             <div
               className="flex items-center gap-1.5 rounded-full border border-white/10 px-3 py-2 text-[13px] font-medium text-white"
               style={{ backgroundColor: NAVY_TILE }}
-              title="Votre ville"
+              title={t("client.home.yourCity")}
             >
               <MapPin size={15} className="text-brand-orange" />
               <span className="max-w-[84px] truncate">{city}</span>
@@ -54,20 +56,20 @@ export default async function HomePage() {
             </div>
             <Link
               href="/notifications"
-              aria-label="Notifications"
+              aria-label={t("common.notifications")}
               style={{ backgroundColor: NAVY_TILE }}
               className="relative flex h-10 w-10 items-center justify-center rounded-full border border-white/10 text-white/80"
             >
               <Bell size={18} />
               {unread > 0 && (
-                <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-orange px-1 text-[10px] font-bold text-white">
+                <span className="absolute -end-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-orange px-1 text-[10px] font-bold text-white">
                   {unread > 9 ? "9+" : unread}
                 </span>
               )}
             </Link>
             <Link
               href="/profile"
-              aria-label="Mon profil"
+              aria-label={t("client.home.myProfile")}
               className="rounded-full border border-white/10"
               style={{ backgroundColor: NAVY_TILE }}
             >

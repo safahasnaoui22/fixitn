@@ -3,18 +3,21 @@
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { useT } from "@/lib/i18n/I18nProvider";
 
 export function AdminShell({
   sidebar,
   children,
-  title = "Fixili Admin",
+  title,
 }: {
   sidebar: React.ReactNode;
   children: React.ReactNode;
   /** Text shown in the mobile top bar (e.g. "Fixili Sous-Admin"). */
   title?: string;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
+  const shownTitle = title ?? t("admin.shell.adminTitle");
 
   return (
     <div className="admin-shell flex h-dvh w-full min-w-0 overflow-hidden bg-surface-alt">
@@ -34,24 +37,24 @@ export function AdminShell({
           }
         }}
         className={`
-          fixed inset-y-0 left-0 z-50
+          fixed inset-y-0 start-0 z-50
           flex w-56 shrink-0 flex-col
-          border-r border-line bg-brand-navy
+          border-e border-line bg-brand-navy
           transition-transform duration-300 ease-in-out
 
           lg:static
           lg:z-auto
           lg:translate-x-0
 
-          ${open ? "translate-x-0" : "-translate-x-full"}
+          ${open ? "translate-x-0" : "-translate-x-full rtl:translate-x-full"}
         `}
       >
         {/* Mobile close */}
         <button
           type="button"
           onClick={() => setOpen(false)}
-          className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 lg:hidden"
-          aria-label="Close navigation"
+          className="absolute end-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20 lg:hidden"
+          aria-label={t("admin.shell.closeNav")}
         >
           <X size={16} />
         </button>
@@ -67,13 +70,13 @@ export function AdminShell({
             type="button"
             onClick={() => setOpen(true)}
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-navy text-white"
-            aria-label="Open navigation"
+            aria-label={t("admin.shell.openNav")}
           >
             <Menu size={18} />
           </button>
 
           <p className="min-w-0 flex-1 truncate font-heading text-base font-bold text-ink">
-            {title}
+            {shownTitle}
           </p>
 
           <ThemeToggle />

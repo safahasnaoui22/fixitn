@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db/client";
 import { getUnreadSupportCount } from "@/lib/db/supportChat";
 import { AdminShell } from "./AdminShell";
 import { AdminSidebar } from "./AdminSidebar";
+import { getT } from "@/lib/i18n/server";
 
 // Shared by the ADMIN and by a SOUS_ADMIN who was given some functions.
 // Each page checks its own permission (requirePermission); the menu only
@@ -13,6 +14,7 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const t = await getT();
   const session = await requireUser();
   if (session.role !== "ADMIN" && session.role !== "SOUS_ADMIN") redirect("/");
 
@@ -32,7 +34,7 @@ export default async function AdminLayout({
 
   return (
     <AdminShell
-      title="Fixili Sous-Admin"
+      title={t("admin.shell.sousTitle")}
       sidebar={
         <AdminSidebar
           role="SOUS_ADMIN"

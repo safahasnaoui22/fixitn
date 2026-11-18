@@ -6,11 +6,12 @@ import { getTechnicianEarnings, listPaymentsForTechnician } from "@/lib/db/monet
 import { TechBottomNav } from "@/components/TechBottomNav";
 import { EmptyState } from "@/components/ui/Card";
 import { formatDT, formatDate } from "@/lib/utils";
+import { getT, getLocale } from "@/lib/i18n/server";
 
 const PAYMENT_TYPE_LABEL: Record<string, string> = {
-  PAYOUT: "Job payout",
-  COMMISSION: "Commission",
-  SUBSCRIPTION: "Subscription",
+  PAYOUT: "tech.earnings.typePayout",
+  COMMISSION: "paymentType.COMMISSION",
+  SUBSCRIPTION: "paymentType.SUBSCRIPTION",
 };
 
 const PAYMENT_TYPE_COLOR: Record<string, string> = {
@@ -21,6 +22,8 @@ const PAYMENT_TYPE_COLOR: Record<string, string> = {
 
 export default async function TechEarningsPage() {
   const session = await requireRole("TECHNICIAN");
+  const t = await getT();
+  const locale = await getLocale();
   const technician = await getTechnicianByUserId(session.userId);
   if (!technician) redirect("/onboarding");
 
@@ -33,11 +36,11 @@ export default async function TechEarningsPage() {
     <>
       <div className="app-content no-scrollbar">
         <div className="bg-brand-navy px-5 pb-8 pt-6 text-white">
-          <p className="font-heading text-lg font-bold mb-5">Earnings</p>
+          <p className="font-heading text-lg font-bold mb-5">{t("tech.earnings.title")}</p>
           <div className="grid grid-cols-3 gap-2">
-            <EarningBox label="Today" value={formatDT(earnings.today)} />
-            <EarningBox label="This month" value={formatDT(earnings.thisMonth)} />
-            <EarningBox label="All time" value={formatDT(earnings.total)} />
+            <EarningBox label={t("tech.dash.today")} value={formatDT(earnings.today, locale)} />
+            <EarningBox label={t("tech.dash.thisMonth")} value={formatDT(earnings.thisMonth, locale)} />
+            <EarningBox label={t("tech.earnings.allTime")} value={formatDT(earnings.total, locale)} />
           </div>
         </div>
 
@@ -46,28 +49,28 @@ export default async function TechEarningsPage() {
             <div className="rounded-2xl border border-line bg-surface p-4">
               <TrendingUp size={18} className="text-success mb-2" />
               <p className="font-heading text-xl font-bold text-ink">
-                {formatDT(earnings.thisMonth)}
+                {formatDT(earnings.thisMonth, locale)}
               </p>
-              <p className="text-xs text-muted mt-0.5">This month net</p>
+              <p className="text-xs text-muted mt-0.5">{t("tech.earnings.thisMonthNet")}</p>
             </div>
             <div className="rounded-2xl border border-line bg-surface p-4">
               <Wallet size={18} className="text-brand-orange mb-2" />
               <p className="font-heading text-xl font-bold text-ink">
-                {formatDT(earnings.total)}
+                {formatDT(earnings.total, locale)}
               </p>
-              <p className="text-xs text-muted mt-0.5">Total net earned</p>
+              <p className="text-xs text-muted mt-0.5">{t("tech.earnings.totalNet")}</p>
             </div>
           </div>
 
           <div>
             <p className="font-heading text-sm font-semibold text-ink mb-3">
-              Payment History
+              {t("tech.earnings.history")}
             </p>
             {payments.length === 0 ? (
               <EmptyState
                 icon={Wallet}
-                title="No payments yet"
-                description="Completed jobs and subscription charges will appear here."
+                title={t("tech.earnings.empty")}
+                description={t("tech.earnings.emptyHint")}
               />
             ) : (
               <div className="rounded-2xl border border-line bg-surface divide-y divide-line overflow-hidden">
@@ -85,16 +88,16 @@ export default async function TechEarningsPage() {
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium text-ink">
-                          {PAYMENT_TYPE_LABEL[p.type] ?? p.type}
+                          {PAYMENT_TYPE_LABEL[p.type] ? t(PAYMENT_TYPE_LABEL[p.type]) : p.type}
                         </p>
-                        <p className="text-xs text-muted">{formatDate(p.createdAt)}</p>
+                        <p className="text-xs text-muted">{formatDate(p.createdAt, locale)}</p>
                       </div>
-                      <div className="text-right shrink-0">
+                      <div className="text-end shrink-0">
                         <p className={`font-heading text-sm font-semibold ${PAYMENT_TYPE_COLOR[p.type] ?? "text-ink"}`}>
-                          {isCredit ? "+" : "-"}{formatDT(isCredit ? net : p.amount)}
+                          {isCredit ? "+" : "-"}{formatDT(isCredit ? net : p.amount, locale)}
                         </p>
                         {p.platformFee > 0 && isCredit && (
-                          <p className="text-[10px] text-muted">-{formatDT(p.platformFee)} fee</p>
+                          <p className="text-[10px] text-muted">{t("tech.earnings.fee", { amount: "-" + formatDT(p.platformFee, locale) })}</p>
                         )}
                       </div>
                     </div>

@@ -1,4 +1,6 @@
 import { prisma } from "./client";
+import { DEFAULT_LOCALE } from "../i18n/config";
+import { getMessages, i18nText, makeT, renderText } from "../i18n/translate";
 
 export type SeniorChatMessage = {
   id: string;
@@ -70,7 +72,7 @@ export async function postSeniorMessage(senderId: string, senderName: string, bo
     await Promise.allSettled(
       others.map((o) =>
         sendPushToUser(o.userId, {
-          title: "👥 Cercle Senior",
+          title: renderText(makeT(getMessages(DEFAULT_LOCALE)), i18nText("sys.notif.seniorCircle.title")),
           body: `${senderName}: ${body.slice(0, 90)}`,
           url: "/t/senior/group",
           tag: "senior-chat",

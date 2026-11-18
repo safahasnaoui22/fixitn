@@ -17,6 +17,8 @@ import { Button } from "@/components/ui/Button";
 import { registerAction } from "./actions";
 import type { Category } from "@/lib/types";
 import { AUTH_INPUT } from "@/lib/theme";
+import { useT } from "@/lib/i18n/I18nProvider";
+import { tOr, type TFn } from "@/lib/i18n/translate";
 
 // Two documents are sent in ONE request.
 // Vercel request body limit is 4.5 MB.
@@ -46,13 +48,11 @@ function canvasToBlob(
  * Validates a document and shrinks big photos
  * so the upload stays small.
  */
-async function prepareDocument(file: File): Promise<File> {
+async function prepareDocument(file: File, t: TFn): Promise<File> {
   // PDF
   if (file.type === "application/pdf") {
     if (file.size > MAX_DOC_BYTES) {
-      throw new Error(
-        "Ce PDF dépasse 1,8 Mo. Envoyez plutôt une photo (JPG ou PNG) ou un PDF plus léger."
-      );
+      throw new Error(t("auth.register.doc.pdfTooBig"));
     }
 
     return file;
@@ -60,9 +60,7 @@ async function prepareDocument(file: File): Promise<File> {
 
   // Images only
   if (!file.type.startsWith("image/")) {
-    throw new Error(
-      "Format non supporté. Utilisez JPG, PNG ou PDF."
-    );
+    throw new Error(t("auth.register.doc.badFormat"));
   }
 
   // Already small enough
@@ -77,9 +75,7 @@ async function prepareDocument(file: File): Promise<File> {
       imageOrientation: "from-image",
     });
   } catch {
-    throw new Error(
-      "Impossible de lire cette image. Essayez un autre fichier."
-    );
+    throw new Error(t("auth.register.doc.unreadable"));
   }
 
   const steps = [
@@ -133,9 +129,7 @@ async function prepareDocument(file: File): Promise<File> {
 
   bitmap.close();
 
-  throw new Error(
-    "Image trop lourde. Prenez une photo de moindre qualité et réessayez."
-  );
+  throw new Error(t("auth.register.doc.tooHeavy"));
 }
 
 export function RegisterForm({
@@ -143,6 +137,7 @@ export function RegisterForm({
 }: {
   categories: Category[];
 }) {
+  const t = useT();
   // No default on purpose: the person MUST choose (this avoids technicians
   // registering as clients by mistake).
   const [role, setRole] = useState<
@@ -202,9 +197,6 @@ export function RegisterForm({
       ? "/terms/technician"
       : "/terms/client";
 
-  const roleLabel =
-    role === "TECHNICIAN" ? "technicien" : "client";
-
   return (
     <form
       action={registerAction}
@@ -245,18 +237,19 @@ export function RegisterForm({
 
       {/* Common fields */}
       <Field
-        label="Nom complet"
+        label={t("auth.register.fullName")}
         name="fullName"
-        placeholder="Ahmed Ben Salah"
+        placeholder={t("auth.register.fullNamePlaceholder")}
         required
       />
 
       <Field
-        label="Numéro de téléphone"
+        label={t("login.phone")}
         name="phone"
         type="tel"
-        placeholder="2XXXXXXX"
+        placeholder={t("auth.phonePlaceholder")}
         required
+        ltr
       />
 
       {/* Password */}
@@ -265,7 +258,7 @@ export function RegisterForm({
           htmlFor="password"
           className="text-sm font-medium text-white"
         >
-          Mot de passe
+          {t("login.password")}
         </label>
 
         <div className="relative mt-1.5">
@@ -274,14 +267,16 @@ export function RegisterForm({
             name="password"
             type={showPass ? "text" : "password"}
             required
-            placeholder="Min. 6 caractères"
-            className={`${AUTH_INPUT} pr-11`}
+            placeholder={t("auth.register.passwordPlaceholder")}
+            dir="ltr"
+            className={`${AUTH_INPUT} pe-11`}
           />
 
           <button
             type="button"
             onClick={() => setShowPass(!showPass)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60"
+            aria-label={showPass ? t("auth.register.hidePassword") : t("auth.register.showPassword")}
+            className="absolute end-3 top-1/2 -translate-y-1/2 text-white/60"
           >
             {showPass ? (
               <EyeOff size={18} />
@@ -293,27 +288,27 @@ export function RegisterForm({
       </div>
 
       <Field
-        label="Ville"
+        label={t("common.city")}
         name="city"
-        placeholder="Tunis"
+        placeholder={t("auth.register.cityPlaceholder")}
       />
 
       {/* Account type: chosen AFTER the common fields, nothing pre-selected */}
       <div>
         <p className="mb-1 text-sm font-medium text-white">
-          Vous êtes ? <span className="text-brand-orange">*</span>
+          {t("auth.register.youAre")} <span className="text-brand-orange">*</span>
         </p>
         {!role && (
           <p className="mb-2 text-xs text-white/60">
-            Choisissez votre type de compte pour continuer.
+            {t("auth.register.chooseType")}
           </p>
         )}
 
         <div className="grid grid-cols-2 gap-3">
           {(
             [
-              { r: "CLIENT", title: "Client", hint: "Je cherche un technicien" },
-              { r: "TECHNICIAN", title: "Technicien", hint: "Je propose mes services" },
+              { r: "CLIENT", title: t("auth.register.client"), hint: t("auth.register.clientHint") },
+              { r: "TECHNICIAN", title: t("auth.register.technician"), hint: t("auth.register.technicianHint") },
             ] as const
           ).map(({ r, title, hint }) => (
             <button
@@ -348,13 +343,13 @@ export function RegisterForm({
       {role === "TECHNICIAN" && (
         <div className="flex flex-col gap-4 rounded-2xl border border-white/15 bg-black/35 p-4 backdrop-blur-sm">
           <p className="text-sm font-semibold text-white">
-            Détails technicien
+            {t("auth.register.techDetails")}
           </p>
 
           <Field
-            label="Titre professionnel"
+            label={t("auth.register.titleLabel")}
             name="title"
-            placeholder="Ex: Technicien Climatisation"
+            placeholder={t("auth.register.titlePlaceholder")}
             required
           />
 
@@ -364,14 +359,14 @@ export function RegisterForm({
               htmlFor="bio"
               className="text-sm font-medium text-white"
             >
-              Bio
+              {t("auth.register.bio")}
             </label>
 
             <textarea
               id="bio"
               name="bio"
               rows={3}
-              placeholder="Présentez-vous aux clients..."
+              placeholder={t("auth.register.bioPlaceholder")}
               className={`mt-1.5 ${AUTH_INPUT}`}
             />
           </div>
@@ -379,30 +374,32 @@ export function RegisterForm({
           {/* Experience / Price */}
           <div className="grid grid-cols-2 gap-3">
             <Field
-              label="Années d'exp."
+              label={t("auth.register.years")}
               name="yearsExperience"
               type="number"
               placeholder="5"
+              ltr
             />
 
             <Field
-              label="Prix départ (DT)"
+              label={t("auth.register.startPrice")}
               name="startingPrice"
               type="number"
               placeholder="30"
+              ltr
             />
           </div>
 
           {/* Categories */}
           <div>
             <p className="mb-2 text-sm font-medium text-white">
-              Services proposés{" "}
+              {t("auth.register.servicesOffered")}{" "}
               <span className="text-red-400">*</span>
             </p>
 
             {categories.length === 0 ? (
               <p className="text-xs text-white/60">
-                Aucune catégorie disponible.
+                {t("auth.register.noCategory")}
               </p>
             ) : (
               <div className="grid grid-cols-2 gap-2">
@@ -417,7 +414,7 @@ export function RegisterForm({
                       onClick={() =>
                         toggleCat(cat.id)
                       }
-                      className={`flex items-center gap-2 rounded-xl border-2 px-3 py-2.5 text-left transition-colors ${
+                      className={`flex items-center gap-2 rounded-xl border-2 px-3 py-2.5 text-start transition-colors ${
                         selected
                           ? "border-brand-orange bg-brand-orange/15"
                           : "border-white/40 bg-black/30"
@@ -437,7 +434,7 @@ export function RegisterForm({
                             : "text-white"
                         }`}
                       >
-                        {cat.name}
+                        {tOr(t, `category.${cat.slug}.name`, cat.name)}
                       </span>
                     </button>
                   );
@@ -447,7 +444,7 @@ export function RegisterForm({
 
             {selectedCats.size === 0 && (
               <p className="mt-1 text-xs text-amber-400">
-                Sélectionnez au moins un service.
+                {t("auth.register.selectService")}
               </p>
             )}
           </div>
@@ -456,21 +453,18 @@ export function RegisterForm({
           <div className="flex flex-col gap-3">
             <div>
               <p className="text-sm font-semibold text-white">
-                Documents d&apos;identité{" "}
+                {t("auth.register.docsTitle")}{" "}
                 <span className="text-red-400">*</span>
               </p>
 
               <p className="mt-0.5 text-xs text-white/60">
-                Requis pour la vérification. Visible
-                uniquement par l&apos;administration.
-                Maximum 1,8 Mo par fichier (les grandes
-                photos sont réduites automatiquement).
+                {t("auth.register.docsHelp")}
               </p>
             </div>
 
             <FileUpload
               name="cin"
-              label="CIN ou Passeport"
+              label={t("auth.register.cin")}
               doc={cin}
               onChange={setCin}
               required
@@ -478,7 +472,7 @@ export function RegisterForm({
 
             <FileUpload
               name="diplome"
-              label="Diplôme ou Certificat professionnel"
+              label={t("auth.register.diploma")}
               doc={diplome}
               onChange={setDiplome}
               required
@@ -499,13 +493,13 @@ export function RegisterForm({
 
           <div>
             <p className="text-sm font-semibold text-white">
-              Conditions d&apos;utilisation
+              {t("auth.register.termsTitle")}
             </p>
 
             <p className="mt-0.5 text-xs text-white/60">
               {role === "TECHNICIAN"
-                ? "En créant un compte technicien, vous acceptez les frais de commission, les conditions d'approbation et les règles de la plateforme."
-                : "En créant un compte client, vous acceptez de payer les frais de visite et de transport pour chaque prestation."}
+                ? t("auth.register.termsTech")
+                : t("auth.register.termsClient")}
             </p>
           </div>
         </div>
@@ -516,7 +510,7 @@ export function RegisterForm({
           className="mb-3 flex items-center gap-1.5 text-xs font-medium text-brand-orange"
         >
           <ExternalLink size={12} />
-          Lire les conditions complètes
+          {t("auth.register.readFull")}
         </Link>
 
         <label className="flex cursor-pointer items-start gap-3">
@@ -554,21 +548,28 @@ export function RegisterForm({
           </div>
 
           <span className="text-sm leading-relaxed text-white">
-            J&apos;ai lu et j&apos;accepte les{" "}
-            <Link
-              href={termsHref}
-              target="_blank"
-              className="font-semibold text-brand-orange"
-            >
-              Conditions d&apos;utilisation
-            </Link>
+            {(() => {
+              const [pre, post = ""] = t("auth.register.agree").split("{terms}");
+              return (
+                <>
+                  {pre}
+                  <Link
+                    href={termsHref}
+                    target="_blank"
+                    className="font-semibold text-brand-orange"
+                  >
+                    {t("auth.register.termsTitle")}
+                  </Link>
+                  {post}
+                </>
+              );
+            })()}
           </span>
         </label>
 
         {!agreed && (
           <p className="mt-2 text-xs text-amber-400">
-            Vous devez accepter les conditions avant de
-            créer un compte.
+            {t("auth.register.mustAccept")}
           </p>
         )}
       </div>
@@ -580,19 +581,19 @@ export function RegisterForm({
         fullWidth
         disabled={!agreed}
       >
-        Créer mon compte {roleLabel}
+        {role === "TECHNICIAN" ? t("auth.register.createTech") : t("auth.register.createClient")}
       </Button>
 
         </>
       )}
 
       <p className="text-center text-sm text-white/60">
-        Déjà inscrit ?{" "}
+        {t("auth.register.alreadyRegistered")}{" "}
         <Link
           href="/login"
           className="font-semibold text-brand-orange"
         >
-          Se connecter
+          {t("login.submit")}
         </Link>
       </p>
     </form>
@@ -616,12 +617,14 @@ function Field({
   type = "text",
   placeholder,
   required,
+  ltr,
 }: {
   label: string;
   name: string;
   type?: string;
   placeholder?: string;
   required?: boolean;
+  ltr?: boolean;
 }) {
   return (
     <div>
@@ -638,6 +641,7 @@ function Field({
         type={type}
         required={required}
         placeholder={placeholder}
+        dir={ltr ? "ltr" : undefined}
         className={`mt-1.5 ${AUTH_INPUT}`}
       />
     </div>
@@ -657,6 +661,7 @@ function FileUpload({
   onChange: (next: DocState) => void;
   required?: boolean;
 }) {
+  const t = useT();
   async function handleChange(
     e: React.ChangeEvent<HTMLInputElement>
   ) {
@@ -671,7 +676,7 @@ function FileUpload({
     }
 
     try {
-      const ready = await prepareDocument(file);
+      const ready = await prepareDocument(file, t);
 
       // If the image was compressed, replace the
       // selected file inside the real input.
@@ -695,7 +700,7 @@ function FileUpload({
         error:
           err instanceof Error
             ? err.message
-            : "Fichier invalide.",
+            : t("auth.register.doc.invalid"),
       });
     }
   }
@@ -722,7 +727,7 @@ function FileUpload({
         required={required}
         accept="image/jpeg,image/png,image/webp,application/pdf"
         onChange={handleChange}
-        className="mt-1.5 block w-full cursor-pointer rounded-xl border border-white bg-black/30 px-4 py-3 text-sm text-white file:mr-4 file:cursor-pointer file:rounded-lg file:border-0 file:bg-brand-orange file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:border-brand-orange"
+        className="mt-1.5 block w-full cursor-pointer rounded-xl border border-white bg-black/30 px-4 py-3 text-sm text-white file:me-4 file:cursor-pointer file:rounded-lg file:border-0 file:bg-brand-orange file:px-4 file:py-2 file:text-sm file:font-medium file:text-white hover:border-brand-orange"
       />
 
       {/* Selected file */}

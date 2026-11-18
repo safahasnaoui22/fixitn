@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/auth";
+import { getT } from "@/lib/i18n/server";
 import { findUserByPhone, createUser } from "@/lib/db/users";
 import { createTechnicianProfile } from "@/lib/db/catalog";
 import { prisma } from "@/lib/db/client";
@@ -18,6 +19,7 @@ export async function adminCreateAccountAction(
   formData: FormData
 ): Promise<void> {
   await requireRole("ADMIN");
+  const t = await getT();
 
   const role = String(formData.get("role") ?? "CLIENT") as Role;
   const fullName = String(formData.get("fullName") ?? "").trim();
@@ -27,13 +29,11 @@ export async function adminCreateAccountAction(
   const planId: string | null = String(formData.get("planId") ?? "").trim() || null;
 
   if (!fullName || !phone || password.length < 6) {
-    fail(
-      "Fill in name, phone, and a password of at least 6 characters."
-    );
+    fail(t("admin.createAccount.err.fields"));
   }
 
   const existing = await findUserByPhone(phone);
-  if (existing) fail("That phone number is already registered.");
+  if (existing) fail(t("admin.createAccount.err.phoneTaken"));
 
   // Create the base user
   const user = await createUser({ fullName, phone, password, role, city });
@@ -44,7 +44,7 @@ export async function adminCreateAccountAction(
 
     try {
       const title =
-        String(formData.get("title") ?? "").trim() || "Technician";
+        String(formData.get("title") ?? "").trim() || t("role.TECHNICIAN");
       const requestedCategoryIds = formData.getAll("categoryIds").map(String);
       const yearsExperience =
         Number(formData.get("yearsExperience") ?? 0) || 0;
@@ -69,7 +69,7 @@ export async function adminCreateAccountAction(
         resolvedPlanId = beginnerPlan?.id ?? null;
       }
       if (!resolvedPlanId) {
-        throw new Error("No plan exists yet. Create a plan first.");
+        throw new Error(t("admin.createAccount.err.noPlan"));
       }
 
       // Handle optional document uploads
@@ -114,13 +114,13 @@ export async function adminCreateAccountAction(
       });
     } catch (err) {
       console.error("[create-account] technician setup failed", err);
-      errorMessage = err instanceof Error ? err.message : "Unknown error";
+      errorMessage = err instanceof Error ? err.message : t("admin.createAccount.err.unknown");
       // do not leave a half-created account behind
       await prisma.user.delete({ where: { id: user.id } }).catch(() => undefined);
     }
 
     if (errorMessage) {
-      fail(`Could not create the technician: ${errorMessage.slice(0, 180)}`);
+      fail(t("admin.createAccount.err.techFailed", { message: errorMessage.slice(0, 180) }));
     }
   }
 

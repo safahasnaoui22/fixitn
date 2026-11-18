@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth";
 import { sendSupportMessage } from "@/lib/db/supportChat";
 import { createNotification } from "@/lib/db/notifications";
+import { i18nText } from "@/lib/i18n/translate";
 
 export async function sendAdminSupportMessageAction(
   adminId: string,
@@ -20,7 +21,7 @@ export async function sendAdminSupportMessageAction(
   await createNotification({
     userId: toUserId,
     type: "NEW_MESSAGE",
-    title: "💬 Réponse du support Fixili",
+    title: i18nText("adminSup.notif.supportReply.title"),
     body: body.slice(0, 80),
     requestId: null,
   });

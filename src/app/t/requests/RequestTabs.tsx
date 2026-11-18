@@ -7,15 +7,28 @@ import { StatusBadge, EmptyState } from "@/components/ui/Card";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { Avatar } from "@/components/ui/Avatar";
 import { formatRelativeTime } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n/I18nProvider";
 import { ClipboardList } from "lucide-react";
 import type { ServiceRequestWithRelations } from "@/lib/types";
 
 type Tab = "pending" | "active" | "done";
 
 const TAB_LABELS: Record<Tab, string> = {
-  pending: "Pending",
-  active: "Active",
-  done: "Done",
+  pending: "tech.requests.tabPending",
+  active: "tech.requests.tabActive",
+  done: "tech.requests.tabDone",
+};
+
+const TAB_EMPTY: Record<Tab, string> = {
+  pending: "tech.requests.emptyPending",
+  active: "tech.requests.emptyActive",
+  done: "tech.requests.emptyDone",
+};
+
+const TAB_HINT: Record<Tab, string> = {
+  pending: "tech.requests.hintPending",
+  active: "tech.requests.hintActive",
+  done: "tech.requests.hintDone",
 };
 
 export function RequestTabs({
@@ -27,6 +40,7 @@ export function RequestTabs({
   active: ServiceRequestWithRelations[];
   done: ServiceRequestWithRelations[];
 }) {
+  const { t, locale } = useI18n();
   const [tab, setTab] = useState<Tab>("pending");
   const lists: Record<Tab, ServiceRequestWithRelations[]> = { pending, active, done };
   const current = lists[tab];
@@ -35,25 +49,25 @@ export function RequestTabs({
     <div className="flex flex-col flex-1">
       {/* Tabs */}
       <div className="flex border-b border-line">
-        {(["pending", "active", "done"] as Tab[]).map((t) => {
-          const count = lists[t].length;
+        {(["pending", "active", "done"] as Tab[]).map((tb) => {
+          const count = lists[tb].length;
           return (
             <button
-              key={t}
-              onClick={() => setTab(t)}
+              key={tb}
+              onClick={() => setTab(tb)}
               className={cn(
                 "flex flex-1 items-center justify-center gap-1.5 py-3 text-sm font-semibold border-b-2 -mb-px transition-colors",
-                tab === t
+                tab === tb
                   ? "border-brand-orange text-brand-orange"
                   : "border-transparent text-muted"
               )}
             >
-              {TAB_LABELS[t]}
+              {t(TAB_LABELS[tb])}
               {count > 0 && (
                 <span
                   className={cn(
                     "rounded-full px-1.5 py-0.5 text-[10px] font-bold",
-                    tab === t
+                    tab === tb
                       ? "bg-brand-orange text-white"
                       : "bg-surface-alt text-muted"
                   )}
@@ -71,14 +85,8 @@ export function RequestTabs({
         {current.length === 0 ? (
           <EmptyState
             icon={ClipboardList}
-            title={`No ${TAB_LABELS[tab].toLowerCase()} jobs`}
-            description={
-              tab === "pending"
-                ? "New requests from clients will appear here."
-                : tab === "active"
-                ? "Accepted jobs you're currently working on."
-                : "Completed, declined, and cancelled jobs."
-            }
+            title={t(TAB_EMPTY[tab])}
+            description={t(TAB_HINT[tab])}
           />
         ) : (
           <div className="flex flex-col gap-3 p-5">
@@ -103,7 +111,7 @@ export function RequestTabs({
                     <p className="truncate text-xs text-muted">{req.clientFullName}</p>
                   </div>
                   <p className="mt-0.5 text-[11px] text-muted">
-                    {formatRelativeTime(req.createdAt)}
+                    {formatRelativeTime(req.createdAt, t, locale)}
                   </p>
                 </div>
                 <StatusBadge status={req.status} />

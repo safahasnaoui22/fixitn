@@ -4,9 +4,11 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ShieldCheck, Info, Loader2, ArrowLeft } from "lucide-react";
 import { FaceCapture, preloadFaceModels } from "@/components/FaceCapture";
-import { DARK_BG, ORANGE } from "@/lib/theme";
+import { DARK_BG } from "@/lib/theme";
 import { FaceIntro } from "@/components/FaceIntro";
 import { faceLogoutAction } from "@/app/face-logout";
+import { useT } from "@/lib/i18n/I18nProvider";
+import { AccentTitle } from "@/components/AccentTitle";
 
 type Step = "intro" | "scanning" | "saving" | "done" | "error";
 
@@ -23,6 +25,7 @@ function getOrCreateDeviceToken(): string {
 }
 
 export default function FaceSetupPage() {
+  const t = useT();
   const router = useRouter();
   const [step, setStep] = useState<Step>("intro");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -56,7 +59,7 @@ async function handleCapture(descriptor: number[]) {
         setStep("error");
         return;
       }
-      throw new Error(data.error ?? "Failed to save face data");
+      throw new Error(data.error ?? t("auth.face.setup.saveFailed"));
     }
 
     setStep("done");
@@ -66,7 +69,7 @@ async function handleCapture(descriptor: number[]) {
     }, 1500);
   } catch (err) {
     setErrorMsg(
-      err instanceof Error ? err.message : "Something went wrong"
+      err instanceof Error ? err.message : t("common.somethingWrong")
     );
     setStep("error");
   }
@@ -80,19 +83,14 @@ async function handleCapture(descriptor: number[]) {
   if (step === "intro") {
     return (
       <FaceIntro
-        title={
-          <>
-            Activez la reconnaissance{" "}
-            <span style={{ color: ORANGE }}>faciale</span>
-          </>
-        }
-        subtitle="Scannez votre visage une seule fois pour protéger votre compte, même si votre téléphone est perdu."
-        startLabel="Démarrer la reconnaissance"
+        title={<AccentTitle text={t("face.setupTitle")} />}
+        subtitle={t("face.setupSubtitle")}
+        startLabel={t("face.start")}
         onStart={() => setStep("scanning")}
         onBack={handleBack}
         footer={
           <p className="text-xs text-white/45">
-            Seule une empreinte numérique de votre visage est enregistrée, jamais une photo.
+            {t("auth.face.setup.footer")}
           </p>
         }
       />
@@ -110,21 +108,20 @@ async function handleCapture(descriptor: number[]) {
             className="flex items-center gap-1.5 self-start text-sm text-white/70 hover:text-white"
           >
             <ArrowLeft size={18} className="rtl:rotate-180" />
-            Retour à la connexion
+            {t("face.backToLogin")}
           </button>
           <div className="text-center">
             <h1 className="font-heading text-xl font-bold text-white">
-              Scan Your Face
+              {t("auth.face.setup.scanTitle")}
             </h1>
             <p className="mt-1 text-sm text-white/60">
-              Look directly at the camera and press capture when your face
-              is detected.
+              {t("auth.face.setup.scanText")}
             </p>
           </div>
 
           <FaceCapture
             onCapture={handleCapture}
-            captureLabel="Register My Face"
+            captureLabel={t("auth.face.setup.captureLabel")}
             threshold={0.5}
           />
         </div>
@@ -139,10 +136,10 @@ async function handleCapture(descriptor: number[]) {
         <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6">
           <Loader2 size={40} className="text-brand-orange animate-spin" />
           <p className="font-heading text-base font-semibold text-white">
-            Saving your face data…
+            {t("auth.face.setup.saving")}
           </p>
           <p className="text-sm text-white/60 text-center">
-            This only takes a second.
+            {t("auth.face.setup.savingSub")}
           </p>
         </div>
       </div>
@@ -158,11 +155,10 @@ async function handleCapture(descriptor: number[]) {
             <ShieldCheck size={40} className="text-emerald-400" />
           </div>
           <h1 className="font-heading text-2xl font-bold text-white">
-            Face ID Activated!
+            {t("auth.face.setup.doneTitle")}
           </h1>
           <p className="text-[15px] text-white/60 leading-relaxed">
-            Your account is now protected. You'll only need to verify your
-            face when logging in from a new device.
+            {t("auth.face.setup.doneText")}
           </p>
           <Loader2 size={20} className="text-white/60 animate-spin mt-2" />
         </div>
@@ -178,7 +174,7 @@ async function handleCapture(descriptor: number[]) {
           <ShieldCheck size={40} className="text-red-300" />
         </div>
         <h1 className="font-heading text-xl font-bold text-white">
-          Setup Failed
+          {t("auth.face.setup.failTitle")}
         </h1>
         <p className="text-sm text-red-300 bg-red-400/15 px-4 py-3 rounded-xl w-full">
           {errorMsg}
@@ -190,13 +186,13 @@ async function handleCapture(descriptor: number[]) {
           }}
           className="w-full rounded-2xl bg-brand-orange py-4 text-base font-bold text-white"
         >
-          Try Again
+          {t("common.retry")}
         </button>
         <button
           onClick={handleBack}
           className="w-full rounded-2xl border border-white/25 py-4 text-base font-semibold text-white"
         >
-          Retour à la connexion
+          {t("face.backToLogin")}
         </button>
       </div>
     </div>

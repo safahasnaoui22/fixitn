@@ -7,6 +7,8 @@ import { logAudit } from "@/lib/db/audit";
 import { prisma } from "@/lib/db/client";
 import { uploadFile } from "@/lib/cloudinary";
 import { toStringArray } from "@/lib/utils";
+import { getT } from "@/lib/i18n/server";
+import { i18nText } from "@/lib/i18n/translate";
 
 // Vercel rejects request bodies above ~4.5 MB, so keep the image under 4 MB.
 const MAX_IMAGE_SIZE = 4 * 1024 * 1024;
@@ -16,19 +18,20 @@ const ACCEPTED_IMAGES = ["image/jpeg", "image/png", "image/webp"];
 async function readImage(
   formData: FormData
 ): Promise<{ url?: string; error?: string }> {
+  const t = await getT();
   const file = formData.get("image");
   if (!(file instanceof File) || file.size === 0) return {};
   if (!ACCEPTED_IMAGES.includes(file.type)) {
-    return { error: "Image must be JPG, PNG or WEBP." };
+    return { error: t("admin.categories.err.imageType") };
   }
   if (file.size > MAX_IMAGE_SIZE) {
-    return { error: "Image is too large (max 4 MB). Please compress it." };
+    return { error: t("admin.categories.err.imageSize") };
   }
   try {
     const { url } = await uploadFile(file, "categories");
     return { url };
   } catch {
-    return { error: "Image upload failed. Check the Cloudinary settings." };
+    return { error: t("admin.categories.err.imageUpload") };
   }
 }
 
@@ -45,6 +48,7 @@ function fail(message: string): never {
 
 export async function createCategoryAction(formData: FormData): Promise<void> {
   const actor = await requirePermission("categories");
+  const t = await getT();
 
   const name = String(formData.get("name") ?? "").trim();
   const icon = String(formData.get("icon") ?? "").trim();
@@ -55,7 +59,7 @@ export async function createCategoryAction(formData: FormData): Promise<void> {
   const howItWorks = readSteps(formData);
 
   if (!name || !icon || !color) {
-    fail("Name, icon and color are required.");
+    fail(t("admin.categories.err.required"));
   }
 
   const image = await readImage(formData);
@@ -71,9 +75,9 @@ export async function createCategoryAction(formData: FormData): Promise<void> {
     orderBy: { sortOrder: "desc" },
   });
 
-  if (!slug) fail("Please use letters or numbers in the name.");
+  if (!slug) fail(t("admin.categories.err.nameChars"));
   if (await prisma.category.findUnique({ where: { slug } })) {
-    fail(`A category with the slug "${slug}" already exists.`);
+    fail(t("admin.categories.err.slugExists", { slug }));
   }
 
   const created = await prisma.category.create({
@@ -96,7 +100,7 @@ export async function createCategoryAction(formData: FormData): Promise<void> {
     action: "category.create",
     entityType: "category",
     entityId: created.id,
-    summary: `Created category ${name}`,
+    summary: i18nText("sys.audit.catCreated", { name }),
   });
 
   revalidatePath("/admin/categories");
@@ -106,6 +110,7 @@ export async function createCategoryAction(formData: FormData): Promise<void> {
 
 export async function updateCategoryAction(formData: FormData): Promise<void> {
   const actor = await requirePermission("categories");
+  const t = await getT();
 
   const id = String(formData.get("id") ?? "");
   const name = String(formData.get("name") ?? "").trim();
@@ -118,7 +123,7 @@ export async function updateCategoryAction(formData: FormData): Promise<void> {
   const removeImage = formData.get("removeImage") === "on";
 
   if (!id || !name || !icon || !color) {
-    fail("Name, icon and color are required.");
+    fail(t("admin.categories.err.required"));
   }
 
   const image = await readImage(formData);
@@ -143,7 +148,7 @@ export async function updateCategoryAction(formData: FormData): Promise<void> {
     action: "category.update",
     entityType: "category",
     entityId: id,
-    summary: `Edited category ${name}`,
+    summary: i18nText("sys.audit.catEdited", { name }),
   });
 
   revalidatePath("/admin/categories");
@@ -167,7 +172,7 @@ export async function toggleCategoryActiveAction(
     action: "category.toggle",
     entityType: "category",
     entityId: id,
-    summary: `${isActive ? "Showed" : "Hid"} category ${cat.name}`,
+    summary: i18nText(isActive ? "sys.audit.catShown" : "sys.audit.catHidden", { name: cat.name }),
   });
 
   revalidatePath("/admin/categories");
@@ -191,7 +196,7 @@ export async function updateVisitPriceAction(
     action: "category.visitPrice",
     entityType: "category",
     entityId: id,
-    summary: `Set visit price of ${cat.name} to ${visitPrice} DT`,
+    summary: i18nText("sys.audit.catVisitPrice", { name: cat.name, price: visitPrice }),
   });
 
   revalidatePath("/admin/categories");

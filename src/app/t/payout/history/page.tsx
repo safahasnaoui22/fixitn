@@ -7,19 +7,7 @@ import { listPaymentsForTechnician } from "@/lib/db/monetization";
 import { TechBottomNav } from "@/components/TechBottomNav";
 import { EmptyState } from "@/components/ui/Card";
 import { formatDT, formatDate } from "@/lib/utils";
-
-const TYPE_LABEL: Record<string, string> = {
-  PAYOUT: "Job payout",
-  SUBSCRIPTION: "Subscription",
-  COMMISSION: "Commission",
-};
-
-const METHOD_LABEL: Record<string, string> = {
-  D17: "D17",
-  FLOUCI: "Flouci",
-  BANK_TRANSFER: "Virement Bancaire",
-  CASH: "Cash",
-};
+import { getT, getLocale } from "@/lib/i18n/server";
 
 export default async function TechPayoutHistoryPage({
   searchParams,
@@ -27,6 +15,8 @@ export default async function TechPayoutHistoryPage({
   searchParams: Promise<{ success?: string }>;
 }) {
   const session = await requireRole("TECHNICIAN");
+  const t = await getT();
+  const locale = await getLocale();
   const { success } = await searchParams;
 
   const technician = await getTechnicianByUserId(session.userId);
@@ -42,9 +32,9 @@ export default async function TechPayoutHistoryPage({
             href="/t/payout"
             className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-alt"
           >
-            <ArrowLeft size={18} />
+            <ArrowLeft size={18} className="rtl:rotate-180" />
           </Link>
-          <p className="font-heading text-lg font-semibold text-ink">Payout History</p>
+          <p className="font-heading text-lg font-semibold text-ink">{t("tech.payout.historyTitle")}</p>
         </div>
 
         <div className="px-5 py-5 flex flex-col gap-4">
@@ -52,7 +42,7 @@ export default async function TechPayoutHistoryPage({
             <div className="flex items-center gap-2 rounded-xl bg-success-light px-4 py-3">
               <CheckCircle2 size={16} className="text-success shrink-0" />
               <p className="text-sm font-medium text-success">
-                Payout request submitted — we'll process it within 48 hours.
+                {t("tech.payout.submitted")}
               </p>
             </div>
           )}
@@ -60,8 +50,8 @@ export default async function TechPayoutHistoryPage({
           {payments.length === 0 ? (
             <EmptyState
               icon={Wallet}
-              title="No transactions yet"
-              description="Completed jobs and payout requests will appear here."
+              title={t("tech.payout.historyEmpty")}
+              description={t("tech.payout.historyEmptyHint")}
             />
           ) : (
             <div className="rounded-2xl border border-line bg-surface divide-y divide-line overflow-hidden">
@@ -93,14 +83,14 @@ export default async function TechPayoutHistoryPage({
 
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-ink">
-                        {TYPE_LABEL[p.type] ?? p.type}
+                        {p.type === "PAYOUT" ? t("tech.earnings.typePayout") : t(`paymentType.${p.type}`)}
                       </p>
                       <p className="text-xs text-muted">
-                        {METHOD_LABEL[p.method] ?? p.method} · {formatDate(p.createdAt)}
+                        {t(`paymentMethod.${p.method}`)} · {formatDate(p.createdAt, locale)}
                       </p>
                     </div>
 
-                    <div className="text-right shrink-0">
+                    <div className="text-end shrink-0">
                       <p
                         className={`font-heading text-sm font-semibold ${
                           isPending
@@ -111,10 +101,10 @@ export default async function TechPayoutHistoryPage({
                         }`}
                       >
                         {isCredit ? "+" : "-"}
-                        {formatDT(isCredit ? net : p.amount)}
+                        {formatDT(isCredit ? net : p.amount, locale)}
                       </p>
-                      <p className="text-[10px] text-muted capitalize">
-                        {isPending ? "Pending" : p.status.toLowerCase()}
+                      <p className="text-[10px] text-muted">
+                        {t(`paymentStatus.${p.status}`)}
                       </p>
                     </div>
                   </div>

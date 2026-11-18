@@ -152,6 +152,5 @@ export async function findOtherAccountWithFace(
   return best;
 }
 
-export const FACE_SHARED_MESSAGE =
-  "Ce visage est déjà lié à un autre compte Fixili. Chaque personne ne peut avoir qu'un seul compte. " +
-  "Contactez support@fixili.tn.";
+/** Catalog key of the "face already linked" message: use t(FACE_SHARED_MESSAGE). */
+export const FACE_SHARED_MESSAGE = "sys.err.faceShared";

@@ -10,12 +10,13 @@ import { Avatar } from "@/components/ui/Avatar";
 import { TechBottomNav } from "@/components/TechBottomNav";
 import { getTechnicianByUserId } from "@/lib/db/catalog";
 import { TechChatPane } from "./TechChatPane";
+import { getT } from "@/lib/i18n/server";
 
 const ROLE_LABEL: Record<string, string> = {
-  ADMIN:      "Administrateur",
-  SOUS_ADMIN: "Support Fixili",
-  CLIENT:     "Client",
-  TECHNICIAN: "Technicien Senior",
+  ADMIN:      "role.ADMIN",
+  SOUS_ADMIN: "tech.messages.roleSupportBrand",
+  CLIENT:     "role.CLIENT",
+  TECHNICIAN: "tech.messages.roleSenior",
 };
 
 export default async function TechMessageChatPage({
@@ -26,6 +27,7 @@ export default async function TechMessageChatPage({
   searchParams: Promise<{ from?: string }>;
 }) {
   const session    = await requireRole("TECHNICIAN");
+  const t = await getT();
   const technician = await getTechnicianByUserId(session.userId);
   if (!technician) redirect("/onboarding");
 
@@ -53,9 +55,10 @@ export default async function TechMessageChatPage({
         <div className="flex items-center gap-3 border-b border-line px-4 py-3 shrink-0 bg-surface">
           <Link
             href={backHref}
+            aria-label={t("common.back")}
             className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-alt shrink-0"
           >
-            <ArrowLeft size={18} />
+            <ArrowLeft size={18} className="rtl:rotate-180" />
           </Link>
           <Avatar
             src={otherUser.avatarUrl}
@@ -72,7 +75,7 @@ export default async function TechMessageChatPage({
               )}
             </div>
             <p className="text-xs text-muted">
-              {ROLE_LABEL[otherUser.role] ?? otherUser.role}
+              {ROLE_LABEL[otherUser.role] ? t(ROLE_LABEL[otherUser.role]) : otherUser.role}
             </p>
           </div>
         </div>

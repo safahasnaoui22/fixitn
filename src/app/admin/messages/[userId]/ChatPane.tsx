@@ -5,13 +5,9 @@ import { useRouter } from "next/navigation";
 import { Send } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { sendAdminMessageAction } from "./actions";
+import { formatTime } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n/I18nProvider";
 import type { SupportMessage } from "@/lib/db/supportChat";
-
-function formatTime(iso: string) {
-  return new Date(iso).toLocaleTimeString("fr-TN", {
-    hour: "2-digit", minute: "2-digit",
-  });
-}
 
 export function ChatPane({
   myId,
@@ -30,6 +26,7 @@ export function ChatPane({
   initialMessages: SupportMessage[];
   actionPath: "admin" | "tech";
 }) {
+  const { t, locale } = useI18n();
   const router = useRouter();
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -51,10 +48,10 @@ export function ChatPane({
         {initialMessages.length === 0 && (
           <div className="flex flex-col items-center gap-2 py-10 text-center">
             <p className="text-sm font-semibold text-ink">
-              Démarrez la conversation
+              {t("adminSup.messages.startTitle")}
             </p>
             <p className="text-xs text-muted max-w-xs">
-              Envoyez un message à {otherUserName}.
+              {t("adminSup.messages.startDesc", { name: otherUserName })}
             </p>
           </div>
         )}
@@ -84,14 +81,14 @@ export function ChatPane({
                 <div
                   className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
                     isMe
-                      ? "bg-brand-navy text-white rounded-br-sm"
-                      : "bg-surface-alt text-ink border border-line rounded-bl-sm"
+                      ? "bg-brand-navy text-white rounded-ee-sm"
+                      : "bg-surface-alt text-ink border border-line rounded-es-sm"
                   }`}
                 >
                   {msg.body}
                 </div>
                 <span className="text-[10px] text-muted px-1">
-                  {formatTime(msg.createdAt)}
+                  {formatTime(msg.createdAt, locale)}
                 </span>
               </div>
             </div>
@@ -109,7 +106,7 @@ export function ChatPane({
           name="body"
           type="text"
           required
-          placeholder={`Écrire à ${otherUserName}…`}
+          placeholder={t("adminSup.messages.writeTo", { name: otherUserName })}
           autoComplete="off"
           className="flex-1 rounded-full border border-line bg-surface-alt px-4 py-2.5 text-sm outline-none focus:border-brand-navy text-ink"
         />
@@ -117,7 +114,7 @@ export function ChatPane({
           type="submit"
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-navy text-white transition-opacity hover:opacity-80"
         >
-          <Send size={16} />
+          <Send size={16} className="rtl:-scale-x-100" />
         </button>
       </form>
     </div>

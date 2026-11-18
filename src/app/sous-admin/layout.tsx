@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db/client";
 import { getUnreadSupportCount } from "@/lib/db/supportChat";
+import { getT } from "@/lib/i18n/server";
 import { AdminShell } from "@/app/admin/AdminShell";
 import { AdminSidebar } from "@/app/admin/AdminSidebar";
 
@@ -10,6 +11,7 @@ export default async function SousAdminLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const t = await getT();
   const session = await getSession();
   if (!session) redirect("/login");
   if (session.role !== "SOUS_ADMIN") redirect("/");
@@ -24,7 +26,7 @@ export default async function SousAdminLayout({
 
   return (
     <AdminShell
-      title="Fixili Sous-Admin"
+      title={t("sous.layout.title")}
       sidebar={
         <AdminSidebar
           role="SOUS_ADMIN"

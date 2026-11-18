@@ -3,6 +3,7 @@ import { Clock, LogOut, MessageCircle } from "lucide-react";
 import { getSession, destroySession } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { ApprovalWatcher } from "./ApprovalWatcher";
+import { getT } from "@/lib/i18n/server";
 
 async function logoutAction() {
   "use server";
@@ -12,6 +13,7 @@ async function logoutAction() {
 
 export default async function TechPendingPage() {
   const session = await getSession();
+  const t = await getT();
   if (!session) redirect("/login");
 
   return (
@@ -24,21 +26,19 @@ export default async function TechPendingPage() {
 
         <div>
           <h1 className="font-heading text-2xl font-bold text-ink">
-            Account Pending Approval
+            {t("tech.pending.title")}
           </h1>
           <p className="mt-2 text-[15px] text-muted leading-relaxed max-w-xs">
-            Welcome, {session.fullName}! Your technician account is currently
-            under review. Our team will verify your documents and approve your
-            account within 24–48 hours.
+            {t("tech.pending.body", { name: session.fullName })}
           </p>
         </div>
 
-        <div className="w-full rounded-2xl border border-line bg-surface p-4 text-left flex flex-col gap-3">
-          <p className="text-sm font-semibold text-ink">What happens next?</p>
+        <div className="w-full rounded-2xl border border-line bg-surface p-4 text-start flex flex-col gap-3">
+          <p className="text-sm font-semibold text-ink">{t("tech.pending.whatNext")}</p>
           {[
-            "Our admin team reviews your CIN and diploma documents",
-            "You receive a notification once your account is approved",
-            "You can then start receiving job requests from clients",
+            t("tech.pending.step1"),
+            t("tech.pending.step2"),
+            t("tech.pending.step3"),
           ].map((step, i) => (
             <div key={i} className="flex items-start gap-2.5">
               <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-orange-light text-[11px] font-bold text-brand-orange mt-0.5">
@@ -50,11 +50,11 @@ export default async function TechPendingPage() {
         </div>
 
         
-         <a href="mailto:support@fixitn.tn?subject=Account Approval Inquiry"
+         <a href={`mailto:support@fixitn.tn?subject=${encodeURIComponent(t("tech.pending.mailSubject"))}`}
           className="flex w-full items-center justify-center gap-2 rounded-2xl border border-line bg-surface py-4 text-sm font-semibold text-ink"
         >
           <MessageCircle size={18} className="text-muted" />
-          Contact Support
+          {t("tech.nav.contactSupport")}
         </a>
 
         <form action={logoutAction} className="w-full">
@@ -63,7 +63,7 @@ export default async function TechPendingPage() {
             className="flex w-full items-center justify-center gap-2 rounded-2xl border border-danger-light bg-danger-light py-4 text-sm font-semibold text-danger"
           >
             <LogOut size={18} />
-            Log Out
+            {t("tech.nav.logout")}
           </button>
         </form>
       </div>

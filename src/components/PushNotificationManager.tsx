@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Bell, X } from "lucide-react";
+import { useT } from "@/lib/i18n/I18nProvider";
 
 function urlBase64ToUint8Array(base64: string): Uint8Array {
   const padding = "=".repeat((4 - (base64.length % 4)) % 4);
@@ -36,6 +37,7 @@ async function save(sub: PushSubscription) {
  * - Asks the permission from a button (browsers + iOS require a user tap).
  */
 export function PushNotificationManager() {
+  const t = useT();
   const pathname = usePathname();
   const [showBanner, setShowBanner] = useState(false);
 
@@ -110,16 +112,16 @@ export function PushNotificationManager() {
           <Bell size={18} />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-white">Activer les notifications</p>
-          <p className="text-xs text-white/60">Recevez les messages et demandes même app fermée.</p>
+          <p className="text-sm font-semibold text-white">{t("comp.push.title")}</p>
+          <p className="text-xs text-white/60">{t("comp.push.text")}</p>
         </div>
         <button
           onClick={enable}
           className="shrink-0 rounded-full bg-brand-orange px-3.5 py-2 text-xs font-bold text-white"
         >
-          Activer
+          {t("comp.push.enable")}
         </button>
-        <button onClick={dismiss} aria-label="Fermer" className="shrink-0 text-white/50">
+        <button onClick={dismiss} aria-label={t("common.close")} className="shrink-0 text-white/50">
           <X size={16} />
         </button>
       </div>

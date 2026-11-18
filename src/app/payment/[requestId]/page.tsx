@@ -7,32 +7,30 @@ import { getJobPaymentInfo } from "@/lib/db/monetization";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { formatDT } from "@/lib/utils";
+import { getT, getLocale } from "@/lib/i18n/server";
+import type { TFn } from "@/lib/i18n/translate";
 import { confirmPaymentAction } from "./actions";
 
 const METHODS = [
   {
     value: "FLOUCI",
-    label: "Flouci",
     icon: CreditCard,
-    desc: (phone: string) => `Send to technician Flouci: ${phone}`,
+    desc: (t: TFn, phone: string) => t("booking.payment.descFlouci", { phone }),
   },
   {
     value: "D17",
-    label: "D17",
     icon: CreditCard,
-    desc: (phone: string) => `Send to technician D17: ${phone}`,
+    desc: (t: TFn, phone: string) => t("booking.payment.descD17", { phone }),
   },
   {
     value: "BANK_TRANSFER",
-    label: "Virement Bancaire",
     icon: Building2,
-    desc: () => "Contact the technician for their RIB details",
+    desc: (t: TFn) => t("booking.payment.descBank"),
   },
   {
     value: "CASH",
-    label: "Cash",
     icon: Banknote,
-    desc: () => "Pay the technician directly in person",
+    desc: (t: TFn) => t("booking.payment.descCash"),
   },
 ];
 
@@ -44,6 +42,8 @@ export default async function ClientPaymentPage({
   searchParams: Promise<{ error?: string }>;
 }) {
   const session = await requireUser();
+  const t = await getT();
+  const locale = await getLocale();
   const { requestId } = await params;
   const { error } = await searchParams;
 
@@ -62,9 +62,9 @@ export default async function ClientPaymentPage({
           href={`/requests/${requestId}`}
           className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-alt"
         >
-          <ArrowLeft size={18} />
+          <ArrowLeft size={18} className="rtl:rotate-180" />
         </Link>
-        <p className="font-heading text-base font-semibold text-ink">Pay for Service</p>
+        <p className="font-heading text-base font-semibold text-ink">{t("booking.payment.title")}</p>
       </div>
 
       <div className="px-5 py-6 flex flex-col gap-5">
@@ -90,17 +90,17 @@ export default async function ClientPaymentPage({
             </div>
           </div>
           <div className="border-t border-line pt-3 flex items-center justify-between">
-            <p className="text-sm text-muted">Service fee</p>
+            <p className="text-sm text-muted">{t("booking.payment.serviceFee")}</p>
             <p className="font-heading text-lg font-bold text-ink">
-              {formatDT(payment.amount)}
+              {formatDT(payment.amount, locale)}
             </p>
           </div>
         </div>
 
         {/* Total banner */}
         <div className="flex items-center justify-between rounded-2xl bg-brand-navy px-5 py-4 text-white">
-          <p className="text-sm font-medium text-white/70">Total to pay</p>
-          <p className="font-heading text-2xl font-bold">{formatDT(payment.amount)}</p>
+          <p className="text-sm font-medium text-white/70">{t("booking.payment.totalToPay")}</p>
+          <p className="font-heading text-2xl font-bold">{formatDT(payment.amount, locale)}</p>
         </div>
 
         {/* Payment method form */}
@@ -108,10 +108,10 @@ export default async function ClientPaymentPage({
           <input type="hidden" name="requestId" value={requestId} />
 
           <p className="font-heading text-sm font-semibold text-ink">
-            Choose payment method
+            {t("booking.payment.chooseMethod")}
           </p>
 
-          {METHODS.map(({ value, label, icon: Icon, desc }) => (
+          {METHODS.map(({ value, icon: Icon, desc }) => (
             <label
               key={value}
               className="flex items-center gap-3 rounded-2xl border border-line bg-surface p-4 cursor-pointer has-[:checked]:border-brand-orange has-[:checked]:bg-brand-orange-light transition-colors"
@@ -121,8 +121,8 @@ export default async function ClientPaymentPage({
                 <Icon size={18} className="text-muted" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-ink">{label}</p>
-                <p className="text-xs text-muted">{desc(payment.technicianPhone)}</p>
+                <p className="text-sm font-semibold text-ink">{t(`paymentMethod.${value}`)}</p>
+                <p className="text-xs text-muted">{desc(t, payment.technicianPhone)}</p>
               </div>
             </label>
           ))}
@@ -130,14 +130,13 @@ export default async function ClientPaymentPage({
           <div className="flex items-start gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
             <AlertCircle size={15} className="text-amber-600 shrink-0 mt-0.5" />
             <p className="text-xs text-amber-800">
-              Send the payment to the technician first, then click confirm below so we
-              can update your job record.
+              {t("booking.payment.notice")}
             </p>
           </div>
 
           <Button type="submit" fullWidth size="lg">
             <CheckCircle2 size={18} />
-            Confirm Payment — {formatDT(payment.amount)}
+            {t("booking.payment.confirm", { amount: formatDT(payment.amount, locale) })}
           </Button>
         </form>
       </div>

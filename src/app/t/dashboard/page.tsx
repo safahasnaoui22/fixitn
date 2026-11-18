@@ -18,6 +18,7 @@ import { StatusBadge } from "@/components/ui/Card";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { TechBottomNav } from "@/components/TechBottomNav";
 import { formatDT, formatRelativeTime } from "@/lib/utils";
+import { getT, getLocale } from "@/lib/i18n/server";
 
 const COLORS = {
   background: "#081426",
@@ -32,6 +33,8 @@ const COLORS = {
 
 export default async function TechDashboardPage() {
   const session = await requireRole("TECHNICIAN");
+  const t = await getT();
+  const locale = await getLocale();
 
   const technician = await getTechnicianByUserId(session.userId);
   if (!technician) redirect("/onboarding");
@@ -79,7 +82,7 @@ export default async function TechDashboardPage() {
               />
 
               <div className="min-w-0">
-                <p className="text-xs text-white/60">Welcome back</p>
+                <p className="text-xs text-white/60">{t("tech.dash.welcomeBack")}</p>
                 <p className="truncate font-heading text-base font-semibold text-white">
                   {technician.fullName.split(" ")[0]}
                 </p>
@@ -88,14 +91,14 @@ export default async function TechDashboardPage() {
 
             <Link
               href="/notifications"
-              aria-label={`Notifications${unread > 0 ? `, ${unread} unread` : ""}`}
+              aria-label={unread > 0 ? t("tech.dash.notifUnread", { n: unread }) : t("common.notifications")}
               className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-white/20"
               style={{ backgroundColor: "#172947" }}
             >
               <Bell size={20} className="text-white" />
 
               {unread > 0 && (
-                <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#f97316] px-1 text-[10px] font-bold text-white">
+                <span className="absolute -end-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#f97316] px-1 text-[10px] font-bold text-white">
                   {unread > 9 ? "9+" : unread}
                 </span>
               )}
@@ -104,9 +107,9 @@ export default async function TechDashboardPage() {
 
           {/* Earnings */}
           <div className="mt-5 grid grid-cols-3 gap-2">
-            <EarningBox label="Today" value={formatDT(earnings.today)} />
-            <EarningBox label="This month" value={formatDT(earnings.thisMonth)} />
-            <EarningBox label="Total" value={formatDT(earnings.total)} />
+            <EarningBox label={t("tech.dash.today")} value={formatDT(earnings.today, locale)} />
+            <EarningBox label={t("tech.dash.thisMonth")} value={formatDT(earnings.thisMonth, locale)} />
+            <EarningBox label={t("tech.dash.total")} value={formatDT(earnings.total, locale)} />
           </div>
         </div>
 
@@ -115,21 +118,21 @@ export default async function TechDashboardPage() {
           <div className="grid grid-cols-3 gap-3">
             <StatCard
               icon={Clock}
-              label="New today"
+              label={t("tech.dash.newToday")}
               value={String(dashStats.newToday)}
               color="text-[#fb923c]"
             />
 
             <StatCard
               icon={Briefcase}
-              label="In progress"
+              label={t("tech.dash.inProgress")}
               value={String(dashStats.inProgress)}
               color="text-[#60a5fa]"
             />
 
             <StatCard
               icon={TrendingUp}
-              label="Completed"
+              label={t("tech.dash.completed")}
               value={String(profileStats.jobsCompleted)}
               color="text-[#4ade80]"
             />
@@ -139,14 +142,14 @@ export default async function TechDashboardPage() {
           <div>
             <div className="mb-3 flex items-center justify-between">
               <p className="font-heading text-sm font-semibold text-white">
-                Active Jobs
+                {t("tech.dash.activeJobs")}
               </p>
 
               <Link
                 href="/t/requests"
                 className="text-xs font-medium text-[#fb923c] hover:text-[#fdba74]"
               >
-                View all
+                {t("common.viewAll")}
               </Link>
             </div>
 
@@ -161,11 +164,11 @@ export default async function TechDashboardPage() {
                 <Briefcase size={28} className="text-[#94a3b8]" />
 
                 <p className="text-sm font-medium text-[#d0dbea]">
-                  No active jobs
+                  {t("tech.dash.noActive")}
                 </p>
 
                 <p className="text-xs text-[#94a3b8]">
-                  New requests will appear here
+                  {t("tech.dash.noActiveHint")}
                 </p>
               </div>
             ) : (
@@ -197,7 +200,7 @@ export default async function TechDashboardPage() {
                       </p>
 
                       <p className="mt-0.5 text-[11px] text-[#94a3b8]">
-                        {formatRelativeTime(req.createdAt)}
+                        {formatRelativeTime(req.createdAt, t, locale)}
                       </p>
                     </div>
 
@@ -221,11 +224,11 @@ export default async function TechDashboardPage() {
               <TrendingUp size={20} className="text-[#fb923c]" />
 
               <p className="font-heading text-sm font-semibold text-white">
-                Earnings
+                {t("tech.dash.earnings")}
               </p>
 
               <p className="text-xs text-[#b8c7dc]">
-                View full history
+                {t("tech.dash.viewHistory")}
               </p>
             </Link>
 
@@ -236,11 +239,11 @@ export default async function TechDashboardPage() {
               <Briefcase size={20} className="text-[#fb923c]" />
 
               <p className="font-heading text-sm font-semibold text-[#fdba74]">
-                Upgrade Plan
+                {t("tech.dash.upgrade")}
               </p>
 
               <p className="text-xs text-[#fdba74]/75">
-                Lower your commission
+                {t("tech.dash.lowerCommission")}
               </p>
             </Link>
           </div>

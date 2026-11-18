@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Send } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { formatTime } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n/I18nProvider";
 import { sendMessageAction } from "./actions";
 import { ReportParticipantForm } from "./ReportParticipantForm";
 import type { MessageWithSender } from "@/lib/types";
@@ -22,6 +23,7 @@ export function ChatPane({
   otherUserId: string;
   otherUserName: string;
 }) {
+  const { t, locale } = useI18n();
   const router = useRouter();
   const bottomRef = useRef<HTMLDivElement>(null);
   const [pending, startTransition] = useTransition();
@@ -42,7 +44,7 @@ export function ChatPane({
     <div className="flex flex-1 flex-col overflow-hidden">
       <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3 no-scrollbar">
         {messages.length === 0 && (
-          <p className="text-center text-sm text-muted py-8">No messages yet — say hello!</p>
+          <p className="text-center text-sm text-muted py-8">{t("booking.chat.empty")}</p>
         )}
         {messages.map((msg) => {
           const isMe = msg.senderId === currentUserId;
@@ -60,14 +62,14 @@ export function ChatPane({
                   <div
                     className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
                       isMe
-                        ? "bg-brand-orange text-white rounded-br-sm"
-                        : "bg-surface-alt text-ink rounded-bl-sm"
+                        ? "bg-brand-orange text-white rounded-ee-sm"
+                        : "bg-surface-alt text-ink rounded-es-sm"
                     }`}
                   >
                     {msg.body}
                   </div>
                 )}
-                <span className="text-[10px] text-muted">{formatTime(msg.createdAt)}</span>
+                <span className="text-[10px] text-muted">{formatTime(msg.createdAt, locale)}</span>
               </div>
             </div>
           );
@@ -89,16 +91,17 @@ export function ChatPane({
           name="body"
           type="text"
           required
-          placeholder="Type a message..."
+          placeholder={t("booking.chat.placeholder")}
           autoComplete="off"
           className="flex-1 rounded-full border border-line bg-surface-alt px-4 py-2.5 text-sm outline-none focus:border-brand-orange"
         />
         <button
           type="submit"
           disabled={pending}
+          aria-label={t("booking.chat.send")}
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-orange text-white disabled:opacity-50"
         >
-          <Send size={16} />
+          <Send size={16} className="rtl:-scale-x-100" />
         </button>
       </form>
     </div>

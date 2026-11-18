@@ -1,5 +1,6 @@
 import { prisma } from "./client";
 import { createNotification } from "./notifications";
+import { i18nText } from "@/lib/i18n/translate";
 
 /**
  * Real approval state from the database (never trust a stale session value).
@@ -22,8 +23,8 @@ export async function approveTechnician(technicianId: string): Promise<void> {
   await createNotification({
     userId: tech.userId,
     type: "STATUS_UPDATE",
-    title: "✅ Account Approved!",
-    body: "Your technician account has been approved. You can now receive job requests.",
+    title: i18nText("sys.notif.accountApproved.title"),
+    body: i18nText("sys.notif.accountApproved.body"),
     requestId: null,
   });
 }
@@ -37,8 +38,8 @@ export async function declineTechnician(technicianId: string): Promise<void> {
   await createNotification({
     userId: tech.userId,
     type: "STATUS_UPDATE",
-    title: "Account Not Approved",
-    body: "Your technician account was not approved. Please contact support.",
+    title: i18nText("sys.notif.accountDeclined.title"),
+    body: i18nText("sys.notif.accountDeclined.body"),
     requestId: null,
   });
 }

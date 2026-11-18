@@ -5,6 +5,7 @@ import { requirePermission } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { sendSupportMessage } from "@/lib/db/supportChat";
 import { createNotification } from "@/lib/db/notifications";
+import { i18nText } from "@/lib/i18n/translate";
 
 export async function sendSupportMessageAction(
   sousAdminId: string,
@@ -22,7 +23,7 @@ export async function sendSupportMessageAction(
   await createNotification({
     userId: toUserId,
     type: "NEW_MESSAGE",
-    title: "New support message",
+    title: i18nText("sous.notif.supportMessage.title"),
     body: body.slice(0, 80),
     requestId: null,
   });

@@ -6,6 +6,8 @@ import { requireUser } from "@/lib/auth";
 import { getTechnicianById, getCategoryBySlug, listCategoriesForTechnician } from "@/lib/db/catalog";
 import { getPublicUserById } from "@/lib/db/users";
 import { RequestForm } from "./RequestForm";
+import { getT } from "@/lib/i18n/server";
+import { tOr } from "@/lib/i18n/translate";
 import { DARK_BG, NAVY_TILE } from "@/lib/theme";
 
 export default async function RequestServicePage({
@@ -16,6 +18,7 @@ export default async function RequestServicePage({
   searchParams: Promise<{ category?: string }>;
 }) {
   const session = await requireUser();
+  const t = await getT();
   if (session.role !== "CLIENT") redirect("/");
 
   const { id } = await params;
@@ -40,12 +43,12 @@ export default async function RequestServicePage({
             className="flex h-9 w-9 items-center justify-center rounded-full text-white"
             style={{ backgroundColor: NAVY_TILE }}
           >
-            <ArrowLeft size={18} />
+            <ArrowLeft size={18} className="rtl:rotate-180" />
           </Link>
           <div>
-            <p className="font-heading text-base font-semibold text-white">Request Service</p>
+            <p className="font-heading text-base font-semibold text-white">{t("client.request.title")}</p>
             <p className="text-xs text-white/60">
-              {technician.fullName} · {resolvedCategory.name}
+              {technician.fullName} · {tOr(t, `category.${resolvedCategory.slug}.name`, resolvedCategory.name)}
             </p>
           </div>
         </div>

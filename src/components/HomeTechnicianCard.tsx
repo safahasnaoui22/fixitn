@@ -1,16 +1,20 @@
+"use client";
+
 import Link from "next/link";
 import { Star, CalendarDays } from "lucide-react";
 import { NAVY_ROW, ORANGE } from "@/lib/theme";
 import { DefaultAvatar } from "@/components/ui/DefaultAvatar";
 import type { HomeTechnician } from "@/lib/db/homeTechnicians";
+import { useI18n } from "@/lib/i18n/I18nProvider";
+import { formatDT } from "@/lib/utils";
 
 const AVAILABILITY_BADGE: Record<
   HomeTechnician["availability"],
   { label: string; bg: string; fg: string; dot: string }
 > = {
-  AVAILABLE: { label: "Dispo", bg: "#16a34a", fg: "#fff", dot: "#fff" },
-  BUSY: { label: "En mission", bg: ORANGE, fg: "#fff", dot: "#fff" },
-  OFFLINE: { label: "Hors ligne", bg: "rgba(9,18,25,0.85)", fg: "rgba(255,255,255,0.65)", dot: "#7b8794" },
+  AVAILABLE: { label: "comp.tech.available", bg: "#16a34a", fg: "#fff", dot: "#fff" },
+  BUSY: { label: "comp.tech.busy", bg: ORANGE, fg: "#fff", dot: "#fff" },
+  OFFLINE: { label: "comp.tech.offline", bg: "rgba(9,18,25,0.85)", fg: "rgba(255,255,255,0.65)", dot: "#7b8794" },
 };
 
 /**
@@ -26,7 +30,9 @@ export function HomeTechnicianCard({
   categorySlug?: string;
   width?: number | string;
 }) {
+  const { t, locale } = useI18n();
   const badge = AVAILABILITY_BADGE[tech.availability];
+  const [fromBefore, fromAfter = ""] = t("comp.tech.startingFrom").split("{price}");
   const href = `/technician/${tech.id}${categorySlug ? `?category=${categorySlug}` : ""}`;
 
   return (
@@ -50,11 +56,11 @@ export function HomeTechnicianCard({
 
         {/* Dispo / En mission / Hors ligne */}
         <span
-          className="absolute right-2 top-2 flex items-center gap-1 rounded-full px-2 py-[3px] text-[10px] font-bold"
+          className="absolute end-2 top-2 flex items-center gap-1 rounded-full px-2 py-[3px] text-[10px] font-bold"
           style={{ backgroundColor: badge.bg, color: badge.fg }}
         >
           <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: badge.dot }} />
-          {badge.label}
+          {t(badge.label)}
         </span>
       </div>
 
@@ -66,25 +72,26 @@ export function HomeTechnicianCard({
           {tech.ratingAvg != null ? (
             <>
               <span className="font-semibold text-white">{tech.ratingAvg.toFixed(1)}</span>
-              <span className="text-white/50">({tech.ratingCount} avis)</span>
+              <span className="text-white/50">{t("comp.tech.reviews", { n: tech.ratingCount })}</span>
             </>
           ) : (
-            <span className="text-white/50">Nouveau</span>
+            <span className="text-white/50">{t("comp.tech.new")}</span>
           )}
         </div>
 
         <div className="flex items-center gap-1 text-[11px] text-white/55">
           <CalendarDays size={12} />
           <span className="truncate">
-            {tech.yearsExperience} an{tech.yearsExperience > 1 ? "s" : ""} d&apos;expérience
+            {t(tech.yearsExperience > 1 ? "comp.tech.yearsMany" : "comp.tech.yearsOne", { n: tech.yearsExperience })}
           </span>
         </div>
 
-        <p className="mt-0.5 text-right text-[10.5px] text-white/50">
-          À partir de{" "}
+        <p className="mt-0.5 text-end text-[10.5px] text-white/50">
+          {fromBefore}
           <span className="font-semibold" style={{ color: ORANGE }}>
-            {tech.startingPrice} DT
+            {formatDT(tech.startingPrice, locale)}
           </span>
+          {fromAfter}
         </p>
       </div>
     </Link>

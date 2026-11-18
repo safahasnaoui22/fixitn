@@ -1,5 +1,7 @@
 import { prisma } from "./client";
 import { createNotification } from "./notifications";
+import { i18nText } from "../i18n/translate";
+import { getT } from "../i18n/server";
 import { parseStringArray, toStringArray } from "../utils";
 import type { JobStatus } from "../constants";
 import type { MessageWithSender, ServiceRequestWithRelations } from "../types";
@@ -123,7 +125,7 @@ export async function createServiceRequest(input: {
   await createNotification({
     userId: req.technician.userId,
     type: "NEW_REQUEST",
-    title: "New service request",
+    title: i18nText("sys.notif.request.new.title"),
     body: input.description.slice(0, 80),
     requestId: req.id,
   });
@@ -141,7 +143,7 @@ export async function acceptRequest(requestId: string): Promise<void> {
     await createNotification({
       userId: parties.clientUserId,
       type: "STATUS_UPDATE",
-      title: "Your request was accepted",
+      title: i18nText("sys.notif.request.accepted.title"),
       requestId,
     });
   }
@@ -157,8 +159,8 @@ export async function declineRequest(requestId: string): Promise<void> {
     await createNotification({
       userId: parties.clientUserId,
       type: "STATUS_UPDATE",
-      title: "Technician declined your request",
-      body: "Try another technician from the list.",
+      title: i18nText("sys.notif.request.declined.title"),
+      body: i18nText("sys.notif.request.declined.body"),
       requestId,
     });
   }
@@ -190,7 +192,7 @@ export async function advanceStatus(
     await createNotification({
       userId: parties.clientUserId,
       type: "STATUS_UPDATE",
-      title: `Job status: ${toStatus.replaceAll("_", " ").toLowerCase()}`,
+      title: i18nText(`sys.notif.status.${toStatus}.title`),
       requestId,
     });
   }
@@ -235,8 +237,8 @@ export async function markCompleted(requestId: string): Promise<void> {
     await createNotification({
       userId: parties.clientUserId,
       type: "STATUS_UPDATE",
-      title: "Job marked as completed",
-      body: "Let us know if the problem was solved.",
+      title: i18nText("sys.notif.completed.title"),
+      body: i18nText("sys.notif.completed.body"),
       requestId,
     });
   }
@@ -298,22 +300,23 @@ export async function createMessage(input: {
   body?: string | null;
   imageUrl?: string | null;
 }): Promise<void> {
+  const t = await getT();
   const request = await prisma.serviceRequest.findUnique({
     where: { id: input.requestId },
     select: { clientId: true, technician: { select: { userId: true } } },
   });
-  if (!request) throw new Error("Conversation not found.");
+  if (!request) throw new Error(t("sys.err.chatNotFound"));
   const isParticipant =
     input.senderId === request.clientId ||
     input.senderId === request.technician.userId;
-  if (!isParticipant) throw new Error("You cannot send messages in this conversation.");
+  if (!isParticipant) throw new Error(t("sys.err.chatNotAllowed"));
 
   const restriction = await prisma.chatRestriction.findUnique({
     where: { requestId: input.requestId },
     select: { active: true },
   });
   if (restriction?.active) {
-    throw new Error("Messaging has been restricted by the Fixitn moderation team.");
+    throw new Error(t("sys.err.chatRestricted"));
   }
 
   await prisma.message.create({
@@ -334,8 +337,8 @@ export async function createMessage(input: {
     await createNotification({
       userId: recipient,
       type: "NEW_MESSAGE",
-      title: "New message",
-      body: input.body ?? "Sent a photo",
+      title: i18nText("sys.notif.message.title"),
+      body: input.body ?? i18nText("sys.notif.message.photo"),
       requestId: input.requestId,
     });
   }

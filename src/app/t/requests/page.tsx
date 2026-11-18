@@ -4,9 +4,11 @@ import { getTechnicianByUserId } from "@/lib/db/catalog";
 import { listRequestsForTechnician } from "@/lib/db/requests";
 import { TechBottomNav } from "@/components/TechBottomNav";
 import { RequestTabs } from "./RequestTabs";
+import { getT } from "@/lib/i18n/server";
 
 export default async function TechRequestsPage() {
   const session = await requireRole("TECHNICIAN");
+  const t = await getT();
   const technician = await getTechnicianByUserId(session.userId);
   if (!technician) redirect("/onboarding");
 
@@ -29,7 +31,7 @@ export default async function TechRequestsPage() {
     <>
       <div className="app-content flex flex-col">
         <div className="border-b border-line px-5 py-4 shrink-0">
-          <p className="font-heading text-lg font-semibold text-ink">My Jobs</p>
+          <p className="font-heading text-lg font-semibold text-ink">{t("tech.requests.title")}</p>
         </div>
         <RequestTabs pending={pending} active={active} done={done} />
       </div>

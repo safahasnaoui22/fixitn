@@ -5,6 +5,7 @@ import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/db/client";
 import { sendSupportMessage } from "@/lib/db/supportChat";
 import { createNotification } from "@/lib/db/notifications";
+import { i18nText } from "@/lib/i18n/translate";
 
 export async function sendClientDirectMessageAction(
   toUserId: string,
@@ -24,7 +25,7 @@ export async function sendClientDirectMessageAction(
   await createNotification({
     userId: toUserId,
     type: "NEW_MESSAGE",
-    title: `💬 Message de ${session.fullName}`,
+    title: i18nText("client.notif.directMessage.title", { name: session.fullName }),
     body: body.slice(0, 80),
     requestId: null,
     url: `/t/messages/${session.userId}`,

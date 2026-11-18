@@ -6,6 +6,7 @@ import { requireRole } from "@/lib/auth";
 import { findUserById } from "@/lib/db/users";
 import { listSupportMessages, markMessagesRead } from "@/lib/db/supportChat";
 import { Avatar } from "@/components/ui/Avatar";
+import { getT } from "@/lib/i18n/server";
 import { AdminSupportChatPane } from "./AdminSupportChatPane";
 
 export default async function AdminSupportChatPage({
@@ -13,6 +14,7 @@ export default async function AdminSupportChatPage({
 }: {
   params: Promise<{ userId: string }>;
 }) {
+  const t = await getT();
   const session = await requireRole("ADMIN");
   const { userId } = await params;
 
@@ -22,12 +24,6 @@ export default async function AdminSupportChatPage({
   await markMessagesRead(session.userId, userId);
   const messages = await listSupportMessages(session.userId, userId);
 
-  const ROLE_LABEL: Record<string, string> = {
-    CLIENT: "Client",
-    TECHNICIAN: "Technicien",
-    SOUS_ADMIN: "Sous-Admin",
-  };
-
   return (
     <div className="flex flex-col max-w-2xl" style={{ height: "calc(100vh - 120px)" }}>
       <div className="flex items-center gap-3 border-b border-line pb-4 mb-0 shrink-0">
@@ -35,7 +31,7 @@ export default async function AdminSupportChatPage({
           href="/admin/support"
           className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-alt border border-line"
         >
-          <ArrowLeft size={18} />
+          <ArrowLeft size={18} className="rtl:rotate-180" />
         </Link>
         <Avatar src={otherUser.avatarUrl} name={otherUser.fullName} size={38} />
         <div>
@@ -43,7 +39,7 @@ export default async function AdminSupportChatPage({
             {otherUser.fullName}
           </p>
           <p className="text-xs text-muted">
-            {ROLE_LABEL[otherUser.role] ?? otherUser.role} · {otherUser.phone}
+            {t(`role.${otherUser.role}`)} · <span dir="ltr">{otherUser.phone}</span>
           </p>
         </div>
       </div>

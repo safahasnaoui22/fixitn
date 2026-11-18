@@ -1,5 +1,8 @@
+"use client";
+
 import { cn } from "@/lib/utils";
 import { ShieldCheck } from "lucide-react";
+import { useT } from "@/lib/i18n/I18nProvider";
 
 interface SeniorBadgeProps {
   className?: string;
@@ -15,6 +18,7 @@ const SIZE: Record<string, string> = {
 const ICON_SIZE: Record<string, number> = { sm: 10, md: 12, lg: 14 };
 
 export function SeniorBadge({ className, size = "md" }: SeniorBadgeProps) {
+  const t = useT();
   return (
     <span
       className={cn(
@@ -25,7 +29,7 @@ export function SeniorBadge({ className, size = "md" }: SeniorBadgeProps) {
       )}
     >
       <ShieldCheck size={ICON_SIZE[size]} strokeWidth={2.5} />
-      Senior Pro
+      {t("comp.senior.label")}
     </span>
   );
 }

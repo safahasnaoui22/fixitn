@@ -5,6 +5,7 @@ import { requireRole, requirePermission } from "@/lib/auth";
 import { setTechnicianVerified, deleteUser } from "@/lib/db/admin";
 import { logAudit } from "@/lib/db/audit";
 import { prisma } from "@/lib/db/client";
+import { i18nText } from "@/lib/i18n/translate";
 
 async function techName(technicianId: string): Promise<string> {
   const t = await prisma.technician.findUnique({
@@ -21,7 +22,7 @@ export async function verifyTechnicianAction(technicianId: string, verified: boo
     action: "technician.verify",
     entityType: "technician",
     entityId: technicianId,
-    summary: `${verified ? "Verified" : "Un-verified"} technician ${await techName(technicianId)}`,
+    summary: i18nText(verified ? "sys.audit.techVerified" : "sys.audit.techUnverified", { name: await techName(technicianId) }),
   });
   redirect(`/admin/technicians/${technicianId}`);
 }
@@ -46,7 +47,7 @@ export async function promoteSeniorAction(
     action: "technician.senior",
     entityType: "technician",
     entityId: technicianId,
-    summary: `${isSenior ? "Promoted to senior" : "Removed senior status of"} technician ${await techName(technicianId)}`,
+    summary: i18nText(isSenior ? "sys.audit.seniorOn" : "sys.audit.seniorOff", { name: await techName(technicianId) }),
   });
   redirect(`/admin/technicians/${technicianId}`);
 }
@@ -59,7 +60,7 @@ export async function resetFaceAction(userId: string): Promise<void> {
     action: "user.resetFace",
     entityType: "user",
     entityId: userId,
-    summary: "Reset face ID",
+    summary: i18nText("sys.audit.faceReset"),
   });
   redirect(`/admin/users/${userId}?success=face-reset`);
 }

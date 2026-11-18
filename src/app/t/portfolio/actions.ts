@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth";
+import { getT } from "@/lib/i18n/server";
 import { getTechnicianByUserId } from "@/lib/db/catalog";
 import { uploadFile } from "@/lib/cloudinary";
 import {
@@ -21,6 +22,8 @@ export async function uploadPortfolioItemAction(
   formData: FormData
 ): Promise<void> {
   const session = await requireRole("TECHNICIAN");
+  const t = await getT();
+  const err = (m: string) => `/t/portfolio?error=${encodeURIComponent(m)}`;
   const technician = await getTechnicianByUserId(session.userId);
   if (!technician) redirect("/onboarding");
 
@@ -28,30 +31,26 @@ export async function uploadPortfolioItemAction(
   const caption = String(formData.get("caption") ?? "").trim() || null;
 
   if (!(file instanceof File) || file.size === 0) {
-    redirect("/t/portfolio?error=Please+select+a+file+to+upload.");
+    redirect(err(t("tech.portfolio.errSelect")));
   }
 
   // Check limit
   const count = await getPortfolioCount(technician.id);
   if (count >= MAX_ITEMS) {
-    redirect(
-      `/t/portfolio?error=Maximum+${MAX_ITEMS}+items+allowed.+Delete+some+before+uploading+more.`
-    );
+    redirect(err(t("tech.portfolio.errMaxDelete", { n: MAX_ITEMS })));
   }
 
   const isImage = ACCEPTED_IMAGES.includes(file.type);
   const isVideo = ACCEPTED_VIDEOS.includes(file.type);
 
   if (!isImage && !isVideo) {
-    redirect(
-      "/t/portfolio?error=Unsupported+file+type.+Use+JPG,+PNG,+WebP,+MP4,+or+MOV."
-    );
+    redirect(err(t("tech.portfolio.errType")));
   }
 
   const maxSize = isVideo ? MAX_VIDEO_SIZE : MAX_IMAGE_SIZE;
   if (file.size > maxSize) {
     const label = isVideo ? "50 MB" : "10 MB";
-    redirect(`/t/portfolio?error=File+too+large.+Maximum+size+is+${label}.`);
+    redirect(err(t("tech.portfolio.errTooLarge", { size: label })));
   }
 
   const folder = isVideo ? "portfolio/videos" : "portfolio/images";
@@ -89,8 +88,9 @@ export async function savePortfolioItemAction(input: {
   caption: string;
 }): Promise<{ ok: boolean; error?: string }> {
   const session = await requireRole("TECHNICIAN");
+  const t = await getT();
   const technician = await getTechnicianByUserId(session.userId);
-  if (!technician) return { ok: false, error: "Technician profile not found." };
+  if (!technician) return { ok: false, error: t("tech.portfolio.errNoProfile") };
 
   const cloud = process.env.CLOUDINARY_CLOUD_NAME;
   if (
@@ -98,12 +98,12 @@ export async function savePortfolioItemAction(input: {
     !input.url.startsWith(`https://res.cloudinary.com/${cloud}/`) ||
     !input.publicId.startsWith("fixitn/portfolio/")
   ) {
-    return { ok: false, error: "Invalid file." };
+    return { ok: false, error: t("tech.portfolio.errInvalidFile") };
   }
-  if (input.type !== "IMAGE" && input.type !== "VIDEO") return { ok: false, error: "Invalid type." };
+  if (input.type !== "IMAGE" && input.type !== "VIDEO") return { ok: false, error: t("tech.portfolio.errInvalidType") };
 
   const count = await getPortfolioCount(technician.id);
-  if (count >= MAX_ITEMS) return { ok: false, error: `Maximum ${MAX_ITEMS} items allowed.` };
+  if (count >= MAX_ITEMS) return { ok: false, error: t("tech.portfolio.errMax", { n: MAX_ITEMS }) };
 
   await createPortfolioItem({
     technicianId: technician.id,

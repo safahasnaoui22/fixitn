@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AlertTriangle, CheckCircle2, ChevronRight } from "lucide-react";
 import { getAttentionItems } from "@/lib/db/attention";
+import { getT } from "@/lib/i18n/server";
 
 const TONE = {
   red: "bg-red-50 text-red-700",
@@ -10,6 +11,12 @@ const TONE = {
 
 /** "Needs attention": everything the admin should do today, on one card. */
 export async function AttentionBox() {
+  const t = await getT();
+  const label = (key: string, fallback: string) => {
+    const k = `comp.attention.${key}`;
+    const out = t(k, { hours: 24 });
+    return out === k ? fallback : out;
+  };
   const items = (await getAttentionItems(24)).filter((i) => i.count > 0);
   return (
     <div className="mb-6 rounded-2xl border border-line bg-surface p-4 shadow-sm">
@@ -20,7 +27,7 @@ export async function AttentionBox() {
           <AlertTriangle size={18} className="text-brand-orange" />
         )}
         <h2 className="font-heading text-base font-bold text-ink">
-          {items.length === 0 ? "All clear — nothing needs attention" : "Needs attention"}
+          {items.length === 0 ? t("comp.attention.allClear") : t("comp.attention.title")}
         </h2>
       </div>
       {items.length > 0 && (
@@ -34,8 +41,8 @@ export async function AttentionBox() {
               <span className={`flex h-9 min-w-9 items-center justify-center rounded-full px-2 text-sm font-bold ${TONE[i.tone]}`}>
                 {i.count}
               </span>
-              <span className="flex-1 text-sm text-ink">{i.label}</span>
-              <ChevronRight size={16} className="text-muted" />
+              <span className="flex-1 text-sm text-ink">{label(i.key, i.label)}</span>
+              <ChevronRight size={16} className="text-muted rtl:rotate-180" />
             </Link>
           ))}
         </div>

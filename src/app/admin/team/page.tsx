@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db/client";
 import { PERMISSIONS } from "@/lib/permissions";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
+import { getT } from "@/lib/i18n/server";
 import { updatePermissionsAction } from "./actions";
 
 export default async function TeamAccessPage({
@@ -13,6 +14,7 @@ export default async function TeamAccessPage({
   searchParams: Promise<{ saved?: string }>;
 }) {
   await requireRole("ADMIN");
+  const t = await getT();
   const { saved } = await searchParams;
 
   const team = await prisma.user.findMany({
@@ -25,35 +27,32 @@ export default async function TeamAccessPage({
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="font-heading text-2xl font-bold text-ink">Team & Access</h1>
+          <h1 className="font-heading text-2xl font-bold text-ink">{t("adminOps.team.title")}</h1>
           <p className="mt-0.5 text-sm text-muted">
-            Choose which functions each sous-admin can see and use. Changes apply at the next page
-            load.
+            {t("adminOps.team.subtitle")}
           </p>
         </div>
         <Link href="/admin/create-account">
           <Button size="sm">
-            <UserPlus size={14} /> New sous-admin
+            <UserPlus size={14} /> {t("adminOps.team.newSous")}
           </Button>
         </Link>
       </div>
 
       {saved && (
         <p className="rounded-xl bg-success-light px-4 py-3 text-sm font-medium text-success">
-          Access saved.
+          {t("adminOps.team.saved")}
         </p>
       )}
 
       <p className="rounded-xl border border-line bg-surface px-4 py-3 text-xs text-muted">
-        <ShieldCheck size={13} className="mr-1 inline text-brand-orange" />
-        Always admin-only (cannot be given): Create Account, Plan Config, Team & Access, Activity,
-        Messages, deleting users and categories. Every change a sous-admin makes is recorded and
-        shown as “modified by sous-admin …”.
+        <ShieldCheck size={13} className="me-1 inline text-brand-orange" />
+        {t("adminOps.team.adminOnly")}
       </p>
 
       {team.length === 0 && (
         <p className="text-sm text-muted">
-          No sous-admin yet. Create one from “Create Account”.
+          {t("adminOps.team.empty")}
         </p>
       )}
 
@@ -70,7 +69,7 @@ export default async function TeamAccessPage({
                 <p className="truncate font-heading text-sm font-semibold text-ink">
                   {member.fullName}
                 </p>
-                <p className="text-xs text-muted">{member.phone}</p>
+                <p dir="ltr" className="text-xs text-muted text-start">{member.phone}</p>
               </div>
             </div>
 
@@ -88,15 +87,15 @@ export default async function TeamAccessPage({
                     className="mt-0.5 h-4 w-4 accent-[#f1591e]"
                   />
                   <span>
-                    <span className="block text-sm font-medium text-ink">{p.label}</span>
-                    <span className="block text-[11px] text-muted">{p.hint}</span>
+                    <span className="block text-sm font-medium text-ink">{t(`adminOps.team.perm.${p.key}.label`)}</span>
+                    <span className="block text-[11px] text-muted">{t(`adminOps.team.perm.${p.key}.hint`)}</span>
                   </span>
                 </label>
               ))}
             </div>
 
             <Button type="submit" size="sm" className="mt-4">
-              Save access
+              {t("adminOps.team.save")}
             </Button>
           </form>
         ))}

@@ -7,6 +7,7 @@ import { getRequestById } from "@/lib/db/requests";
 import { getReviewByRequestId } from "@/lib/db/reviews";
 import { Avatar } from "@/components/ui/Avatar";
 import { RatingForm } from "./RatingForm";
+import { getT } from "@/lib/i18n/server";
 
 export default async function RatePage({
   params,
@@ -14,6 +15,7 @@ export default async function RatePage({
   params: Promise<{ id: string }>;
 }) {
   const session = await requireUser();
+  const t = await getT();
   const { id } = await params;
 
   const req = await getRequestById(id);
@@ -31,9 +33,9 @@ export default async function RatePage({
           href={`/requests/${id}`}
           className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-alt"
         >
-          <ArrowLeft size={18} />
+          <ArrowLeft size={18} className="rtl:rotate-180" />
         </Link>
-        <p className="font-heading text-base font-semibold text-ink">Leave a Review</p>
+        <p className="font-heading text-base font-semibold text-ink">{t("booking.rate.title")}</p>
       </div>
 
       <div className="px-5 py-6">

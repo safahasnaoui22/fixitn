@@ -8,9 +8,13 @@ import { CategoryIcon } from "@/components/CategoryIcon";
 import { EmptyState } from "@/components/ui/Card";
 import { ClientBottomNav } from "@/components/ClientBottomNav";
 import { formatRelativeTime } from "@/lib/utils";
+import { getT, getLocale } from "@/lib/i18n/server";
+import { renderText } from "@/lib/i18n/translate";
 
 export default async function ChatsPage() {
   const session = await requireUser();
+  const t = await getT();
+  const locale = await getLocale();
   const chats = await listChatsForUser(session.userId);
   const direct = session.role === "CLIENT" ? await listDirectConversations(session.userId, "TECHNICIAN") : [];
 
@@ -18,14 +22,14 @@ export default async function ChatsPage() {
     <>
       <div className="app-content no-scrollbar">
         <div className="border-b border-line px-5 py-4">
-          <p className="font-heading text-lg font-semibold text-ink">Messages</p>
+          <p className="font-heading text-lg font-semibold text-ink">{t("client.chats.title")}</p>
         </div>
 
         {chats.length === 0 && direct.length === 0 ? (
           <EmptyState
             icon={MessageCircle}
-            title="No conversations yet"
-            description="Chat with a technician once they accept your request."
+            title={t("client.chats.emptyTitle")}
+            description={t("client.chats.emptyDesc")}
           />
         ) : (
           <div className="flex flex-col divide-y divide-line">
@@ -39,9 +43,9 @@ export default async function ChatsPage() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
                     <p className="truncate font-heading text-sm font-semibold text-ink">{d.fullName}</p>
-                    <span className="shrink-0 text-[11px] text-muted">{formatRelativeTime(d.lastMessageAt)}</span>
+                    <span className="shrink-0 text-[11px] text-muted">{formatRelativeTime(d.lastMessageAt, t, locale)}</span>
                   </div>
-                  <p className="truncate text-sm text-muted mt-0.5">{d.lastMessage}</p>
+                  <p className="truncate text-sm text-muted mt-0.5">{renderText(t, d.lastMessage)}</p>
                 </div>
                 {d.unreadCount > 0 && (
                   <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-orange px-1.5 text-[11px] font-semibold text-white">
@@ -63,7 +67,7 @@ export default async function ChatsPage() {
                 >
                   <div className="relative">
                     <Avatar src={otherAvatar} name={otherName} size={48} />
-                    <div className="absolute -bottom-0.5 -right-0.5">
+                    <div className="absolute -bottom-0.5 -end-0.5">
                       <CategoryIcon
                         icon={chat.categoryIcon}
                         color={chat.categoryColor}
@@ -80,13 +84,13 @@ export default async function ChatsPage() {
                       </p>
                       {chat.lastMsgAt && (
                         <span className="shrink-0 text-[11px] text-muted">
-                          {formatRelativeTime(chat.lastMsgAt)}
+                          {formatRelativeTime(chat.lastMsgAt, t, locale)}
                         </span>
                       )}
                     </div>
                     <p className="truncate text-xs text-muted mt-0.5">{chat.categoryName}</p>
                     {chat.lastMsg && (
-                      <p className="truncate text-sm text-muted mt-0.5">{chat.lastMsg}</p>
+                      <p className="truncate text-sm text-muted mt-0.5">{renderText(t, chat.lastMsg)}</p>
                     )}
                   </div>
                 </Link>

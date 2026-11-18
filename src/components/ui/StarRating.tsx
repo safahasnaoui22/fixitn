@@ -1,6 +1,7 @@
 "use client";
 import { Star } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/I18nProvider";
 
 interface StarRatingProps {
   value: number;
@@ -10,6 +11,7 @@ interface StarRatingProps {
 }
 
 export function StarRating({ value, onChange, size = 18, className }: StarRatingProps) {
+  const t = useT();
   const interactive = !!onChange;
   return (
     <div className={cn("inline-flex items-center gap-0.5", className)}>
@@ -20,7 +22,7 @@ export function StarRating({ value, onChange, size = 18, className }: StarRating
           tabIndex={interactive ? 0 : -1}
           onClick={() => onChange?.(n)}
           className={cn(!interactive && "cursor-default", interactive && "transition-transform active:scale-90")}
-          aria-label={`${n} star${n > 1 ? "s" : ""}`}
+          aria-label={t(n > 1 ? "comp.stars.many" : "comp.stars.one", { n })}
         >
           <Star
             size={size}

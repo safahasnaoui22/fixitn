@@ -12,6 +12,11 @@ import { getPlanConfig } from "@/lib/db/planConfig";
 import { Button } from "@/components/ui/Button";
 import { updatePlanConfigAction } from "./actions";
 import { prisma } from "@/lib/db/client";
+import { getT } from "@/lib/i18n/server";
+
+function rich(s: string) {
+  return s.split(/<b>(.*?)<\/b>/g).map((part, i) => (i % 2 ? <strong key={i}>{part}</strong> : part));
+}
 
 async function getSeniorStats() {
   const [total, seniors, eligible] = await Promise.all([
@@ -28,6 +33,7 @@ export default async function PlanConfigPage({
   searchParams: Promise<{ error?: string; success?: string }>;
 }) {
   await requireRole("ADMIN");
+  const t = await getT();
   const { error, success } = await searchParams;
   const [config, stats] = await Promise.all([getPlanConfig(), getSeniorStats()]);
 
@@ -38,14 +44,14 @@ export default async function PlanConfigPage({
           href="/admin"
           className="flex h-9 w-9 items-center justify-center rounded-full bg-surface border border-line"
         >
-          <ArrowLeft size={18} />
+          <ArrowLeft size={18} className="rtl:rotate-180" />
         </Link>
         <div>
           <h1 className="font-heading text-2xl font-bold text-ink">
-            Senior Pro Criteria
+            {t("adminOps.planConfig.title")}
           </h1>
           <p className="text-sm text-muted">
-            Configure when a technician is automatically promoted
+            {t("adminOps.planConfig.subtitle")}
           </p>
         </div>
       </div>
@@ -55,8 +61,7 @@ export default async function PlanConfigPage({
         <div className="flex items-center gap-2 rounded-xl bg-success-light px-4 py-3">
           <CheckCircle2 size={16} className="text-success shrink-0" />
           <p className="text-sm font-medium text-success">
-            Criteria updated — new reviews will be evaluated against these
-            thresholds automatically.
+            {t("adminOps.planConfig.updated")}
           </p>
         </div>
       )}
@@ -72,7 +77,7 @@ export default async function PlanConfigPage({
           <p className="font-heading text-2xl font-bold text-ink">
             {stats.total}
           </p>
-          <p className="text-xs text-muted mt-0.5">Total technicians</p>
+          <p className="text-xs text-muted mt-0.5">{t("adminOps.planConfig.totalTechs")}</p>
         </div>
         <div className="rounded-2xl border border-line bg-surface p-4 text-center">
           <div className="flex items-center justify-center gap-1 mb-1">
@@ -81,13 +86,13 @@ export default async function PlanConfigPage({
               {stats.seniors}
             </p>
           </div>
-          <p className="text-xs text-muted">Senior Pro</p>
+          <p className="text-xs text-muted">{t("adminOps.planConfig.seniorPro")}</p>
         </div>
         <div className="rounded-2xl border border-line bg-surface p-4 text-center">
           <p className="font-heading text-2xl font-bold text-ink">
             {stats.nonSeniors}
           </p>
-          <p className="text-xs text-muted mt-0.5">Beginner</p>
+          <p className="text-xs text-muted mt-0.5">{t("adminOps.planConfig.beginner")}</p>
         </div>
       </div>
 
@@ -96,46 +101,39 @@ export default async function PlanConfigPage({
         <div className="flex items-center gap-2 mb-2">
           <Info size={15} className="text-blue-500 shrink-0" />
           <p className="text-sm font-semibold text-blue-800">
-            How automatic promotion works
+            {t("adminOps.planConfig.howTitle")}
           </p>
         </div>
         <p className="text-sm text-blue-700 leading-relaxed mb-2">
-          After every review, FixiTN automatically checks if the technician
-          qualifies for Senior Pro. They must first pass the{" "}
-          <strong>minimum reviews</strong> gate, then satisfy{" "}
-          <strong>either</strong> of the two routes below:
+          {rich(t("adminOps.planConfig.howIntro"))}
         </p>
         <div className="flex flex-col gap-2">
           <div className="rounded-xl bg-white/60 px-3 py-2">
             <p className="text-xs font-semibold text-blue-800">
-              Route 1 — Five-star count
+              {t("adminOps.planConfig.route1")}
             </p>
             <p className="text-xs text-blue-700">
-              Technician has received at least{" "}
-              <strong>{config.minFiveStarCount}</strong> five-star reviews.
+              {rich(t("adminOps.planConfig.route1Desc", { n: config.minFiveStarCount }))}
             </p>
           </div>
           <div className="rounded-xl bg-white/60 px-3 py-2">
             <p className="text-xs font-semibold text-blue-800">
-              Route 2 — Average rating
+              {t("adminOps.planConfig.route2")}
             </p>
             <p className="text-xs text-blue-700">
-              Average rating ≥ <strong>{config.minAverageRating}</strong> AND
-              at least <strong>{config.minFourStarCount}</strong> reviews rated
-              4 or higher.
+              {rich(t("adminOps.planConfig.route2Desc", { avg: config.minAverageRating, n: config.minFourStarCount }))}
             </p>
           </div>
         </div>
         <p className="text-xs text-blue-600 mt-2 font-medium">
-          Both routes require a minimum of{" "}
-          <strong>{config.minTotalReviews}</strong> total reviews first.
+          {rich(t("adminOps.planConfig.bothRoutes", { n: config.minTotalReviews }))}
         </p>
       </div>
 
       {/* Config form */}
       <div className="rounded-2xl border border-line bg-surface p-5">
         <p className="font-heading text-base font-semibold text-ink mb-5">
-          Edit Criteria
+          {t("adminOps.planConfig.editTitle")}
         </p>
 
         <form action={updatePlanConfigAction} className="flex flex-col gap-5">
@@ -146,12 +144,12 @@ export default async function PlanConfigPage({
                 G
               </div>
               <p className="text-sm font-semibold text-ink">
-                Minimum total reviews gate
+                {t("adminOps.planConfig.gate")}
               </p>
             </div>
             <div>
               <label className="text-sm font-medium text-ink">
-                Technician must have at least this many reviews total
+                {t("adminOps.planConfig.gateLabel")}
               </label>
               <input
                 name="minTotalReviews"
@@ -163,7 +161,7 @@ export default async function PlanConfigPage({
                 className="mt-1.5 w-full rounded-xl border border-line px-4 py-3 text-[15px] outline-none focus:border-brand-orange"
               />
               <p className="mt-1 text-xs text-muted">
-                Currently: {config.minTotalReviews} reviews
+                {t("adminOps.planConfig.currentReviews", { n: config.minTotalReviews })}
               </p>
             </div>
           </div>
@@ -175,12 +173,12 @@ export default async function PlanConfigPage({
             <div className="flex items-center gap-2 mb-3">
               <Star size={16} className="text-amber-500 fill-amber-500" />
               <p className="text-sm font-semibold text-ink">
-                Route 1 — Five-star count
+                {t("adminOps.planConfig.route1")}
               </p>
             </div>
             <div>
               <label className="text-sm font-medium text-ink">
-                Minimum number of 5-star reviews
+                {t("adminOps.planConfig.minFive")}
               </label>
               <input
                 name="minFiveStarCount"
@@ -192,7 +190,7 @@ export default async function PlanConfigPage({
                 className="mt-1.5 w-full rounded-xl border border-line px-4 py-3 text-[15px] outline-none focus:border-brand-orange"
               />
               <p className="mt-1 text-xs text-muted">
-                Currently: {config.minFiveStarCount} five-star reviews
+                {t("adminOps.planConfig.currentFive", { n: config.minFiveStarCount })}
               </p>
             </div>
           </div>
@@ -204,13 +202,13 @@ export default async function PlanConfigPage({
             <div className="flex items-center gap-2 mb-3">
               <TrendingUp size={16} className="text-success" />
               <p className="text-sm font-semibold text-ink">
-                Route 2 — Average rating
+                {t("adminOps.planConfig.route2")}
               </p>
             </div>
             <div className="flex flex-col gap-3">
               <div>
                 <label className="text-sm font-medium text-ink">
-                  Minimum average rating (1.0 – 5.0)
+                  {t("adminOps.planConfig.minAvg")}
                 </label>
                 <input
                   name="minAverageRating"
@@ -223,12 +221,12 @@ export default async function PlanConfigPage({
                   className="mt-1.5 w-full rounded-xl border border-line px-4 py-3 text-[15px] outline-none focus:border-brand-orange"
                 />
                 <p className="mt-1 text-xs text-muted">
-                  Currently: {config.minAverageRating}★
+                  {t("adminOps.planConfig.currentAvg", { n: config.minAverageRating })}
                 </p>
               </div>
               <div>
                 <label className="text-sm font-medium text-ink">
-                  Minimum number of reviews rated 4 or higher
+                  {t("adminOps.planConfig.minFour")}
                 </label>
                 <input
                   name="minFourStarCount"
@@ -240,7 +238,7 @@ export default async function PlanConfigPage({
                   className="mt-1.5 w-full rounded-xl border border-line px-4 py-3 text-[15px] outline-none focus:border-brand-orange"
                 />
                 <p className="mt-1 text-xs text-muted">
-                  Currently: {config.minFourStarCount} reviews ≥ 4 stars
+                  {t("adminOps.planConfig.currentFour", { n: config.minFourStarCount })}
                 </p>
               </div>
             </div>
@@ -248,7 +246,7 @@ export default async function PlanConfigPage({
 
           <Button type="submit" fullWidth size="lg">
             <CheckCircle2 size={18} />
-            Save Criteria
+            {t("adminOps.planConfig.save")}
           </Button>
         </form>
       </div>
@@ -256,13 +254,10 @@ export default async function PlanConfigPage({
       {/* Warning */}
       <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
         <p className="text-sm font-semibold text-amber-800 mb-1">
-          Important
+          {t("adminOps.planConfig.important")}
         </p>
         <p className="text-sm text-amber-700 leading-relaxed">
-          Changing these criteria does <strong>not</strong> retroactively
-          demote existing Senior Pro technicians. It only affects future
-          promotions. To manually demote a technician, visit their profile
-          in the Technicians section.
+          {rich(t("adminOps.planConfig.warning"))}
         </p>
       </div>
     </div>

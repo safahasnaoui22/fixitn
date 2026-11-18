@@ -2,7 +2,6 @@ import Link from "next/link";
 import { ShieldAlert, ScanFace, Smartphone, LogOut, KeyRound, Users } from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import {
-  SECURITY_LABEL,
   SECURITY_TYPES,
   listAccountsForSecurity,
   listSecurityEvents,
@@ -11,6 +10,8 @@ import {
 } from "@/lib/db/security";
 import { ResetFaceButton } from "@/components/ResetFaceButton";
 import { formatDate, formatTime } from "@/lib/utils";
+import { getT, getLocale } from "@/lib/i18n/server";
+import { tOr } from "@/lib/i18n/translate";
 
 export const dynamic = "force-dynamic";
 
@@ -38,8 +39,10 @@ export default async function SecurityPage({
   searchParams: Promise<{ type?: string; q?: string }>;
 }) {
   await requireRole("ADMIN");
+  const t = await getT();
+  const locale = await getLocale();
   const { type, q } = await searchParams;
-  const activeType = SECURITY_TYPES.find((t) => t === type);
+  const activeType = SECURITY_TYPES.find((s) => s === type);
 
   const [summary, events, accounts] = await Promise.all([
     securitySummary24h(),
@@ -50,27 +53,27 @@ export default async function SecurityPage({
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="font-heading text-2xl font-bold text-ink">Security center</h1>
+        <h1 className="font-heading text-2xl font-bold text-ink">{t("adminOps.security.title")}</h1>
         <p className="mt-0.5 text-sm text-muted">
-          Face checks, shared faces, new devices and forced logouts. One face = one account, one active device.
+          {t("adminOps.security.subtitle")}
         </p>
       </div>
 
       {/* Last 24 h */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        {SECURITY_TYPES.map((t) => {
-          const Icon = ICON[t];
+        {SECURITY_TYPES.map((st) => {
+          const Icon = ICON[st];
           return (
             <Link
-              key={t}
-              href={`/admin/security?type=${t}`}
+              key={st}
+              href={`/admin/security?type=${st}`}
               className="rounded-2xl border border-line bg-surface p-3 hover:border-brand-orange"
             >
-              <span className={`flex h-8 w-8 items-center justify-center rounded-full ${TONE[t]}`}>
+              <span className={`flex h-8 w-8 items-center justify-center rounded-full ${TONE[st]}`}>
                 <Icon size={15} />
               </span>
-              <p className="mt-2 font-heading text-xl font-bold text-ink">{summary[t]}</p>
-              <p className="text-[11px] leading-tight text-muted">{SECURITY_LABEL[t]} · 24 h</p>
+              <p className="mt-2 font-heading text-xl font-bold text-ink">{summary[st]}</p>
+              <p className="text-[11px] leading-tight text-muted">{t("adminOps.security.last24h", { label: t(`adminOps.security.type.${st}`) })}</p>
             </Link>
           );
         })}
@@ -84,45 +87,45 @@ export default async function SecurityPage({
             !activeType ? "bg-brand-orange text-white" : "border border-line bg-surface text-muted"
           }`}
         >
-          All events
+          {t("adminOps.security.allEvents")}
         </Link>
-        {SECURITY_TYPES.map((t) => (
+        {SECURITY_TYPES.map((st) => (
           <Link
-            key={t}
-            href={`/admin/security?type=${t}`}
+            key={st}
+            href={`/admin/security?type=${st}`}
             className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
-              activeType === t ? "bg-brand-orange text-white" : "border border-line bg-surface text-muted"
+              activeType === st ? "bg-brand-orange text-white" : "border border-line bg-surface text-muted"
             }`}
           >
-            {SECURITY_LABEL[t]}
+            {t(`adminOps.security.type.${st}`)}
           </Link>
         ))}
       </div>
 
       {/* Events */}
       <div className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface">
-        {events.length === 0 && <p className="px-4 py-6 text-sm text-muted">No events yet.</p>}
+        {events.length === 0 && <p className="px-4 py-6 text-sm text-muted">{t("adminOps.security.noEvents")}</p>}
         {events.map((e) => {
-          const t = e.type as SecurityType;
+          const et = e.type as SecurityType;
           return (
             <div key={e.id} className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:gap-4">
               <span
-                className={`w-fit shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold ${TONE[t] ?? "bg-surface-alt text-ink"}`}
+                className={`w-fit shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold ${TONE[et] ?? "bg-surface-alt text-ink"}`}
               >
-                {SECURITY_LABEL[t] ?? e.type}
+                {tOr(t, `adminOps.security.type.${et}`, e.type)}
               </span>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-ink">{e.userName ?? "Unknown user"}</p>
+                <p className="truncate text-sm font-semibold text-ink">{e.userName ?? t("adminOps.security.unknownUser")}</p>
                 <p className="truncate text-xs text-muted">
                   {e.detail}
                   {e.userAgent ? ` · ${e.userAgent}` : ""}
                 </p>
               </div>
               <p className="shrink-0 text-xs text-muted">
-                {formatDate(e.createdAt.toISOString())} {formatTime(e.createdAt.toISOString())}
+                {formatDate(e.createdAt.toISOString(), locale)} {formatTime(e.createdAt.toISOString(), locale)}
               </p>
-              {e.userId && (t === "FACE_SHARED" || t === "FACE_FAIL") && (
-                <ResetFaceButton userId={e.userId} name={e.userName ?? "this user"} />
+              {e.userId && (et === "FACE_SHARED" || et === "FACE_FAIL") && (
+                <ResetFaceButton userId={e.userId} name={e.userName ?? t("adminOps.security.thisUser")} />
               )}
             </div>
           );
@@ -133,18 +136,18 @@ export default async function SecurityPage({
       <div>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="flex items-center gap-2 font-heading text-lg font-bold text-ink">
-            <Users size={18} /> Accounts &amp; faces
+            <Users size={18} /> {t("adminOps.security.accounts")}
           </h2>
           <form className="flex gap-2" action="/admin/security">
             {activeType && <input type="hidden" name="type" value={activeType} />}
             <input
               name="q"
               defaultValue={q ?? ""}
-              placeholder="Search name or phone"
+              placeholder={t("adminOps.security.searchPh")}
               className="rounded-full border border-line bg-surface px-4 py-2 text-sm text-ink outline-none focus:border-brand-orange"
             />
             <button className="rounded-full bg-brand-orange px-4 py-2 text-sm font-semibold text-white">
-              Search
+              {t("common.search")}
             </button>
           </form>
         </div>
@@ -154,7 +157,7 @@ export default async function SecurityPage({
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold text-ink">{u.fullName}</p>
                 <p className="text-xs text-muted">
-                  {u.phone} · {u.role}
+                  <span dir="ltr">{u.phone}</span> · {tOr(t, `role.${u.role}`, u.role)}
                 </p>
               </div>
               <span
@@ -162,13 +165,13 @@ export default async function SecurityPage({
                   u.hasFace ? "bg-emerald-50 text-emerald-700" : "bg-surface-alt text-muted"
                 }`}
               >
-                {u.hasFace ? "Face registered" : "No face yet"}
+                {u.hasFace ? t("adminOps.security.faceRegistered") : t("adminOps.security.noFace")}
               </span>
-              <span className="text-xs text-muted">{u.devices} device{u.devices === 1 ? "" : "s"}</span>
+              <span className="text-xs text-muted">{u.devices === 1 ? t("adminOps.security.devicesOne") : t("adminOps.security.devicesMany", { n: u.devices })}</span>
               {u.hasFace && <ResetFaceButton userId={u.id} name={u.fullName} />}
             </div>
           ))}
-          {accounts.length === 0 && <p className="px-4 py-6 text-sm text-muted">No account found.</p>}
+          {accounts.length === 0 && <p className="px-4 py-6 text-sm text-muted">{t("adminOps.security.noAccount")}</p>}
         </div>
       </div>
     </div>

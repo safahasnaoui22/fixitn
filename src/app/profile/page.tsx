@@ -6,6 +6,7 @@ import { findUserById } from "@/lib/db/users";
 import { Avatar } from "@/components/ui/Avatar";
 import { ClientBottomNav } from "@/components/ClientBottomNav";
 import { hasFaceDescriptor } from "@/lib/db/face";
+import { getT } from "@/lib/i18n/server";
 
 async function logoutAction() {
   "use server";
@@ -15,6 +16,7 @@ async function logoutAction() {
 
 export default async function ClientProfilePage() {
   const session = await requireUser();
+  const t = await getT();
   if (session.role === "TECHNICIAN") redirect("/t/profile");
 
   const user = await findUserById(session.userId);
@@ -27,12 +29,12 @@ export default async function ClientProfilePage() {
       <div className="app-content no-scrollbar">
         {/* Header */}
         <div className="bg-brand-navy px-5 pb-8 pt-6 text-white">
-          <p className="font-heading text-lg font-bold mb-5">Mon Profil</p>
+          <p className="font-heading text-lg font-bold mb-5">{t("client.profile.title")}</p>
           <div className="flex items-center gap-4">
             <Avatar src={user.avatarUrl} name={user.fullName} size={64} />
             <div>
               <p className="font-heading text-lg font-semibold">{user.fullName}</p>
-              <p className="text-sm text-white/60">Client</p>
+              <p className="text-sm text-white/60">{t("role.CLIENT")}</p>
               {user.city && (
                 <p className="text-xs text-white/50 flex items-center gap-1 mt-0.5">
                   <MapPin size={11} /> {user.city}
@@ -49,22 +51,22 @@ export default async function ClientProfilePage() {
             <div className="flex items-center gap-3 px-4 py-3.5">
               <User size={16} className="text-muted shrink-0" />
               <div>
-                <p className="text-[10px] text-muted">Nom complet</p>
+                <p className="text-[10px] text-muted">{t("client.profile.fullName")}</p>
                 <p className="text-sm font-medium text-ink">{user.fullName}</p>
               </div>
             </div>
             <div className="flex items-center gap-3 px-4 py-3.5">
               <Phone size={16} className="text-muted shrink-0" />
               <div>
-                <p className="text-[10px] text-muted">Téléphone</p>
-                <p className="text-sm font-medium text-ink">{user.phone}</p>
+                <p className="text-[10px] text-muted">{t("client.profile.phone")}</p>
+                <p dir="ltr" className="text-sm font-medium text-ink text-start">{user.phone}</p>
               </div>
             </div>
             {user.city && (
               <div className="flex items-center gap-3 px-4 py-3.5">
                 <MapPin size={16} className="text-muted shrink-0" />
                 <div>
-                  <p className="text-[10px] text-muted">Ville</p>
+                  <p className="text-[10px] text-muted">{t("client.profile.city")}</p>
                   <p className="text-sm font-medium text-ink">{user.city}</p>
                 </div>
               </div>
@@ -78,20 +80,20 @@ export default async function ClientProfilePage() {
                 size={16}
                 className={faceRegistered ? "text-success" : "text-muted"}
               />
-              <p className="text-sm font-semibold text-ink">Sécurité Face ID</p>
+              <p className="text-sm font-semibold text-ink">{t("client.profile.faceIdTitle")}</p>
             </div>
             {faceRegistered ? (
               <p className="text-xs text-success font-medium">
-                ✓ Face ID activé — votre compte est protégé
+                {t("client.profile.faceIdOn")}
               </p>
             ) : (
               <div className="flex flex-col gap-2">
                 <p className="text-xs text-danger">
-                  Face ID non configuré — votre compte n'est pas protégé
+                  {t("client.profile.faceIdOff")}
                 </p>
                 <Link href="/face-setup">
                   <span className="text-xs font-semibold text-brand-orange">
-                    Configurer maintenant →
+                    {t("client.profile.faceIdSetup")} <span className="inline-block rtl:rotate-180">→</span>
                   </span>
                 </Link>
               </div>
@@ -102,18 +104,18 @@ export default async function ClientProfilePage() {
           <div className="rounded-2xl border border-line bg-surface divide-y divide-line">
             <Link href="/requests"
               className="flex items-center justify-between px-4 py-3.5 hover:bg-surface-alt transition-colors">
-              <span className="text-sm font-medium text-ink">Mes réservations</span>
-              <span className="text-muted">›</span>
+              <span className="text-sm font-medium text-ink">{t("client.profile.myBookings")}</span>
+              <span className="text-muted rtl:rotate-180">›</span>
             </Link>
             <Link href="/notifications"
               className="flex items-center justify-between px-4 py-3.5 hover:bg-surface-alt transition-colors">
-              <span className="text-sm font-medium text-ink">Notifications</span>
-              <span className="text-muted">›</span>
+              <span className="text-sm font-medium text-ink">{t("common.notifications")}</span>
+              <span className="text-muted rtl:rotate-180">›</span>
             </Link>
             <Link href="/plans"
               className="flex items-center justify-between px-4 py-3.5 hover:bg-surface-alt transition-colors">
-              <span className="text-sm font-medium text-ink">Plans & Tarifs</span>
-              <span className="text-muted">›</span>
+              <span className="text-sm font-medium text-ink">{t("client.profile.plans")}</span>
+              <span className="text-muted rtl:rotate-180">›</span>
             </Link>
           </div>
 
@@ -124,7 +126,7 @@ export default async function ClientProfilePage() {
               className="flex w-full items-center gap-3 rounded-2xl border border-danger-light bg-danger-light px-4 py-3.5 text-sm font-semibold text-danger transition-colors hover:bg-danger hover:text-white"
             >
               <LogOut size={18} />
-              Se déconnecter
+              {t("client.profile.logout")}
             </button>
           </form>
         </div>

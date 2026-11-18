@@ -48,7 +48,8 @@ export function LoginForm() {
           name="phone"
           type="tel"
           required
-          placeholder="2XXXXXXX"
+          placeholder={t("auth.phonePlaceholder")}
+          dir="ltr"
           className={`mt-1.5 ${AUTH_INPUT}`}
         />
       </div>
@@ -71,6 +72,7 @@ export function LoginForm() {
           type="password"
           required
           placeholder="••••••••"
+          dir="ltr"
           className={`mt-1.5 ${AUTH_INPUT}`}
         />
       </div>

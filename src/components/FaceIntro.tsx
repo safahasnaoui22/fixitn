@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { FaceCorners } from "@/components/FaceCorners";
 import { ORANGE, NAVY_TILE } from "@/lib/theme";
+import { useT } from "@/lib/i18n/I18nProvider";
 
 export function FaceIntro({
   title,
@@ -28,12 +29,13 @@ export function FaceIntro({
   onBack?: () => void;
   footer?: ReactNode;
 }) {
+  const t = useT();
   const [imgFailed, setImgFailed] = useState(false);
 
   const benefits = [
-    { icon: ShieldCheck, text: "Sécurisé\net fiable" },
-    { icon: Zap, text: "Accès rapide\net facile" },
-    { icon: UserRound, text: "Votre visage,\nvotre compte" },
+    { icon: ShieldCheck, text: t("face.benefit1") },
+    { icon: Zap, text: t("face.benefit2") },
+    { icon: UserRound, text: t("face.benefit3") },
   ];
 
   return (
@@ -58,7 +60,7 @@ export function FaceIntro({
             <button
               type="button"
               onClick={onBack}
-              aria-label="Retour"
+              aria-label={t("common.back")}
               className="flex h-9 w-9 items-center justify-center text-white"
             >
               <ArrowLeft size={22} className="rtl:rotate-180" />

@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db/client";
 import { createNotification } from "@/lib/db/notifications";
+import { getT } from "@/lib/i18n/server";
+import { i18nText, tDb } from "@/lib/i18n/translate";
 import { REPORT_REASONS } from "@/lib/reportReasons";
 
 export type ReportResult = { ok: boolean; error?: string };
@@ -15,32 +17,33 @@ export type ReportResult = { ok: boolean; error?: string };
  */
 export async function createUserReportAction(formData: FormData): Promise<ReportResult> {
   const session = await requireUser();
+  const t = await getT();
 
   const reportedUserId = String(formData.get("reportedUserId") ?? "").trim();
   const requestIdRaw = String(formData.get("requestId") ?? "").trim();
   const reason = String(formData.get("reason") ?? "").trim();
   const message = String(formData.get("message") ?? "").trim().slice(0, 1500);
 
-  if (!reportedUserId) return { ok: false, error: "Nobody to report." };
+  if (!reportedUserId) return { ok: false, error: t("booking.report.errNobody") };
   if (!(REPORT_REASONS as readonly string[]).includes(reason)) {
-    return { ok: false, error: "Choose a reason." };
+    return { ok: false, error: t("booking.report.errReason") };
   }
   if (message.length < 5) {
-    return { ok: false, error: "Write a short message for the moderators." };
+    return { ok: false, error: t("booking.report.errMessage") };
   }
-  if (reportedUserId === session.userId) return { ok: false, error: "You cannot report yourself." };
+  if (reportedUserId === session.userId) return { ok: false, error: t("booking.report.errSelf") };
 
   const [reporter, reported] = await Promise.all([
     prisma.user.findUnique({ where: { id: session.userId }, select: { fullName: true, role: true } }),
     prisma.user.findUnique({ where: { id: reportedUserId }, select: { fullName: true, role: true } }),
   ]);
-  if (!reporter || !reported) return { ok: false, error: "User not found." };
+  if (!reporter || !reported) return { ok: false, error: t("booking.report.errNotFound") };
 
   // Only client <-> technician reports (staff are handled through support).
   const okPair =
     (reporter.role === "CLIENT" && reported.role === "TECHNICIAN") ||
     (reporter.role === "TECHNICIAN" && reported.role === "CLIENT");
-  if (!okPair) return { ok: false, error: "You cannot report this user." };
+  if (!okPair) return { ok: false, error: t("booking.report.errPair") };
 
   // A technician may only report a client he worked with; a client may report any technician.
   let requestId: string | null = null;
@@ -53,14 +56,14 @@ export async function createUserReportAction(formData: FormData): Promise<Report
       req &&
       ((req.clientId === session.userId && req.technician.userId === reportedUserId) ||
         (req.technician.userId === session.userId && req.clientId === reportedUserId));
-    if (!inJob) return { ok: false, error: "This job does not match." };
+    if (!inJob) return { ok: false, error: t("booking.report.errJob") };
     requestId = req.id;
   } else if (reporter.role === "TECHNICIAN") {
     const worked = await prisma.serviceRequest.findFirst({
       where: { clientId: reportedUserId, technician: { userId: session.userId } },
       select: { id: true },
     });
-    if (!worked) return { ok: false, error: "You can only report a client you worked with." };
+    if (!worked) return { ok: false, error: t("booking.report.errWorked") };
   }
 
   // no spam: one open report from you about the same person
@@ -72,7 +75,7 @@ export async function createUserReportAction(formData: FormData): Promise<Report
     },
     select: { id: true },
   });
-  if (open) return { ok: false, error: "You already reported this person. Our team is on it." };
+  if (open) return { ok: false, error: t("booking.report.errDuplicate") };
 
   await prisma.report.create({
     data: {
@@ -100,7 +103,11 @@ export async function createUserReportAction(formData: FormData): Promise<Report
         data: {
           fromUserId: session.userId,
           toUserId: preferred.id,
-          body: `🚩 Signalement contre ${reported.fullName}\nMotif : ${reason}\n${message}`,
+          body: i18nText("booking.report.supportMsg", {
+            name: reported.fullName,
+            reason: tDb(t, "reportReason", reason),
+            message,
+          }),
         },
       })
       .catch(() => undefined);
@@ -117,8 +124,13 @@ export async function createUserReportAction(formData: FormData): Promise<Report
       createNotification({
         userId: m.id,
         type: "STATUS_UPDATE",
-        title: "🚩 New report",
-        body: `${reporter.fullName} reported ${reported.fullName}: ${reason} — ${message.slice(0, 100)}`,
+        title: i18nText("booking.notif.report.title"),
+        body: i18nText("booking.notif.report.body", {
+          reporter: reporter.fullName,
+          reported: reported.fullName,
+          reason: tDb(t, "reportReason", reason),
+          message: message.slice(0, 100),
+        }),
         requestId,
       })
     )

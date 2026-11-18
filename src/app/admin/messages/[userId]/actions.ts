@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth";
 import { sendSupportMessage } from "@/lib/db/supportChat";
 import { createNotification } from "@/lib/db/notifications";
+import { i18nText } from "@/lib/i18n/translate";
 import { findUserById } from "@/lib/db/users";
 
 export async function sendAdminMessageAction(
@@ -23,7 +24,7 @@ export async function sendAdminMessageAction(
     await createNotification({
       userId: toUserId,
       type: "NEW_MESSAGE",
-      title: `💬 Message de l'administrateur`,
+      title: i18nText("adminSup.notif.adminMessage.title"),
       body: body.slice(0, 80),
       requestId: null,
     });

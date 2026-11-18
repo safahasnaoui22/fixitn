@@ -6,6 +6,8 @@ import { listAdminPlans } from "@/lib/db/admin";
 import { parseStringArray } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { formatDT } from "@/lib/utils";
+import { getT, getLocale } from "@/lib/i18n/server";
+import { tOr, tDb } from "@/lib/i18n/translate";
 import { updatePlanAction } from "./actions";
 
 export default async function AdminPlansPage({
@@ -14,6 +16,8 @@ export default async function AdminPlansPage({
   searchParams: Promise<{ success?: string }>;
 }) {
   await requirePermission("plans");
+  const t = await getT();
+  const locale = await getLocale();
   const { success } = await searchParams;
   const plans = await listAdminPlans();
   const lastChanges = await getLastChanges("plan", plans.map((pl) => pl.id));
@@ -21,13 +25,13 @@ export default async function AdminPlansPage({
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="font-heading text-2xl font-bold text-ink">Plans</h1>
-        <p className="text-sm text-muted mt-0.5">Edit commission rates and pricing</p>
+        <h1 className="font-heading text-2xl font-bold text-ink">{t("adminOps.plans.title")}</h1>
+        <p className="text-sm text-muted mt-0.5">{t("adminOps.plans.subtitle")}</p>
       </div>
 
       {success && (
         <p className="rounded-xl bg-success-light px-4 py-3 text-sm font-medium text-success">
-          ✓ Plan updated successfully
+          ✓ {t("adminOps.plans.updated")}
         </p>
       )}
 
@@ -36,13 +40,13 @@ export default async function AdminPlansPage({
         {plans.map((plan) => (
           <div key={plan.id} className="rounded-2xl border border-line bg-surface p-4 text-center">
             <Crown size={20} className={plan.key === "FREE" ? "text-muted mx-auto mb-2" : "text-brand-orange mx-auto mb-2"} />
-            <p className="font-heading text-lg font-bold text-ink">{plan.name}</p>
+            <p className="font-heading text-lg font-bold text-ink">{tOr(t, `plan.${plan.key}`, plan.name)}</p>
             <p className="text-2xl font-bold text-brand-orange mt-1">
-              {plan.price === 0 ? "Free" : formatDT(plan.price)}
+              {plan.price === 0 ? t("common.free") : formatDT(plan.price, locale)}
             </p>
             <div className="mt-3 flex items-center justify-center gap-1.5 text-sm text-muted">
               <Users size={14} />
-              <span>{plan.activeSubscriptions} active</span>
+              <span>{t("adminOps.plans.activeCount", { n: plan.activeSubscriptions })}</span>
             </div>
           </div>
         ))}
@@ -54,11 +58,11 @@ export default async function AdminPlansPage({
           <div key={plan.id} className="rounded-2xl border border-line bg-surface p-5">
             <div className="flex items-center gap-2 mb-5">
               <Crown size={16} className={plan.key === "FREE" ? "text-muted" : "text-brand-orange"} />
-              <p className="font-heading text-base font-semibold text-ink">{plan.name}</p>
-              <span className="text-xs text-muted">· {plan.billingCycle}</span>
-              <span className="ml-auto flex items-center gap-1.5 text-xs text-muted">
+              <p className="font-heading text-base font-semibold text-ink">{tOr(t, `plan.${plan.key}`, plan.name)}</p>
+              <span className="text-xs text-muted">· {tOr(t, `billingCycle.${plan.billingCycle}`, plan.billingCycle)}</span>
+              <span className="ms-auto flex items-center gap-1.5 text-xs text-muted">
                 <Users size={12} />
-                {plan.activeSubscriptions} active subscriber{plan.activeSubscriptions !== 1 ? "s" : ""}
+                {plan.activeSubscriptions === 1 ? t("adminOps.plans.subscriberOne") : t("adminOps.plans.subscriberMany", { n: plan.activeSubscriptions })}
               </span>
             </div>
 
@@ -70,7 +74,7 @@ export default async function AdminPlansPage({
               <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
                 <div>
                   <label className="text-xs font-semibold text-muted uppercase tracking-wider">
-                    Price (DT)
+                    {t("adminOps.plans.priceDt")}
                   </label>
                   <input
                     name="price"
@@ -79,13 +83,13 @@ export default async function AdminPlansPage({
                     step="1"
                     defaultValue={plan.price}
                     disabled={plan.key === "FREE"}
-                    className="mt-1.5 w-full rounded-xl border border-line px-3 py-2 text-sm outline-none focus:border-brand-orange disabled:bg-surface-alt disabled:text-muted"
+                    dir="ltr" className="mt-1.5 w-full rounded-xl border border-line px-3 py-2 text-sm text-start outline-none focus:border-brand-orange disabled:bg-surface-alt disabled:text-muted"
                   />
                 </div>
 
                 <div>
                   <label className="text-xs font-semibold text-muted uppercase tracking-wider">
-                    Commission %
+                    {t("adminOps.plans.commissionPct")}
                   </label>
                   <input
                     name="commissionRate"
@@ -97,33 +101,33 @@ export default async function AdminPlansPage({
                     className="mt-1.5 w-full rounded-xl border border-line px-3 py-2 text-sm outline-none focus:border-brand-orange"
                   />
                   <p className="text-[10px] text-muted mt-1">
-                    Currently {Math.round(plan.commissionRate * 100)}% per job
+                    {t("adminOps.plans.currentCommission", { n: Math.round(plan.commissionRate * 100) })}
                   </p>
                 </div>
 
                 <div>
                   <label className="text-xs font-semibold text-muted uppercase tracking-wider">
-                    Max requests/mo
+                    {t("adminOps.plans.maxRequests")}
                   </label>
                   <input
                     name="maxRequestsPerMonth"
                     type="number"
                     min="0"
                     defaultValue={plan.maxRequestsPerMonth ?? ""}
-                    placeholder="0 = unlimited"
+                    placeholder={t("adminOps.plans.unlimitedPh")}
                     className="mt-1.5 w-full rounded-xl border border-line px-3 py-2 text-sm outline-none focus:border-brand-orange"
                   />
-                  <p className="text-[10px] text-muted mt-1">Leave blank for unlimited</p>
+                  <p className="text-[10px] text-muted mt-1">{t("adminOps.plans.unlimitedHint")}</p>
                 </div>
 
                 <div>
                   <label className="text-xs font-semibold text-muted uppercase tracking-wider">
-                    Badge text
+                    {t("adminOps.plans.badgeText")}
                   </label>
                   <input
                     name="badge"
                     defaultValue={plan.badge ?? ""}
-                    placeholder='e.g. "Save 34%"'
+                    placeholder={t("adminOps.plans.badgePh")}
                     className="mt-1.5 w-full rounded-xl border border-line px-3 py-2 text-sm outline-none focus:border-brand-orange"
                   />
                 </div>
@@ -132,13 +136,13 @@ export default async function AdminPlansPage({
               {/* Features list (read-only display) */}
               <div>
                 <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">
-                  Features
+                  {t("adminOps.plans.features")}
                 </p>
                 <ul className="flex flex-col gap-1.5">
                   {parseStringArray(plan.features).map((f, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm text-ink">
                       <CheckCircle2 size={14} className="text-success mt-0.5 shrink-0" />
-                      {f}
+                      {tDb(t, "planFeature", f)}
                     </li>
                   ))}
                 </ul>
@@ -146,7 +150,7 @@ export default async function AdminPlansPage({
 
               <div>
                 <Button type="submit" size="sm">
-                  Save {plan.name}
+                  {t("adminOps.plans.saveNamed", { name: tOr(t, `plan.${plan.key}`, plan.name) })}
                 </Button>
               </div>
             </form>

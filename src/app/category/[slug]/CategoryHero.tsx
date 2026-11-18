@@ -67,7 +67,7 @@ export function CategoryHero({
 
       {/* Rating — top right */}
       {ratingAvg != null && (
-        <div className="absolute right-4 top-4 flex items-center gap-1 rounded-full bg-black/55 px-2.5 py-1 text-xs backdrop-blur-sm">
+        <div className="absolute end-4 top-4 flex items-center gap-1 rounded-full bg-black/55 px-2.5 py-1 text-xs backdrop-blur-sm">
           <Star size={13} className="fill-star text-star" />
           <span className="font-semibold text-white">{ratingAvg.toFixed(1)}</span>
           <span className="text-white/70">({ratingCount ?? 0})</span>

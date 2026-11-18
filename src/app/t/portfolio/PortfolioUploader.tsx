@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Upload } from "lucide-react";
 import { savePortfolioItemAction } from "./actions";
+import { useT } from "@/lib/i18n/I18nProvider";
 
 const IMAGES = ["image/jpeg", "image/png", "image/webp"];
 const VIDEOS = ["video/mp4", "video/quicktime", "video/webm"];
@@ -12,6 +13,7 @@ const MAX_VIDEO = 100 * 1024 * 1024;
 
 export function PortfolioUploader({ remaining }: { remaining: number }) {
   const router = useRouter();
+  const t = useT();
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState("");
@@ -22,13 +24,13 @@ export function PortfolioUploader({ remaining }: { remaining: number }) {
     const form = e.currentTarget;
     const file = (form.elements.namedItem("file") as HTMLInputElement).files?.[0];
     const caption = (form.elements.namedItem("caption") as HTMLInputElement).value;
-    if (!file) return setError("Please select a file.");
+    if (!file) return setError(t("tech.portfolio.errSelect"));
 
     const isVideo = VIDEOS.includes(file.type);
     const isImage = IMAGES.includes(file.type);
-    if (!isVideo && !isImage) return setError("Use JPG, PNG, WebP, MP4, MOV or WebM.");
+    if (!isVideo && !isImage) return setError(t("tech.portfolio.errFormats"));
     if (file.size > (isVideo ? MAX_VIDEO : MAX_IMAGE))
-      return setError(isVideo ? "Video too large (max 100 MB)." : "Photo too large (max 10 MB).");
+      return setError(isVideo ? t("tech.portfolio.errVideoLarge") : t("tech.portfolio.errPhotoLarge"));
 
     setBusy(true);
     setProgress(0);
@@ -38,7 +40,7 @@ export function PortfolioUploader({ remaining }: { remaining: number }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ kind: isVideo ? "video" : "image" }),
       });
-      if (!signRes.ok) throw new Error("Could not start the upload.");
+      if (!signRes.ok) throw new Error(t("tech.portfolio.errStart"));
       const s = await signRes.json();
 
       const fd = new FormData();
@@ -58,12 +60,12 @@ export function PortfolioUploader({ remaining }: { remaining: number }) {
           try {
             const json = JSON.parse(xhr.responseText);
             if (xhr.status >= 200 && xhr.status < 300) resolve(json);
-            else reject(new Error(json?.error?.message ?? "Upload failed."));
+            else reject(new Error(json?.error?.message ?? t("tech.portfolio.errUpload")));
           } catch {
-            reject(new Error("Upload failed."));
+            reject(new Error(t("tech.portfolio.errUpload")));
           }
         };
-        xhr.onerror = () => reject(new Error("Network error during upload."));
+        xhr.onerror = () => reject(new Error(t("tech.portfolio.errNetwork")));
         xhr.send(fd);
       });
 
@@ -73,12 +75,12 @@ export function PortfolioUploader({ remaining }: { remaining: number }) {
         type: isVideo ? "VIDEO" : "IMAGE",
         caption,
       });
-      if (!saved.ok) throw new Error(saved.error ?? "Could not save.");
+      if (!saved.ok) throw new Error(saved.error ?? t("tech.portfolio.errSave"));
       form.reset();
       router.push("/t/portfolio?success=1");
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload failed.");
+      setError(err instanceof Error ? err.message : t("tech.portfolio.errUpload"));
     } finally {
       setBusy(false);
     }
@@ -87,25 +89,25 @@ export function PortfolioUploader({ remaining }: { remaining: number }) {
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-3">
       <div>
-        <label className="text-sm font-medium text-ink">File (photo or video)</label>
+        <label className="text-sm font-medium text-ink">{t("tech.portfolio.fileLabel")}</label>
         <input
           name="file"
           type="file"
           required
           disabled={busy}
           accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,video/webm"
-          className="mt-1.5 w-full rounded-xl border border-line px-4 py-3 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-brand-orange-light file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-brand-orange-dark outline-none focus:border-brand-orange"
+          className="mt-1.5 w-full rounded-xl border border-line px-4 py-3 text-sm file:me-3 file:rounded-lg file:border-0 file:bg-brand-orange-light file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-brand-orange-dark outline-none focus:border-brand-orange"
         />
-        <p className="mt-1 text-xs text-muted">Photos up to 10 MB · Videos up to 100 MB (MP4, MOV, WebM)</p>
+        <p className="mt-1 text-xs text-muted">{t("tech.portfolio.fileHint")}</p>
       </div>
       <div>
-        <label className="text-sm font-medium text-ink">Caption (optional)</label>
+        <label className="text-sm font-medium text-ink">{t("tech.portfolio.captionLabel")}</label>
         <input
           name="caption"
           type="text"
           maxLength={120}
           disabled={busy}
-          placeholder="e.g. AC repair completed in 1 hour"
+          placeholder={t("tech.portfolio.captionPlaceholder")}
           className="mt-1.5 w-full rounded-xl border border-line px-4 py-3 text-[15px] outline-none focus:border-brand-orange"
         />
       </div>
@@ -121,7 +123,7 @@ export function PortfolioUploader({ remaining }: { remaining: number }) {
         className="flex items-center justify-center gap-2 rounded-xl bg-brand-orange px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
       >
         <Upload size={16} />
-        {busy ? `Uploading… ${progress}%` : `Upload (${remaining} remaining)`}
+        {busy ? t("tech.portfolio.uploading", { p: progress }) : t("tech.portfolio.uploadBtn", { n: remaining })}
       </button>
     </form>
   );

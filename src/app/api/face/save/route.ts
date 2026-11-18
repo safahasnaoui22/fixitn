@@ -4,21 +4,22 @@ import {
   saveFaceDescriptor,
   saveKnownDevice,
   findOtherAccountWithFace,
-  FACE_SHARED_MESSAGE,
 } from "@/lib/db/face";
 
 import { isTechnicianApproved } from "@/lib/db/technicianApproval";
+import { getT } from "@/lib/i18n/server";
 
 export async function POST(req: NextRequest) {
+  const t = await getT();
   const session = await getSession();
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: t("common.unauthorized") }, { status: 401 });
   }
 
   const body = await req.json().catch(() => null);
   if (!Array.isArray(body?.descriptor) || body.descriptor.length !== 128) {
     return NextResponse.json(
-      { error: "Invalid descriptor — expected 128 numbers" },
+      { error: t("auth.api.invalidDescriptor") },
       { status: 400 }
     );
   }
@@ -34,7 +35,7 @@ export async function POST(req: NextRequest) {
       `[face/save] Face already exists. userId=${session.userId} matched=${owner.userId} distance=${owner.distance.toFixed(4)}`
     );
     return NextResponse.json(
-      { error: FACE_SHARED_MESSAGE, code: "FACE_ALREADY_EXISTS" },
+      { error: t("auth.api.faceShared"), code: "FACE_ALREADY_EXISTS" },
       { status: 409 }
     );
   }

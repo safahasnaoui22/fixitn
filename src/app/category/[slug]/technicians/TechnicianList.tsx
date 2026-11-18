@@ -10,7 +10,8 @@ import {
 import { Avatar } from "@/components/ui/Avatar";
 import { SeniorBadge } from "@/components/SeniorBadge";
 import { CategoryIcon } from "@/components/CategoryIcon";
-import { formatDT, cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n/I18nProvider";
+import { formatDT, formatDistance, cn } from "@/lib/utils";
 import { NAVY_ROW, NAVY_TILE } from "@/lib/theme";
 import type { TechnicianWithUser, Category } from "@/lib/types";
 
@@ -32,11 +33,11 @@ function haversineKm(
 
 type SortOption = "rating" | "price" | "distance" | "experience";
 
-const SORT_OPTIONS: { value: SortOption; label: string }[] = [
-  { value: "rating", label: "Best Rated" },
-  { value: "price", label: "Lowest Price" },
-  { value: "distance", label: "Nearest" },
-  { value: "experience", label: "Most Experienced" },
+const SORT_OPTIONS: { value: SortOption; key: string }[] = [
+  { value: "rating", key: "client.techList.sortRating" },
+  { value: "price", key: "client.techList.sortPrice" },
+  { value: "distance", key: "client.techList.sortDistance" },
+  { value: "experience", key: "client.techList.sortExperience" },
 ];
 
 export function TechnicianList({
@@ -50,6 +51,7 @@ export function TechnicianList({
   clientLat: number | null;
   clientLng: number | null;
 }) {
+  const { t, locale } = useI18n();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -63,7 +65,7 @@ export function TechnicianList({
   // Request GPS location
   function handleLocate() {
     if (!navigator.geolocation) {
-      setLocError("Geolocation not supported on this device.");
+      setLocError(t("client.techList.geoUnsupported"));
       return;
     }
     setLocating(true);
@@ -84,7 +86,7 @@ export function TechnicianList({
       },
       () => {
         setLocating(false);
-        setLocError("Could not get your location. Please allow location access.");
+        setLocError(t("client.techList.geoFailed"));
       },
       { timeout: 8000 }
     );
@@ -116,14 +118,14 @@ export function TechnicianList({
           style={{ backgroundColor: NAVY_ROW }}
         >
           <div>
-            <p className="text-xs text-white/60">Visit fee (prix de visite)</p>
+            <p className="text-xs text-white/60">{t("client.techList.visitFee")}</p>
             <p className="font-heading text-lg font-bold text-white">
-              {formatDT(category.visitPrice)}
+              {formatDT(category.visitPrice, locale)}
             </p>
           </div>
-          <div className="text-right">
-            <p className="text-xs text-white/60">+ Transport</p>
-            <p className="text-sm font-semibold text-white">1 DT / km</p>
+          <div className="text-end">
+            <p className="text-xs text-white/60">{t("client.techList.plusTransport")}</p>
+            <p className="text-sm font-semibold text-white">{t("client.techList.transportRate")}</p>
           </div>
         </div>
       )}
@@ -146,10 +148,10 @@ export function TechnicianList({
           ) : (
             <Navigation size={12} />
           )}
-          {clientLat ? "Location active" : "Use my location"}
+          {clientLat ? t("client.techList.locationActive") : t("client.techList.useLocation")}
         </button>
 
-        <div className="flex items-center gap-1.5 ml-auto flex-wrap">
+        <div className="flex items-center gap-1.5 ms-auto flex-wrap">
           {SORT_OPTIONS.map((opt) => (
             <button
               key={opt.value}
@@ -163,7 +165,7 @@ export function TechnicianList({
                   : "text-white/75 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed"
               )}
             >
-              {opt.label}
+              {t(opt.key)}
             </button>
           ))}
         </div>
@@ -181,8 +183,10 @@ export function TechnicianList({
         <Users size={14} className="text-white/60" />
         <p className="text-sm text-white/60">
           <span className="font-semibold text-white">{sorted.length}</span>
-          {" "}technician{sorted.length !== 1 ? "s" : ""} available
-          {clientLat ? " nearby" : ""}
+          {" "}
+          {sorted.length === 1
+            ? t(clientLat ? "client.techList.countOneNearby" : "client.techList.countOne")
+            : t(clientLat ? "client.techList.countManyNearby" : "client.techList.countMany")}
         </p>
       </div>
 
@@ -202,12 +206,12 @@ export function TechnicianList({
             />
           </div>
           <p className="font-heading text-base font-semibold text-white">
-            No technicians found
+            {t("client.techList.emptyTitle")}
           </p>
           <p className="text-sm text-white/60 max-w-xs">
             {clientLat
-              ? "No technicians available in your area. Try expanding the search or come back later."
-              : "No technicians registered for this category yet."}
+              ? t("client.techList.emptyNearby")
+              : t("client.techList.emptyCategory")}
           </p>
         </div>
       )}
@@ -265,19 +269,17 @@ export function TechnicianList({
 
                 {/* Right: price + distance */}
                 <div className="flex flex-col items-end gap-1 shrink-0">
-                  <div className="text-right">
-                    <p className="text-[10px] text-white/60">Starting from</p>
+                  <div className="text-end">
+                    <p className="text-[10px] text-white/60">{t("client.techList.startingFrom")}</p>
                     <p className="font-heading text-sm font-bold text-white">
-                      {formatDT(tech.startingPrice)}
+                      {formatDT(tech.startingPrice, locale)}
                     </p>
                   </div>
                   {distanceKm != null && (
                     <div className="flex items-center gap-0.5">
                       <MapPin size={10} className="text-white/60" />
                       <span className="text-[10px] text-white/60">
-                        {distanceKm < 1
-                          ? `${Math.round(distanceKm * 1000)} m`
-                          : `${distanceKm.toFixed(1)} km`}
+                        {formatDistance(distanceKm, t)}
                       </span>
                     </div>
                   )}
@@ -289,7 +291,12 @@ export function TechnicianList({
                 <div className="flex items-center gap-1.5">
                   <Clock size={12} className="text-white/60 shrink-0" />
                   <span className="text-xs text-white/60">
-                    {tech.yearsExperience} yr{tech.yearsExperience !== 1 ? "s" : ""} experience
+                    {t(
+                      tech.yearsExperience === 1
+                        ? "client.techList.experienceOne"
+                        : "client.techList.experienceMany",
+                      { n: tech.yearsExperience }
+                    )}
                   </span>
                 </div>
 
@@ -297,9 +304,9 @@ export function TechnicianList({
                   <>
                     <div className="h-3 w-px bg-white/15" />
                     <div className="flex items-center gap-1">
-                      <span className="text-xs text-white/60">Visit fee:</span>
+                      <span className="text-xs text-white/60">{t("client.techList.visitFeeColon")}</span>
                       <span className="text-xs font-semibold text-brand-orange">
-                        {formatDT(category.visitPrice)}
+                        {formatDT(category.visitPrice, locale)}
                       </span>
                     </div>
                   </>
@@ -309,17 +316,17 @@ export function TechnicianList({
                   <>
                     <div className="h-3 w-px bg-white/15" />
                     <div className="flex items-center gap-1">
-                      <span className="text-xs text-white/60">Transport:</span>
+                      <span className="text-xs text-white/60">{t("client.techList.transportColon")}</span>
                       <span className="text-xs font-semibold text-white">
-                        ~{formatDT(Math.round(distanceKm))}
+                        ~{formatDT(Math.round(distanceKm), locale)}
                       </span>
                     </div>
                   </>
                 )}
 
-                <div className="ml-auto">
+                <div className="ms-auto">
                   <span className="rounded-full bg-brand-orange px-3 py-1 text-xs font-bold text-white">
-                    Book
+                    {t("client.techList.book")}
                   </span>
                 </div>
               </div>

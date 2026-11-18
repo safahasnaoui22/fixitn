@@ -4,6 +4,8 @@ import Link from "next/link";
 import { getCategoryBySlug, listTechniciansByCategorySlug } from "@/lib/db/catalog";
 import { CategoryIcon } from "@/components/CategoryIcon";
 import { DARK_BLACK_BG, NAVY_TILE } from "@/lib/theme";
+import { getT } from "@/lib/i18n/server";
+import { tOr } from "@/lib/i18n/translate";
 import { TechnicianList } from "./TechnicianList";
 
 export default async function TechnicianListPage({
@@ -13,6 +15,7 @@ export default async function TechnicianListPage({
   params: Promise<{ slug: string }>;
   searchParams: Promise<{ lat?: string; lng?: string }>;
 }) {
+  const t = await getT();
   const { slug } = await params;
   const { lat, lng } = await searchParams;
 
@@ -34,11 +37,11 @@ export default async function TechnicianListPage({
       <div className="flex items-center gap-3 border-b border-white/10 px-5 py-4">
         <Link
           href={`/category/${slug}`}
-          aria-label="Retour"
+          aria-label={t("common.back")}
           style={{ backgroundColor: NAVY_TILE }}
           className="flex h-9 w-9 items-center justify-center rounded-full text-white"
         >
-          <ArrowLeft size={18} />
+          <ArrowLeft size={18} className="rtl:rotate-180" />
         </Link>
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <CategoryIcon
@@ -49,7 +52,7 @@ export default async function TechnicianListPage({
             variant="navy"
           />
           <p className="font-heading text-base font-semibold text-white truncate">
-            {category.name} Technicians
+            {t("client.techList.title", { name: tOr(t, `category.${category.slug}.name`, category.name) })}
           </p>
         </div>
       </div>
@@ -59,7 +62,7 @@ export default async function TechnicianListPage({
         <div className="flex items-center gap-2 bg-success/15 px-5 py-2.5 border-b border-white/10">
           <MapPin size={13} className="text-success shrink-0" />
           <p className="text-xs font-medium text-success">
-            Showing technicians within your plan&apos;s visibility radius
+            {t("client.techList.radiusNotice")}
           </p>
         </div>
       )}

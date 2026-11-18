@@ -4,6 +4,8 @@ import { requireRole } from "@/lib/auth";
 import { Avatar } from "@/components/ui/Avatar";
 import { TechBottomNav } from "@/components/TechBottomNav";
 import { formatRelativeTime } from "@/lib/utils";
+import { getT, getLocale } from "@/lib/i18n/server";
+import { renderText } from "@/lib/i18n/translate";
 import {
   countSeniorMembers,
   isActiveSenior,
@@ -19,6 +21,8 @@ export const dynamic = "force-dynamic";
  */
 export default async function SeniorCirclePage() {
   const session = await requireRole("TECHNICIAN");
+  const t = await getT();
+  const locale = await getLocale();
   const allowed = await isActiveSenior(session.userId);
 
   if (!allowed) {
@@ -28,13 +32,12 @@ export default async function SeniorCirclePage() {
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-surface-alt">
             <Lock size={28} className="text-muted" />
           </div>
-          <p className="font-heading text-lg font-semibold text-ink">Cercle Senior</p>
+          <p className="font-heading text-lg font-semibold text-ink">{t("tech.senior.title")}</p>
           <p className="text-sm text-muted">
-            Ce groupe est réservé aux techniciens avec le badge Senior Pro. Il leur permet de
-            s&apos;entraider en cas de problème.
+            {t("tech.senior.restricted")}
           </p>
           <Link href="/t/messages" className="mt-2 text-sm font-semibold text-brand-orange">
-            Retour aux messages
+            {t("tech.senior.backToMessages")}
           </Link>
         </div>
         <TechBottomNav />
@@ -54,14 +57,14 @@ export default async function SeniorCirclePage() {
         <div className="flex items-center gap-3 border-b border-line px-4 py-3">
           <Link
             href="/t/messages"
-            aria-label="Retour"
+            aria-label={t("common.back")}
             className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-alt text-ink"
           >
-            <ArrowLeft size={18} />
+            <ArrowLeft size={18} className="rtl:rotate-180" />
           </Link>
           <div>
-            <p className="font-heading text-base font-semibold text-ink">Cercle Senior</p>
-            <p className="text-xs text-muted">Choisissez avec qui discuter</p>
+            <p className="font-heading text-base font-semibold text-ink">{t("tech.senior.title")}</p>
+            <p className="text-xs text-muted">{t("tech.senior.pickWho")}</p>
           </div>
         </div>
 
@@ -73,8 +76,8 @@ export default async function SeniorCirclePage() {
             <Users size={20} />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-ink">Groupe de tous les Seniors</p>
-            <p className="text-xs text-muted">{members} technicien{members > 1 ? "s" : ""} Senior</p>
+            <p className="text-sm font-semibold text-ink">{t("tech.senior.groupAll")}</p>
+            <p className="text-xs text-muted">{t(members > 1 ? "tech.senior.membersMany" : "tech.senior.membersOne", { n: members })}</p>
           </div>
           {groupUnread > 0 && (
             <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-orange px-1 text-[10px] font-bold text-white">
@@ -84,7 +87,7 @@ export default async function SeniorCirclePage() {
         </Link>
 
         <p className="px-5 pb-1 pt-5 text-xs font-semibold uppercase tracking-wider text-muted">
-          Techniciens Senior
+          {t("tech.senior.listTitle")}
         </p>
 
         {contacts.length === 0 ? (
@@ -92,7 +95,7 @@ export default async function SeniorCirclePage() {
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-surface-alt">
               <MessageCircle size={24} className="text-muted" />
             </div>
-            <p className="text-sm text-muted">Pas encore d&apos;autre technicien Senior.</p>
+            <p className="text-sm text-muted">{t("tech.senior.noOthers")}</p>
           </div>
         ) : (
           <div className="divide-y divide-line">
@@ -108,12 +111,12 @@ export default async function SeniorCirclePage() {
                     {c.fullName}
                   </p>
                   <p className="truncate text-xs text-muted">
-                    {c.lastMessage ?? <span className="italic">{c.title} · Démarrer la conversation</span>}
+                    {c.lastMessage ? renderText(t, c.lastMessage) : <span className="italic">{t("tech.senior.startWithTitle", { title: c.title })}</span>}
                   </p>
                 </div>
                 <div className="flex shrink-0 flex-col items-end gap-1">
                   {c.lastMessageAt && (
-                    <span className="text-[10px] text-muted">{formatRelativeTime(c.lastMessageAt)}</span>
+                    <span className="text-[10px] text-muted">{formatRelativeTime(c.lastMessageAt, t, locale)}</span>
                   )}
                   {c.unreadCount > 0 && (
                     <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-orange px-1 text-[10px] font-bold text-white">

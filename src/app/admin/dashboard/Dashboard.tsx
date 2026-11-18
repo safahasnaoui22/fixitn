@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import {
   AreaChart,
   Area,
@@ -26,8 +25,9 @@ import {
 } from "lucide-react";
 
 import Link from "next/link";
-import Navbar from "./Navbar";
 import { formatDT, formatRelativeTime } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n/I18nProvider";
+import { renderText, tOr } from "@/lib/i18n/translate";
 
 type DashboardData = {
   stats: {
@@ -135,32 +135,32 @@ function getStatusDisplay(status: string): string {
       "IN_PROGRESS",
     ].includes(status)
   ) {
-    return "In Progress";
+    return "inProgress";
   }
 
   if (status === "COMPLETED") {
-    return "Completed";
+    return "completed";
   }
 
   if (status === "PENDING") {
-    return "Pending";
+    return "pending";
   }
 
-  return "Cancelled";
+  return "cancelled";
 }
 
 function statusBadgeClass(status: string): string {
   const d = getStatusDisplay(status);
 
-  if (d === "In Progress") {
+  if (d === "inProgress") {
     return "bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300";
   }
 
-  if (d === "Completed") {
+  if (d === "completed") {
     return "bg-success-light text-success";
   }
 
-  if (d === "Pending") {
+  if (d === "pending") {
     return "bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300";
   }
 
@@ -236,6 +236,7 @@ const CustomTooltip = ({
   active,
   payload,
   label,
+  locale,
 }: any) => {
   if (active && payload?.length) {
     return (
@@ -245,7 +246,7 @@ const CustomTooltip = ({
         </div>
 
         <div className="font-bold">
-          {formatDT(payload[0].value)}
+          {formatDT(payload[0].value, locale)}
         </div>
       </div>
     );
@@ -352,8 +353,7 @@ const DonutChart: React.FC<{
 export const Dashboard: React.FC<{
   data: DashboardData;
 }> = ({ data }) => {
-  const [activeNav, setActiveNav] =
-    useState("Dashboard");
+  const { t, locale } = useI18n();
 
   const {
     stats,
@@ -383,17 +383,18 @@ export const Dashboard: React.FC<{
         {[
           {
             icon: DollarSign,
-            label: "Total Revenue",
-            value: formatDT(stats.totalRevenue),
+            label: t("admin.dashboard.totalRevenue"),
+            value: formatDT(stats.totalRevenue, locale),
             color:
               "bg-[var(--orange-light)] text-[var(--orange)]",
           },
 
           {
             icon: Briefcase,
-            label: "Platform Earnings",
+            label: t("admin.dashboard.platformEarnings"),
             value: formatDT(
-              stats.platformEarnings
+              stats.platformEarnings,
+              locale
             ),
             color:
               "bg-success-light text-success",
@@ -401,7 +402,7 @@ export const Dashboard: React.FC<{
 
           {
             icon: Wrench,
-            label: "Technicians",
+            label: t("admin.dashboard.technicians"),
             value: stats.totalTechnicians,
             color:
               "bg-[var(--purple-light)] text-[var(--purple)]",
@@ -409,7 +410,7 @@ export const Dashboard: React.FC<{
 
           {
             icon: Users,
-            label: "Clients",
+            label: t("admin.dashboard.clients"),
             value: stats.totalClients,
             color:
               "bg-[var(--blue-light)] text-[var(--blue)]",
@@ -417,7 +418,7 @@ export const Dashboard: React.FC<{
 
           {
             icon: Briefcase,
-            label: "Total Jobs",
+            label: t("admin.dashboard.totalJobs"),
             value: stats.totalJobs,
             color:
               "bg-[var(--yellow-light)] text-[var(--yellow)]",
@@ -450,23 +451,23 @@ export const Dashboard: React.FC<{
         <div className="min-w-0 rounded-2xl border border-line bg-surface dark:bg-[#0f1f3d] p-4 xl:col-span-2">
           <div className="mb-4 flex items-center justify-between gap-3">
             <p className="font-heading text-sm font-semibold text-ink dark:text-slate-100">
-              Revenue Overview
+              {t("admin.dashboard.revenueOverview")}
             </p>
 
             <Link
               href="/admin/revenue"
               className="shrink-0 text-xs font-medium text-brand-orange"
             >
-              View full →
+              {t("admin.dashboard.viewFull")}
             </Link>
           </div>
 
           {monthly.length === 0 ? (
             <div className="flex h-36 items-center justify-center text-sm text-muted dark:text-slate-300">
-              No payment data yet
+              {t("admin.dashboard.noPaymentData")}
             </div>
           ) : (
-            <div className="h-36 min-w-0 w-full">
+            <div className="h-36 min-w-0 w-full" dir="ltr">
               <ResponsiveContainer
                 width="100%"
                 height="100%"
@@ -533,7 +534,7 @@ export const Dashboard: React.FC<{
                   />
 
                   <Tooltip
-                    content={<CustomTooltip />}
+                    content={<CustomTooltip locale={locale} />}
                   />
 
                   <Area
@@ -562,7 +563,7 @@ export const Dashboard: React.FC<{
         {/* Jobs donut */}
         <div className="min-w-0 rounded-2xl border border-line bg-surface dark:bg-[#0f1f3d] p-4">
           <p className="mb-3 font-heading text-sm font-semibold text-ink dark:text-slate-100">
-            Jobs Overview
+            {t("admin.dashboard.jobsOverview")}
           </p>
 
           <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-center">
@@ -586,28 +587,28 @@ export const Dashboard: React.FC<{
             <div className="flex min-w-0 flex-1 flex-col gap-2">
               {[
                 {
-                  label: "Completed",
+                  label: t("admin.dashboard.status.completed"),
                   value:
                     jobsOverview.completed,
                   color: COLORS[0],
                 },
 
                 {
-                  label: "In Progress",
+                  label: t("admin.dashboard.status.inProgress"),
                   value:
                     jobsOverview.inProgress,
                   color: COLORS[1],
                 },
 
                 {
-                  label: "Pending",
+                  label: t("admin.dashboard.status.pending"),
                   value:
                     jobsOverview.pending,
                   color: COLORS[2],
                 },
 
                 {
-                  label: "Cancelled",
+                  label: t("admin.dashboard.status.cancelled"),
                   value:
                     jobsOverview.terminated,
                   color: COLORS[3],
@@ -651,21 +652,21 @@ export const Dashboard: React.FC<{
         <div className="min-w-0 rounded-2xl border border-line bg-surface dark:bg-[#0f1f3d] p-4">
           <div className="mb-3 flex items-center justify-between gap-3">
             <p className="font-heading text-sm font-semibold text-ink dark:text-slate-100">
-              Notifications
+              {t("common.notifications")}
             </p>
 
             <Link
               href="/notifications"
               className="shrink-0 text-xs font-medium text-brand-orange"
             >
-              View all
+              {t("common.viewAll")}
             </Link>
           </div>
 
           <div className="flex flex-col gap-2">
             {recentNotifications.length === 0 && (
               <p className="py-4 text-center text-xs text-muted dark:text-slate-300">
-                No notifications yet
+                {t("admin.dashboard.noNotifications")}
               </p>
             )}
 
@@ -692,12 +693,14 @@ export const Dashboard: React.FC<{
 
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-xs font-medium text-ink dark:text-slate-100">
-                      {n.title}
+                      {renderText(t, n.title)}
                     </p>
 
                     <p className="text-[10px] text-muted dark:text-slate-300">
                       {formatRelativeTime(
-                        n.createdAt
+                        n.createdAt,
+                        t,
+                        locale
                       )}
                     </p>
                   </div>
@@ -711,14 +714,14 @@ export const Dashboard: React.FC<{
         <div className="min-w-0 rounded-2xl border border-line bg-surface dark:bg-[#0f1f3d] p-4 xl:col-span-2">
           <div className="mb-3 flex items-center justify-between gap-3">
             <p className="font-heading text-sm font-semibold text-ink dark:text-slate-100">
-              Recent Jobs
+              {t("admin.dashboard.recentJobs")}
             </p>
 
             <Link
               href="/admin/requests"
               className="shrink-0 text-xs font-medium text-brand-orange"
             >
-              View all
+              {t("common.viewAll")}
             </Link>
           </div>
 
@@ -727,15 +730,15 @@ export const Dashboard: React.FC<{
               <thead>
                 <tr className="border-b border-line">
                   {[
-                    "Service",
-                    "Client",
-                    "Technician",
-                    "Status",
-                    "Amount",
+                    t("admin.dashboard.col.service"),
+                    t("admin.dashboard.clients"),
+                    t("admin.dashboard.technicians"),
+                    t("common.status"),
+                    t("admin.dashboard.col.amount"),
                   ].map((h) => (
                     <th
                       key={h}
-                      className="pb-2 pr-3 text-left font-semibold text-muted dark:text-slate-300"
+                      className="pb-2 pe-3 text-start font-semibold text-muted dark:text-slate-300"
                     >
                       {h}
                     </th>
@@ -750,7 +753,7 @@ export const Dashboard: React.FC<{
                       colSpan={5}
                       className="py-6 text-center text-muted dark:text-slate-300"
                     >
-                      No jobs yet
+                      {t("admin.dashboard.noJobs")}
                     </td>
                   </tr>
                 )}
@@ -762,11 +765,11 @@ export const Dashboard: React.FC<{
                       key={job.id}
                       className="transition-colors hover:bg-surface-alt dark:hover:bg-[#1a2d4b]"
                     >
-                      <td className="py-2 pr-3 font-medium text-ink dark:text-slate-100">
+                      <td className="py-2 pe-3 font-medium text-ink dark:text-slate-100">
                         {job.service}
                       </td>
 
-                      <td className="py-2 pr-3">
+                      <td className="py-2 pe-3">
                         <div className="flex items-center gap-1.5">
                           <Avatar
                             name={job.clientName}
@@ -782,7 +785,7 @@ export const Dashboard: React.FC<{
                         </div>
                       </td>
 
-                      <td className="py-2 pr-3">
+                      <td className="py-2 pe-3">
                         <div className="flex items-center gap-1.5">
                           <Avatar
                             name={
@@ -802,22 +805,23 @@ export const Dashboard: React.FC<{
                         </div>
                       </td>
 
-                      <td className="py-2 pr-3">
+                      <td className="py-2 pe-3">
                         <span
                           className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${statusBadgeClass(
                             job.status
                           )}`}
                         >
-                          {getStatusDisplay(
+                          {t(`admin.dashboard.status.${getStatusDisplay(
                             job.status
-                          )}
+                          )}`)}
                         </span>
                       </td>
 
                       <td className="py-2 font-semibold text-ink dark:text-slate-100">
                         {job.amount
                           ? formatDT(
-                              job.amount
+                              job.amount,
+                              locale
                             )
                           : "—"}
                       </td>
@@ -835,14 +839,14 @@ export const Dashboard: React.FC<{
         <div className="min-w-0 rounded-2xl border border-line bg-surface dark:bg-[#0f1f3d] p-4">
           <div className="mb-3 flex items-center justify-between gap-3">
             <p className="font-heading text-sm font-semibold text-ink dark:text-slate-100">
-              Top Technicians
+              {t("admin.dashboard.topTechnicians")}
             </p>
 
             <Link
               href="/admin/technicians"
               className="shrink-0 text-xs font-medium text-brand-orange"
             >
-              View all
+              {t("common.viewAll")}
             </Link>
           </div>
 
@@ -851,14 +855,14 @@ export const Dashboard: React.FC<{
               <thead>
                 <tr className="border-b border-line">
                   {[
-                    "Technician",
-                    "Jobs",
-                    "Rating",
-                    "Earnings",
+                    t("admin.dashboard.technicians"),
+                    t("admin.dashboard.col.jobs"),
+                    t("admin.dashboard.col.rating"),
+                    t("admin.dashboard.col.earnings"),
                   ].map((h) => (
                     <th
                       key={h}
-                      className="pb-2 pr-3 text-left font-semibold text-muted dark:text-slate-300"
+                      className="pb-2 pe-3 text-start font-semibold text-muted dark:text-slate-300"
                     >
                       {h}
                     </th>
@@ -873,7 +877,7 @@ export const Dashboard: React.FC<{
                       colSpan={4}
                       className="py-6 text-center text-muted dark:text-slate-300"
                     >
-                      No data yet
+                      {t("admin.dashboard.noData")}
                     </td>
                   </tr>
                 )}
@@ -884,7 +888,7 @@ export const Dashboard: React.FC<{
                       key={tech.name}
                       className="transition-colors hover:bg-surface-alt dark:hover:bg-[#1a2d4b]"
                     >
-                      <td className="py-2 pr-3">
+                      <td className="py-2 pe-3">
                         <div className="flex items-center gap-2">
                           <Avatar
                             name={tech.name}
@@ -906,11 +910,11 @@ export const Dashboard: React.FC<{
                         </div>
                       </td>
 
-                      <td className="py-2 pr-3 font-semibold text-ink dark:text-slate-100">
+                      <td className="py-2 pe-3 font-semibold text-ink dark:text-slate-100">
                         {tech.jobs}
                       </td>
 
-                      <td className="py-2 pr-3 text-muted dark:text-slate-300">
+                      <td className="py-2 pe-3 text-muted dark:text-slate-300">
                         {tech.rating !=
                         null
                           ? `⭐ ${tech.rating.toFixed(
@@ -921,7 +925,8 @@ export const Dashboard: React.FC<{
 
                       <td className="whitespace-nowrap py-2 font-semibold text-ink dark:text-slate-100">
                         {formatDT(
-                          tech.earnings
+                          tech.earnings,
+                          locale
                         )}
                       </td>
                     </tr>
@@ -936,21 +941,21 @@ export const Dashboard: React.FC<{
         <div className="min-w-0 rounded-2xl border border-line bg-surface dark:bg-[#0f1f3d] p-4">
           <div className="mb-3 flex items-center justify-between gap-3">
             <p className="font-heading text-sm font-semibold text-ink dark:text-slate-100">
-              Recent Payments
+              {t("admin.dashboard.recentPayments")}
             </p>
 
             <Link
               href="/admin/payments"
               className="shrink-0 text-xs font-medium text-brand-orange"
             >
-              View all
+              {t("common.viewAll")}
             </Link>
           </div>
 
           <div className="flex min-w-0 flex-col divide-y divide-line">
             {recentPayments.length === 0 && (
               <p className="py-6 text-center text-xs text-muted dark:text-slate-300">
-                No payments yet
+                {t("admin.dashboard.noPayments")}
               </p>
             )}
 
@@ -979,16 +984,16 @@ export const Dashboard: React.FC<{
                           p.method
                         )}`}
                       >
-                        {p.method}
+                        {tOr(t, `paymentMethod.${p.method}`, p.method)}
                       </span>
 
                       <span className="truncate text-[10px] text-muted dark:text-slate-300">
-                        {p.type}
+                        {tOr(t, `paymentType.${p.type}`, p.type)}
                       </span>
                     </div>
                   </div>
 
-                  <div className="shrink-0 text-right">
+                  <div className="shrink-0 text-end">
                     <p
                       className={`text-xs font-bold ${
                         isCredit
@@ -997,14 +1002,13 @@ export const Dashboard: React.FC<{
                       }`}
                     >
                       {isCredit ? "+" : "-"}
-                      {formatDT(p.amount)}
+                      {formatDT(p.amount, locale)}
                     </p>
 
                     <p className="text-[10px] text-muted dark:text-slate-300">
-                      {formatDT(
-                        p.platformFee
-                      )}{" "}
-                      fee
+                      {t("admin.dashboard.feeAmount", {
+                        amount: formatDT(p.platformFee, locale),
+                      })}
                     </p>
                   </div>
                 </div>
@@ -1017,47 +1021,48 @@ export const Dashboard: React.FC<{
       {/* Platform Summary */}
       <div className="min-w-0 rounded-2xl border border-line bg-surface dark:bg-[#0f1f3d] p-4">
         <p className="mb-3 font-heading text-sm font-semibold text-ink dark:text-slate-100">
-          Platform Summary
+          {t("admin.dashboard.platformSummary")}
         </p>
 
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
           {[
             {
-              label: "Platform Earnings",
+              label: t("admin.dashboard.platformEarnings"),
               value: formatDT(
-                stats.platformEarnings
+                stats.platformEarnings,
+                locale
               ),
               icon: DollarSign,
             },
 
             {
-              label: "Technicians",
+              label: t("admin.dashboard.technicians"),
               value: stats.totalTechnicians,
               icon: Wrench,
             },
 
             {
-              label: "Clients",
+              label: t("admin.dashboard.clients"),
               value: stats.totalClients,
               icon: UserCheck,
             },
 
             {
-              label: "Completed Jobs",
+              label: t("admin.dashboard.completedJobs"),
               value:
                 jobsOverview.completed,
               icon: BarChart2,
             },
 
             {
-              label: "Active Jobs",
+              label: t("admin.dashboard.activeJobs"),
               value:
                 jobsOverview.inProgress,
               icon: Building2,
             },
 
             {
-              label: "Pending Jobs",
+              label: t("admin.dashboard.pendingJobs"),
               value:
                 jobsOverview.pending,
               icon: Percent,
@@ -1089,7 +1094,7 @@ export const Dashboard: React.FC<{
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-surface-alt dark:bg-[#172947] py-2.5 text-sm font-semibold text-ink dark:text-slate-100 transition-colors hover:bg-line dark:hover:bg-[#203756]"
           >
             <BarChart2 size={16} />
-            View Detailed Reports
+            {t("admin.dashboard.detailedReports")}
           </Link>
         </div>
       </div>

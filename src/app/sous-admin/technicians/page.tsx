@@ -11,7 +11,8 @@ import { prisma } from "@/lib/db/client";
 import { Avatar } from "@/components/ui/Avatar";
 import { SeniorBadge } from "@/components/SeniorBadge";
 import { Button } from "@/components/ui/Button";
-import { formatDate } from "@/lib/utils";
+import { formatDT, formatDate } from "@/lib/utils";
+import { getT, getLocale } from "@/lib/i18n/server";
 import {
   approveTechnicianAction,
   declineTechnicianAction,
@@ -21,12 +22,12 @@ import {
 
 type AccountStatus = "PENDING" | "ACTIVE" | "DECLINED" | "ARCHIVED";
 
-const STATUS_TABS: { label: string; value: AccountStatus | "ALL" }[] = [
-  { label: "All", value: "ALL" },
-  { label: "Pending", value: "PENDING" },
-  { label: "Active", value: "ACTIVE" },
-  { label: "Declined", value: "DECLINED" },
-  { label: "Archived", value: "ARCHIVED" },
+const STATUS_TABS: { value: AccountStatus | "ALL" }[] = [
+  { value: "ALL" },
+  { value: "PENDING" },
+  { value: "ACTIVE" },
+  { value: "DECLINED" },
+  { value: "ARCHIVED" },
 ];
 
 const STATUS_BADGE: Record<AccountStatus, string> = {
@@ -41,6 +42,8 @@ export default async function SousAdminTechniciansPage({
 }: {
   searchParams: Promise<{ status?: string }>;
 }) {
+  const t = await getT();
+  const locale = await getLocale();
   const session = await requirePermission("technicians");
 
   const { status = "PENDING" } = await searchParams;
@@ -81,10 +84,10 @@ export default async function SousAdminTechniciansPage({
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="font-heading text-2xl font-bold text-ink">
-          Technicians
+          {t("sous.tech.title")}
         </h1>
         <p className="text-sm text-muted mt-0.5">
-          Review and manage technician accounts
+          {t("sous.tech.subtitle")}
         </p>
       </div>
 
@@ -106,7 +109,7 @@ export default async function SousAdminTechniciansPage({
                   : "bg-surface border border-line text-muted hover:text-ink"
               }`}
             >
-              {tab.label}
+              {t(`sous.tech.tab.${tab.value}`)}
               {count > 0 && (
                 <span
                   className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
@@ -128,12 +131,10 @@ export default async function SousAdminTechniciansPage({
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-line bg-surface py-16 text-center">
           <CheckCircle2 size={32} className="text-muted" />
           <p className="text-base font-semibold text-ink">
-            No technicians in this category
+            {t("sous.tech.emptyTitle")}
           </p>
           <p className="text-sm text-muted">
-            {activeStatus === "PENDING"
-              ? "No pending approvals — you're all caught up!"
-              : `No ${activeStatus.toLowerCase()} technicians found.`}
+            {t(`sous.tech.empty${activeStatus === "ALL" ? "All" : activeStatus.charAt(0) + activeStatus.slice(1).toLowerCase()}`)}
           </p>
         </div>
       ) : (
@@ -165,17 +166,17 @@ export default async function SousAdminTechniciansPage({
                       {tech.verified && (
                         <span className="flex items-center gap-1 rounded-full bg-success-light px-1.5 py-0.5 text-[10px] font-bold text-success">
                           <ShieldCheck size={10} />
-                          Verified
+                          {t("sous.tech.verified")}
                         </span>
                       )}
                     </div>
                     <p className="text-sm text-muted">{tech.title}</p>
                     <p className="text-xs text-muted">
-                      {tech.user.phone}
+                      <span dir="ltr">{tech.user.phone}</span>
                       {tech.user.city && ` · ${tech.user.city}`}
                     </p>
                     <p className="text-xs text-muted mt-0.5">
-                      Registered {formatDate(tech.user.createdAt.toISOString())}
+                      {t("sous.tech.registered", { date: formatDate(tech.user.createdAt.toISOString(), locale) })}
                     </p>
                     <ModifiedBy change={lastChanges.get(tech.id)} />
                   </div>
@@ -186,7 +187,7 @@ export default async function SousAdminTechniciansPage({
                       STATUS_BADGE[accountStatus]
                     }`}
                   >
-                    {accountStatus}
+                    {t(`accountStatus.${accountStatus}`)}
                   </span>
                 </div>
 
@@ -194,22 +195,22 @@ export default async function SousAdminTechniciansPage({
                 <div className="border-t border-line px-4 py-3 flex flex-wrap gap-3 text-xs">
                   {tech.categories.length > 0 && (
                     <span className="text-muted">
-                      Services:{" "}
+                      {t("sous.tech.services")}{" "}
                       <span className="text-ink font-medium">
                         {tech.categories.map((c) => c.name).join(", ")}
                       </span>
                     </span>
                   )}
                   <span className="text-muted">
-                    Experience:{" "}
+                    {t("sous.tech.experience")}{" "}
                     <span className="text-ink font-medium">
-                      {tech.yearsExperience} yr{tech.yearsExperience !== 1 ? "s" : ""}
+                      {t(tech.yearsExperience !== 1 ? "sous.tech.yearsMany" : "sous.tech.yearsOne", { n: tech.yearsExperience })}
                     </span>
                   </span>
                   <span className="text-muted">
-                    Starting price:{" "}
+                    {t("sous.tech.startingPrice")}{" "}
                     <span className="text-ink font-medium">
-                      {tech.startingPrice} DT
+                      {formatDT(tech.startingPrice, locale)}
                     </span>
                   </span>
                 </div>
@@ -224,12 +225,12 @@ export default async function SousAdminTechniciansPage({
                       className="flex items-center gap-1.5 rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-ink hover:border-brand-orange hover:text-brand-orange transition-colors"
                     >
                       <FileText size={12} />
-                      View CIN / Passport
+                      {t("sous.tech.viewCin")}
                       <ExternalLink size={10} />
                     </a>
                   ) : (
                     <span className="rounded-lg border border-danger-light px-3 py-1.5 text-xs text-danger">
-                      CIN not uploaded
+                      {t("sous.tech.cinMissing")}
                     </span>
                   )}
                   {tech.diplomeUrl ? (
@@ -240,12 +241,12 @@ export default async function SousAdminTechniciansPage({
                       className="flex items-center gap-1.5 rounded-lg border border-line px-3 py-1.5 text-xs font-medium text-ink hover:border-brand-orange hover:text-brand-orange transition-colors"
                     >
                       <FileText size={12} />
-                      View Diploma
+                      {t("sous.tech.viewDiploma")}
                       <ExternalLink size={10} />
                     </a>
                   ) : (
                     <span className="rounded-lg border border-danger-light px-3 py-1.5 text-xs text-danger">
-                      Diploma not uploaded
+                      {t("sous.tech.diplomaMissing")}
                     </span>
                   )}
                 </div>
@@ -256,14 +257,14 @@ export default async function SousAdminTechniciansPage({
                 <form action={updateTechnicianPlanAction.bind(null, tech.id)}>
                     <div className="flex items-center gap-2">
                       <label className="text-xs font-medium text-muted shrink-0">
-                        Plan:
+                        {t("sous.tech.plan")}
                       </label>
                       <select
                         name="planId"
                         defaultValue={tech.plan?.id ?? ""}
                         className="rounded-lg border border-line px-2 py-1.5 text-xs outline-none focus:border-brand-orange bg-surface"
                       >
-                        <option value="">— Select plan —</option>
+                        <option value="">{t("sous.tech.selectPlan")}</option>
                         {plans.map((p) => (
                           <option key={p.id} value={p.id}>
                             {p.name}
@@ -274,13 +275,13 @@ export default async function SousAdminTechniciansPage({
                         type="submit"
                         className="rounded-lg bg-brand-orange px-3 py-1.5 text-xs font-semibold text-white hover:opacity-90"
                       >
-                        Save
+                        {t("common.save")}
                       </button>
                     </div>
                   </form>
 
                   {/* Action buttons */}
-                  <div className="flex items-center gap-2 ml-auto">
+                  <div className="flex items-center gap-2 ms-auto">
                     {accountStatus === "PENDING" && (
                       <>
                         <form
@@ -293,7 +294,7 @@ export default async function SousAdminTechniciansPage({
                             className="text-danger border-danger-light hover:bg-danger-light"
                           >
                             <XCircle size={14} />
-                            Decline
+                            {t("sous.tech.decline")}
                           </Button>
                         </form>
                         <form
@@ -301,7 +302,7 @@ export default async function SousAdminTechniciansPage({
                         >
                           <Button type="submit" size="sm">
                             <CheckCircle2 size={14} />
-                            Approve
+                            {t("sous.tech.approve")}
                           </Button>
                         </form>
                       </>
@@ -314,7 +315,7 @@ export default async function SousAdminTechniciansPage({
                         >
                           <Button type="submit" size="sm" variant="outline">
                             <Archive size={14} />
-                            Archive
+                            {t("sous.tech.archive")}
                           </Button>
                         </form>
                         <form
@@ -327,7 +328,7 @@ export default async function SousAdminTechniciansPage({
                             className="text-danger border-danger-light hover:bg-danger-light"
                           >
                             <XCircle size={14} />
-                            Decline
+                            {t("sous.tech.decline")}
                           </Button>
                         </form>
                       </>
@@ -340,7 +341,7 @@ export default async function SousAdminTechniciansPage({
                       >
                         <Button type="submit" size="sm" variant="outline">
                           <CheckCircle2 size={14} />
-                          Re-approve
+                          {t("sous.tech.reapprove")}
                         </Button>
                       </form>
                     )}

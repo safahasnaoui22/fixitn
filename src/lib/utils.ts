@@ -1,3 +1,5 @@
+import { DEFAULT_LOCALE, intlLocale, type Locale } from "./i18n/config";
+import type { TFn } from "./i18n/translate";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -25,44 +27,44 @@ function toRad(deg: number): number {
   return (deg * Math.PI) / 180;
 }
 
-export function formatDistance(km: number): string {
-  if (km < 1) return `${Math.round(km * 1000)} m away`;
-  return `${km.toFixed(1)} km away`;
+export function formatDistance(km: number, t: TFn): string {
+  if (km < 1) return t("common.distanceM", { n: Math.round(km * 1000) });
+  return t("common.distanceKm", { n: km.toFixed(1) });
 }
 
-export function formatDT(amount: number): string {
-  return `${amount.toLocaleString("en-US")} DT`;
+export function formatDT(amount: number, locale: Locale = DEFAULT_LOCALE): string {
+  return `${amount.toLocaleString(intlLocale(locale))} ${locale === "ar" ? "د.ت" : "DT"}`;
 }
 
-export function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("en-GB", {
+export function formatDate(iso: string, locale: Locale = DEFAULT_LOCALE): string {
+  return new Date(iso).toLocaleDateString(intlLocale(locale), {
     day: "numeric",
     month: "short",
     year: "numeric",
   });
 }
 
-export function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString("en-GB", {
+export function formatTime(iso: string, locale: Locale = DEFAULT_LOCALE): string {
+  return new Date(iso).toLocaleTimeString(intlLocale(locale), {
     hour: "2-digit",
     minute: "2-digit",
   });
 }
 
-export function formatDateTime(iso: string): string {
-  return `${formatDate(iso)} · ${formatTime(iso)}`;
+export function formatDateTime(iso: string, locale: Locale = DEFAULT_LOCALE): string {
+  return `${formatDate(iso, locale)} · ${formatTime(iso, locale)}`;
 }
 
-export function formatRelativeTime(iso: string): string {
+export function formatRelativeTime(iso: string, t: TFn, locale: Locale = DEFAULT_LOCALE): string {
   const diffMs = Date.now() - new Date(iso).getTime();
   const diffMin = Math.round(diffMs / 60000);
-  if (diffMin < 1) return "Just now";
-  if (diffMin < 60) return `${diffMin}m ago`;
+  if (diffMin < 1) return t("common.justNow");
+  if (diffMin < 60) return t("common.minAgo", { n: diffMin });
   const diffHr = Math.round(diffMin / 60);
-  if (diffHr < 24) return `${diffHr}h ago`;
+  if (diffHr < 24) return t("common.hourAgo", { n: diffHr });
   const diffDay = Math.round(diffHr / 24);
-  if (diffDay < 7) return `${diffDay}d ago`;
-  return formatDate(iso);
+  if (diffDay < 7) return t("common.dayAgo", { n: diffDay });
+  return formatDate(iso, locale);
 }
 
 /** Parses a JSON-encoded string[] column, tolerating null/empty/garbage. */

@@ -8,11 +8,11 @@ import {
   getFaceDescriptor,
   saveKnownDevice,
   findOtherAccountWithFace,
-  FACE_SHARED_MESSAGE,
 } from "@/lib/db/face";
 import { findUserById, bumpSessionVersion } from "@/lib/db/users";
 
 import { isTechnicianApproved } from "@/lib/db/technicianApproval";
+import { getT } from "@/lib/i18n/server";
 
 const THRESHOLD = 0.5;
 
@@ -23,17 +23,18 @@ function euclidean(a: number[], b: number[]): number {
 }
 
 export async function POST(req: NextRequest) {
+  const t = await getT();
   const pending = await getPendingSession();
   if (!pending) {
     return NextResponse.json(
-      { error: "No pending session — please log in first" },
+      { error: t("auth.api.noPending") },
       { status: 401 }
     );
   }
 
   const body = await req.json().catch(() => null);
   if (!Array.isArray(body?.descriptor) || body.descriptor.length !== 128) {
-    return NextResponse.json({ error: "Invalid descriptor" }, { status: 400 });
+    return NextResponse.json({ error: t("auth.api.invalidDescriptor") }, { status: 400 });
   }
 
   const incomingDescriptor: number[] = body.descriptor;
@@ -44,9 +45,7 @@ export async function POST(req: NextRequest) {
   if (!storedDescriptor) {
     return NextResponse.json(
       {
-        error:
-          "No face registered for this account. " +
-          "Contact support@fixili.tn to reset your account.",
+        error: t("auth.api.noFaceContact"),
       },
       { status: 404 }
     );
@@ -61,7 +60,7 @@ export async function POST(req: NextRequest) {
   if (distance > THRESHOLD) {
     return NextResponse.json(
       {
-        error: "Face does not match. Try better lighting or contact support.",
+        error: t("auth.api.faceMismatch"),
         distance: Number(distance.toFixed(4)),
         code: "FACE_MISMATCH",
       },
@@ -78,7 +77,7 @@ export async function POST(req: NextRequest) {
     );
     await destroyPendingSession();
     return NextResponse.json(
-      { error: FACE_SHARED_MESSAGE, code: "FACE_SHARED" },
+      { error: t("auth.api.faceShared"), code: "FACE_SHARED" },
       { status: 403 }
     );
   }
@@ -86,7 +85,7 @@ export async function POST(req: NextRequest) {
   // Face matched — load user
   const user = await findUserById(pending.pendingUserId);
   if (!user) {
-    return NextResponse.json({ error: "User not found" }, { status: 404 });
+    return NextResponse.json({ error: t("auth.api.userNotFound") }, { status: 404 });
   }
 
   // Register the new device

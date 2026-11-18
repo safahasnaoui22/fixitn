@@ -4,6 +4,7 @@ import { Users, Phone, MapPin, Briefcase, ChevronRight, ArrowUpRight, Wrench, Us
 import { listAdminUsers } from "@/lib/db/admin";
 import { Avatar } from "@/components/ui/Avatar";
 import { formatDate } from "@/lib/utils";
+import { getT, getLocale } from "@/lib/i18n/server";
 import { ResetFaceButton } from "@/components/ResetFaceButton";
 
 const ROLE_STYLES: Record<string, { badge: string; ring: string; dot: string }> = {
@@ -33,6 +34,8 @@ export default async function AdminUsersPage({
 }: {
   searchParams: Promise<{ role?: string }>;
 }) {
+  const t = await getT();
+  const locale = await getLocale();
   const actor = await requirePermission("users");
   const { role } = await searchParams;
   const users = await listAdminUsers(role);
@@ -41,9 +44,9 @@ export default async function AdminUsersPage({
   const clientCount = users.filter((u) => u.role === "CLIENT").length;
 
   const tabs = [
-    { label: "All", value: undefined, count: users.length, icon: Users },
-    { label: "Clients", value: "CLIENT", count: clientCount, icon: UserCircle2 },
-    { label: "Technicians", value: "TECHNICIAN", count: technicianCount, icon: Wrench },
+    { label: t("common.all"), value: undefined, count: users.length, icon: Users },
+    { label: t("admin.users.clients"), value: "CLIENT", count: clientCount, icon: UserCircle2 },
+    { label: t("admin.users.technicians"), value: "TECHNICIAN", count: technicianCount, icon: Wrench },
   ];
 
   return (
@@ -59,30 +62,30 @@ export default async function AdminUsersPage({
           }}
         />
         {/* orange glow, beacon-like */}
-        <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-brand-orange/40 blur-[90px]" />
-        <div className="pointer-events-none absolute -left-16 bottom-0 h-48 w-48 rounded-full bg-brand-orange-dark/20 blur-[80px]" />
+        <div className="pointer-events-none absolute -end-24 -top-24 h-72 w-72 rounded-full bg-brand-orange/40 blur-[90px]" />
+        <div className="pointer-events-none absolute -start-16 bottom-0 h-48 w-48 rounded-full bg-brand-orange-dark/20 blur-[80px]" />
 
         <div className="relative flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-white/70 backdrop-blur-sm">
               <span className="h-1.5 w-1.5 rounded-full bg-success" />
-              Live directory
+              {t("admin.users.liveDirectory")}
             </div>
-            <h1 className="font-heading text-2xl font-bold text-white sm:text-3xl">People on FixiTN</h1>
+            <h1 className="font-heading text-2xl font-bold text-white sm:text-3xl">{t("admin.users.heading")}</h1>
             <p className="mt-1.5 text-sm text-white/60">
-              {users.length} {users.length === 1 ? "account" : "accounts"} across clients and technicians
+              {t(users.length === 1 ? "admin.users.accountsOne" : "admin.users.accountsMany", { count: users.length })}
             </p>
           </div>
 
           <div className="flex gap-4 sm:gap-6">
             <div>
               <p className="font-heading text-xl font-bold text-white sm:text-2xl">{clientCount}</p>
-              <p className="text-xs font-medium text-white/50">Clients</p>
+              <p className="text-xs font-medium text-white/50">{t("admin.users.clients")}</p>
             </div>
             <div className="w-px bg-white/15" />
             <div>
               <p className="font-heading text-xl font-bold text-white sm:text-2xl">{technicianCount}</p>
-              <p className="text-xs font-medium text-white/50">Technicians</p>
+              <p className="text-xs font-medium text-white/50">{t("admin.users.technicians")}</p>
             </div>
           </div>
         </div>
@@ -124,8 +127,8 @@ export default async function AdminUsersPage({
             <Users size={22} className="text-brand-orange" />
           </div>
           <div>
-            <p className="text-sm font-medium text-ink">No users found</p>
-            <p className="mt-0.5 text-xs text-muted">Try a different filter to see more results.</p>
+            <p className="text-sm font-medium text-ink">{t("admin.users.empty")}</p>
+            <p className="mt-0.5 text-xs text-muted">{t("admin.users.emptyHint")}</p>
           </div>
         </div>
       )}
@@ -141,18 +144,18 @@ export default async function AdminUsersPage({
                 href={`/admin/users/${user.id}`}
                 className="group relative overflow-hidden rounded-2xl border border-line bg-surface p-4 shadow-sm transition-all active:scale-[0.99]"
               >
-                <div className={`absolute inset-y-0 left-0 w-1 ${rs.dot}`} />
-                <div className="flex items-start gap-3 pl-1.5">
+                <div className={`absolute inset-y-0 start-0 w-1 ${rs.dot}`} />
+                <div className="flex items-start gap-3 ps-1.5">
                   <div className={`rounded-full ring-2 ring-offset-2 ring-offset-surface ${rs.ring}`}>
                     <Avatar src={user.avatarUrl} name={user.fullName} size={44} />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
                       <p className="truncate font-semibold text-ink">{user.fullName}</p>
-                      <ChevronRight size={16} className="shrink-0 text-muted transition-transform group-active:translate-x-0.5" />
+                      <ChevronRight size={16} className="shrink-0 rtl:rotate-180 text-muted transition-transform group-active:translate-x-0.5" />
                     </div>
                     <span className={`mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${rs.badge}`}>
-                      {user.role}
+                      {t(`role.${user.role}`)}
                     </span>
                   </div>
                 </div>
@@ -170,10 +173,10 @@ export default async function AdminUsersPage({
                   )}
                   <div className="flex items-center gap-1.5">
                     <Briefcase size={12} />
-                    <span>{user.jobCount} jobs</span>
+                    <span>{t("admin.users.jobs", { count: user.jobCount })}</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <span>Joined {formatDate(user.createdAt)}</span>
+                    <span>{t("admin.users.joinedOn", { date: formatDate(user.createdAt, locale) })}</span>
                   </div>
                 </div>
               </Link>
@@ -189,12 +192,12 @@ export default async function AdminUsersPage({
             <table className="w-full min-w-[720px] text-sm">
               <thead className="border-b border-line bg-surface-alt">
                 <tr>
-                  {["User", "Phone", "Role", "Jobs", "Joined", ""].map((h) => (
+                  {["user", "phone", "role", "jobs", "joined", ""].map((h) => (
                     <th
                       key={h}
-                      className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted"
+                      className="px-4 py-3 text-start text-xs font-semibold uppercase tracking-wide text-muted"
                     >
-                      {h}
+                      {h ? t(`admin.users.col.${h}`) : ""}
                     </th>
                   ))}
                 </tr>
@@ -220,17 +223,17 @@ export default async function AdminUsersPage({
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-muted">{user.phone}</td>
+                      <td className="px-4 py-3 text-muted" dir="ltr"><span className="block text-start">{user.phone}</span></td>
                       <td className="px-4 py-3">
                         <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${rs.badge}`}>
-                          {user.role}
+                          {t(`role.${user.role}`)}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-muted">{user.jobCount}</td>
-                      <td className="px-4 py-3 text-muted">{formatDate(user.createdAt)}</td>
-                      <td className="px-4 py-3 text-right">
+                      <td className="px-4 py-3 text-muted">{formatDate(user.createdAt, locale)}</td>
+                      <td className="px-4 py-3 text-end">
                         {actor.role === "ADMIN" && user.role !== "ADMIN" && (
-                          <span className="mr-2 inline-block align-middle">
+                          <span className="me-2 inline-block align-middle">
                             <ResetFaceButton userId={user.id} name={user.fullName} />
                           </span>
                         )}
@@ -238,8 +241,8 @@ export default async function AdminUsersPage({
                           href={`/admin/users/${user.id}`}
                           className="inline-flex items-center gap-1 text-xs font-semibold text-brand-orange opacity-0 transition-opacity hover:underline group-hover:opacity-100"
                         >
-                          View
-                          <ArrowUpRight size={12} />
+                          {t("admin.users.view")}
+                          <ArrowUpRight size={12} className="rtl:-scale-x-100" />
                         </Link>
                       </td>
                     </tr>

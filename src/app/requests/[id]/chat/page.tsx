@@ -33,7 +33,7 @@ export default async function ChatPage({
           href={`/requests/${id}`}
           className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-alt"
         >
-          <ArrowLeft size={18} />
+          <ArrowLeft size={18} className="rtl:rotate-180" />
         </Link>
         <Avatar src={otherAvatar} name={otherName} size={36} />
         <div className="min-w-0 flex-1">

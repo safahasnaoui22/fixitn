@@ -2,14 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db/client";
 import { createNotification } from "@/lib/db/notifications";
+import { getT } from "@/lib/i18n/server";
+import { i18nText } from "@/lib/i18n/translate";
 
 const SUPPORT_ROLES = ["ADMIN", "SOUS_ADMIN"];
 
 // GET — load the shared support conversation for the signed-in user.
 export async function GET() {
+  const t = await getT();
   const session = await getSession();
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: t("sys.api.unauthorized") }, { status: 401 });
   }
 
   const supportUsers = await prisma.user.findMany({
@@ -63,9 +66,10 @@ export async function GET() {
 
 // POST — send a message to the shared support inbox.
 export async function POST(req: NextRequest) {
+  const t = await getT();
   const session = await getSession();
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: t("sys.api.unauthorized") }, { status: 401 });
   }
 
   let body: string;
@@ -73,11 +77,11 @@ export async function POST(req: NextRequest) {
     const payload = await req.json();
     body = typeof payload.body === "string" ? payload.body.trim() : "";
   } catch {
-    return NextResponse.json({ error: "Requête invalide" }, { status: 400 });
+    return NextResponse.json({ error: t("sys.api.invalidRequest") }, { status: 400 });
   }
 
   if (!body) {
-    return NextResponse.json({ error: "Message vide" }, { status: 400 });
+    return NextResponse.json({ error: t("sys.api.emptyMessage") }, { status: 400 });
   }
 
   const supportUsers = await prisma.user.findMany({
@@ -88,7 +92,7 @@ export async function POST(req: NextRequest) {
 
   if (supportUsers.length === 0) {
     return NextResponse.json(
-      { error: "Service support indisponible pour le moment." },
+      { error: t("sys.api.supportUnavailable") },
       { status: 503 }
     );
   }
@@ -112,7 +116,7 @@ export async function POST(req: NextRequest) {
       createNotification({
         userId: supportUser.id,
         type: "NEW_MESSAGE",
-        title: `💬 Message de ${session.fullName}`,
+        title: i18nText("sys.notif.supportMessage.title", { name: session.fullName }),
         body: body.slice(0, 80),
         requestId: null,
       })

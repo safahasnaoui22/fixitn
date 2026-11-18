@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth";
 import { logAudit } from "@/lib/db/audit";
 import { prisma } from "@/lib/db/client";
+import { i18nText } from "@/lib/i18n/translate";
 import { resetUserFace } from "@/lib/db/security";
 
 /** ADMIN only. Clears the face of one account so the person must enrol again. */
@@ -19,7 +20,7 @@ export async function resetFaceAction(userId: string): Promise<void> {
     action: "user.faceReset",
     entityType: "user",
     entityId: userId,
-    summary: `Reset face of ${user.fullName}`,
+    summary: i18nText("adminOps.security.audit.faceReset", { name: user.fullName }),
   });
   revalidatePath("/admin/security");
   revalidatePath("/admin/users");

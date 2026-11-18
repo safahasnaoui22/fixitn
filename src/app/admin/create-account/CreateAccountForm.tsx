@@ -6,12 +6,13 @@ import { CategoryIcon } from "@/components/CategoryIcon";
 import { cn } from "@/lib/utils";
 import { adminCreateAccountAction } from "./actions";
 import type { Category, Plan } from "@/lib/types";
+import { useT } from "@/lib/i18n/I18nProvider";
 
 const ROLES = [
-  { value: "CLIENT", label: "Client" },
-  { value: "TECHNICIAN", label: "Technician" },
-  { value: "SOUS_ADMIN", label: "Sous-Admin" },
-  { value: "ADMIN", label: "Admin" },
+  { value: "CLIENT" },
+  { value: "TECHNICIAN" },
+  { value: "SOUS_ADMIN" },
+  { value: "ADMIN" },
 ];
 
 export function CreateAccountForm({
@@ -21,6 +22,7 @@ export function CreateAccountForm({
   categories: Category[];
   plans: Plan[];
 }) {
+  const t = useT();
   const [role, setRole] = useState("CLIENT");
 
   return (
@@ -31,7 +33,7 @@ export function CreateAccountForm({
     >
       {/* Role selector */}
       <div>
-        <label className="text-sm font-medium text-ink">Role</label>
+        <label className="text-sm font-medium text-ink">{t("admin.createAccount.role")}</label>
         <div className="mt-1.5 grid grid-cols-2 gap-2">
           {ROLES.map((r) => (
             <label
@@ -57,7 +59,7 @@ export function CreateAccountForm({
                   role === r.value ? "text-brand-orange" : "text-ink"
                 )}
               >
-                {r.label}
+                {t(`role.${r.value}`)}
               </span>
             </label>
           ))}
@@ -65,29 +67,30 @@ export function CreateAccountForm({
       </div>
 
       {/* Common fields */}
-      <Field label="Full name" name="fullName" placeholder="Ahmed Ben Salah" required />
-      <Field label="Phone number" name="phone" type="tel" placeholder="2XXXXXXX" required />
+      <Field label={t("common.fullName")} name="fullName" placeholder={t("admin.createAccount.fullNamePlaceholder")} required />
+      <Field label={t("admin.createAccount.phoneNumber")} name="phone" type="tel" placeholder="2XXXXXXX" required ltr />
       <Field
-        label="Password"
+        label={t("admin.createAccount.password")}
         name="password"
         type="password"
-        placeholder="Min 6 characters"
+        placeholder={t("admin.createAccount.passwordPlaceholder")}
         required
+        ltr
       />
-      <Field label="City" name="city" placeholder="Tunis" />
+      <Field label={t("common.city")} name="city" placeholder={t("admin.createAccount.cityPlaceholder")} />
 
       {/* Plan selector (all roles except CLIENT) */}
       {role !== "CLIENT" && (
         <div>
-          <label className="text-sm font-medium text-ink">Plan</label>
+          <label className="text-sm font-medium text-ink">{t("admin.createAccount.plan")}</label>
           <select
             name="planId"
             className="mt-1.5 w-full rounded-xl border border-line px-4 py-3 text-sm outline-none focus:border-brand-orange bg-surface"
           >
-            <option value="">— Default (Beginner) —</option>
+            <option value="">{t("admin.createAccount.planDefault")}</option>
             {plans.map((p) => (
               <option key={p.id} value={p.id}>
-                {p.name} ({Math.round(p.commissionRate * 100)}% commission)
+                {t("admin.createAccount.planOption", { name: p.name, pct: Math.round(p.commissionRate * 100) })}
               </option>
             ))}
           </select>
@@ -97,23 +100,23 @@ export function CreateAccountForm({
       {/* Technician-only fields */}
       {role === "TECHNICIAN" && (
         <div className="flex flex-col gap-4 rounded-2xl border border-line bg-surface-alt p-4">
-          <p className="text-sm font-semibold text-ink">Technician details</p>
+          <p className="text-sm font-semibold text-ink">{t("admin.createAccount.techDetails")}</p>
 
           <Field
-            label="Professional title"
+            label={t("admin.createAccount.proTitle")}
             name="title"
-            placeholder="e.g. AC Technician"
+            placeholder={t("admin.createAccount.proTitlePlaceholder")}
           />
 
           <div className="grid grid-cols-2 gap-3">
             <Field
-              label="Years of experience"
+              label={t("admin.createAccount.years")}
               name="yearsExperience"
               type="number"
               placeholder="5"
             />
             <Field
-              label="Starting price (DT)"
+              label={t("admin.createAccount.startingPrice")}
               name="startingPrice"
               type="number"
               placeholder="30"
@@ -123,7 +126,7 @@ export function CreateAccountForm({
           {/* Categories */}
           <div>
             <p className="text-sm font-medium text-ink mb-2">
-              Service categories
+              {t("admin.createAccount.serviceCategories")}
             </p>
             <div className="grid grid-cols-3 gap-2">
               {categories.map((cat) => (
@@ -154,36 +157,35 @@ export function CreateAccountForm({
           {/* Optional documents */}
           <div className="flex flex-col gap-2">
             <p className="text-sm font-medium text-ink">
-              Documents (optional)
+              {t("admin.createAccount.documents")}
             </p>
             <div>
-              <label className="text-xs text-muted">CIN / Passport</label>
+              <label className="text-xs text-muted">{t("admin.createAccount.cin")}</label>
               <input
                 type="file"
                 name="cin"
                 accept="image/jpeg,image/png,image/webp,application/pdf"
-                className="mt-1 w-full rounded-xl border border-line px-4 py-2.5 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-brand-orange-light file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-brand-orange-dark outline-none"
+                className="mt-1 w-full rounded-xl border border-line px-4 py-2.5 text-sm file:me-3 file:rounded-lg file:border-0 file:bg-brand-orange-light file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-brand-orange-dark outline-none"
               />
             </div>
             <div>
-              <label className="text-xs text-muted">Diploma / Certificate</label>
+              <label className="text-xs text-muted">{t("admin.createAccount.diploma")}</label>
               <input
                 type="file"
                 name="diplome"
                 accept="image/jpeg,image/png,image/webp,application/pdf"
-                className="mt-1 w-full rounded-xl border border-line px-4 py-2.5 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-brand-orange-light file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-brand-orange-dark outline-none"
+                className="mt-1 w-full rounded-xl border border-line px-4 py-2.5 text-sm file:me-3 file:rounded-lg file:border-0 file:bg-brand-orange-light file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-brand-orange-dark outline-none"
               />
             </div>
             <p className="text-xs text-muted">
-              Documents can be uploaded later by the technician from their
-              profile.
+              {t("admin.createAccount.docsLater")}
             </p>
           </div>
         </div>
       )}
 
       <Button type="submit" fullWidth size="lg" className="mt-2">
-        <span>Create Account</span>
+        <span>{t("admin.createAccount.submit")}</span>
       </Button>
     </form>
   );
@@ -195,12 +197,14 @@ function Field({
   type = "text",
   placeholder,
   required,
+  ltr,
 }: {
   label: string;
   name: string;
   type?: string;
   placeholder?: string;
   required?: boolean;
+  ltr?: boolean;
 }) {
   return (
     <div>
@@ -213,7 +217,8 @@ function Field({
         type={type}
         required={required}
         placeholder={placeholder}
-        className="mt-1.5 w-full rounded-xl border border-line px-4 py-3 text-[15px] outline-none focus:border-brand-orange"
+        dir={ltr ? "ltr" : undefined}
+        className="mt-1.5 w-full rounded-xl border border-line px-4 py-3 text-[15px] text-start outline-none focus:border-brand-orange"
       />
     </div>
   );

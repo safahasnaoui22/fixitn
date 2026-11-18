@@ -1,3 +1,4 @@
+import { i18nText } from "../i18n/translate";
 import { prisma } from "./client";
 
 // --- Dashboard stats ------------------------------------------------------
@@ -1030,8 +1031,8 @@ export async function approveAccount(technicianId: string): Promise<void> {
   await createNotification({
     userId: tech.userId,
     type: "STATUS_UPDATE",
-    title: "✅ Account Approved!",
-    body: "Your technician account has been approved. You can now receive job requests.",
+    title: i18nText("sys.notif.accountApproved.title"),
+    body: i18nText("sys.notif.accountApproved.body"),
     requestId: null,
   });
 }
@@ -1046,8 +1047,8 @@ export async function declineAccount(technicianId: string): Promise<void> {
   await createNotification({
     userId: tech.userId,
     type: "STATUS_UPDATE",
-    title: "Account Not Approved",
-    body: "Your account was not approved. Contact support for more information.",
+    title: i18nText("sys.notif.accountDeclined.title"),
+    body: i18nText("sys.notif.accountDeclined.body"),
     requestId: null,
   });
 }

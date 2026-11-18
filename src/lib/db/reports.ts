@@ -1,5 +1,6 @@
 import { prisma } from "./client";
 
+/** `label` is a legacy default: display with t(`adminOps.reports.period.${key}`). */
 export const PERIODS = {
   "30d": { label: "Last 30 days", days: 30 },
   "90d": { label: "Last 90 days", days: 90 },

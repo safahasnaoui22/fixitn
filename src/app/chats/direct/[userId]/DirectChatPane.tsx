@@ -6,6 +6,9 @@ import { Send } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { sendClientDirectMessageAction } from "./actions";
 import type { SupportMessage } from "@/lib/db/supportChat";
+import { useI18n } from "@/lib/i18n/I18nProvider";
+import { formatTime } from "@/lib/utils";
+import { renderText } from "@/lib/i18n/translate";
 
 export function DirectChatPane({
   myId,
@@ -20,6 +23,7 @@ export function DirectChatPane({
   otherUserAvatar: string | null;
   initialMessages: SupportMessage[];
 }) {
+  const { t, locale } = useI18n();
   const router = useRouter();
   const bottomRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
@@ -29,8 +33,8 @@ export function DirectChatPane({
   }, [initialMessages.length]);
 
   useEffect(() => {
-    const t = setInterval(() => router.refresh(), 4000);
-    return () => clearInterval(t);
+    const timer = setInterval(() => router.refresh(), 4000);
+    return () => clearInterval(timer);
   }, [router]);
 
   const bound = sendClientDirectMessageAction.bind(null, otherUserId);
@@ -40,7 +44,7 @@ export function DirectChatPane({
       <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3 no-scrollbar">
         {initialMessages.length === 0 && (
           <p className="py-12 text-center text-sm text-muted">
-            Send a message to {otherUserName}.
+            {t("client.chats.sendTo", { name: otherUserName })}
           </p>
         )}
         {initialMessages.map((msg) => {
@@ -52,14 +56,14 @@ export function DirectChatPane({
                 <div
                   className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
                     isMe
-                      ? "bg-brand-orange text-white rounded-br-sm"
-                      : "bg-surface-alt text-ink border border-line rounded-bl-sm"
+                      ? "bg-brand-orange text-white rounded-ee-sm"
+                      : "bg-surface-alt text-ink border border-line rounded-es-sm"
                   }`}
                 >
-                  {msg.body}
+                  {renderText(t, msg.body)}
                 </div>
                 <span className="text-[10px] text-muted px-1">
-                  {new Date(msg.createdAt).toLocaleTimeString("fr-TN", { hour: "2-digit", minute: "2-digit" })}
+                  {formatTime(msg.createdAt, locale)}
                 </span>
               </div>
             </div>
@@ -82,11 +86,11 @@ export function DirectChatPane({
           type="text"
           required
           autoComplete="off"
-          placeholder={`Write to ${otherUserName}…`}
+          placeholder={t("client.chats.writeTo", { name: otherUserName })}
           className="flex-1 rounded-full border border-line bg-surface-alt px-4 py-2.5 text-sm outline-none focus:border-brand-orange text-ink"
         />
         <button type="submit" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-orange text-white">
-          <Send size={16} />
+          <Send size={16} className="rtl:-scale-x-100" />
         </button>
       </form>
     </div>

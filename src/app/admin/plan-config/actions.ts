@@ -4,11 +4,13 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth";
 import { updatePlanConfig } from "@/lib/db/planConfig";
+import { getT } from "@/lib/i18n/server";
 
 export async function updatePlanConfigAction(
   formData: FormData
 ): Promise<void> {
   await requireRole("ADMIN");
+  const t = await getT();
 
   const minTotalReviews = Number(formData.get("minTotalReviews") ?? 0);
   const minFiveStarCount = Number(formData.get("minFiveStarCount") ?? 0);
@@ -23,7 +25,7 @@ export async function updatePlanConfigAction(
     minFourStarCount < 1
   ) {
     redirect(
-      "/admin/plan-config?error=Invalid+values.+All+fields+required+and+rating+must+be+between+1+and+5."
+      "/admin/plan-config?error=" + encodeURIComponent(t("adminOps.planConfig.invalid"))
     );
   }
 

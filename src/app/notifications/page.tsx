@@ -8,6 +8,8 @@ import { TechBottomNav } from "@/components/TechBottomNav";
 import { EmptyState } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { formatRelativeTime } from "@/lib/utils";
+import { getT, getLocale } from "@/lib/i18n/server";
+import { renderText } from "@/lib/i18n/translate";
 import { markAllReadAction } from "./actions";
 
 const TYPE_COLOR: Record<string, string> = {
@@ -19,6 +21,8 @@ const TYPE_COLOR: Record<string, string> = {
 
 export default async function NotificationsPage() {
   const session = await requireUser();
+  const t = await getT();
+  const locale = await getLocale();
   const notifications = await listNotifications(session.userId);
   const hasUnread = notifications.some((n) => !n.read);
 
@@ -36,15 +40,15 @@ export default async function NotificationsPage() {
         <div className="flex items-center gap-3">
           <Link
             href={session.role === "TECHNICIAN" ? "/t/dashboard" : "/"}
-            aria-label="Go back"
+            aria-label={t("client.notifications.goBack")}
             className="flex h-9 w-9 items-center justify-center rounded-full text-white transition-colors hover:bg-[#223858]"
             style={{ backgroundColor: "#172947" }}
           >
-            <ArrowLeft size={18} />
+            <ArrowLeft size={18} className="rtl:rotate-180" />
           </Link>
 
           <p className="font-heading text-lg font-semibold text-white">
-            Notifications
+            {t("common.notifications")}
           </p>
         </div>
 
@@ -56,7 +60,7 @@ export default async function NotificationsPage() {
               size="sm"
               className="!text-orange-400"
             >
-              Mark all read
+              {t("client.notifications.markAllRead")}
             </Button>
           </form>
         )}
@@ -67,8 +71,8 @@ export default async function NotificationsPage() {
         <div className="text-white">
           <EmptyState
             icon={Bell}
-            title="No notifications yet"
-            description="We'll let you know when something happens on your jobs."
+            title={t("client.notifications.emptyTitle")}
+            description={t("client.notifications.emptyDesc")}
           />
         </div>
       ) : (
@@ -84,6 +88,7 @@ export default async function NotificationsPage() {
             >
               {/* Notification icon */}
               <div
+                title={t(`notifType.${notif.type}`)}
                 className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
                   TYPE_COLOR[notif.type] ?? "bg-[#64748b]"
                 }`}
@@ -95,17 +100,17 @@ export default async function NotificationsPage() {
               <div className="min-w-0 flex-1">
                 <div className="flex items-start justify-between gap-2">
                   <p className="text-sm font-semibold !text-white">
-                    {notif.title}
+                    {renderText(t, notif.title)}
                   </p>
 
                   <span className="shrink-0 text-[11px] !text-[#b8c7dc]">
-                    {formatRelativeTime(notif.createdAt)}
+                    {formatRelativeTime(notif.createdAt, t, locale)}
                   </span>
                 </div>
 
                 {notif.body && (
                   <p className="mt-0.5 line-clamp-2 text-sm !text-[#d0dbea]">
-                    {notif.body}
+                    {renderText(t, notif.body)}
                   </p>
                 )}
               </div>
@@ -113,7 +118,7 @@ export default async function NotificationsPage() {
               {/* Unread indicator */}
               {!notif.read && (
                 <div
-                  aria-label="Unread"
+                  aria-label={t("client.notifications.unread")}
                   className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#f97316]"
                 />
               )}

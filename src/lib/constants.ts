@@ -18,6 +18,7 @@ export const JOB_STATUSES = [
 ] as const;
 export type JobStatus = (typeof JOB_STATUSES)[number];
 
+/** @deprecated use t(`jobStatus.${status}`) */
 export const JOB_STATUS_LABEL: Record<JobStatus, string> = {
   PENDING:     "Pending",
   ACCEPTED:    "Accepted",
@@ -36,6 +37,7 @@ export const NEXT_STATUS: Partial<Record<JobStatus, JobStatus>> = {
   IN_PROGRESS: "COMPLETED",
 };
 
+/** @deprecated use t(`jobStatusAction.${status}`) */
 export const NEXT_ACTION_LABEL: Partial<Record<JobStatus, string>> = {
   ACCEPTED:    "Départ — Start Heading Over",
   ON_THE_WAY:  "Mark as Arrived",
@@ -57,6 +59,7 @@ export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
 export const PLAN_KEYS = ["FREE", "BEGINNER", "PRO"] as const;
 export type PlanKey = (typeof PLAN_KEYS)[number];
 
+/** @deprecated use t(`plan.${key}`) */
 export const PLAN_LABEL: Record<PlanKey, string> = {
   FREE:     "Free",
   BEGINNER: "Beginner",
@@ -86,6 +89,7 @@ export const ACCOUNT_STATUSES = [
 ] as const;
 export type AccountStatus = (typeof ACCOUNT_STATUSES)[number];
 
+/** @deprecated use t(`accountStatus.${status}`) */
 export const ACCOUNT_STATUS_LABEL: Record<AccountStatus, string> = {
   PENDING:  "Pending Approval",
   ACTIVE:   "Active",

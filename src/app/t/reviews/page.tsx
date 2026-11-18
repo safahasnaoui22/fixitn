@@ -8,9 +8,12 @@ import { StarRating } from "@/components/ui/StarRating";
 import { EmptyState } from "@/components/ui/Card";
 import { TechBottomNav } from "@/components/TechBottomNav";
 import { formatRelativeTime } from "@/lib/utils";
+import { getT, getLocale } from "@/lib/i18n/server";
 
 export default async function TechReviewsPage() {
   const session = await requireRole("TECHNICIAN");
+  const t = await getT();
+  const locale = await getLocale();
   const technician = await getTechnicianByUserId(session.userId);
   if (!technician) redirect("/onboarding");
 
@@ -23,14 +26,14 @@ export default async function TechReviewsPage() {
     <>
       <div className="app-content no-scrollbar">
         <div className="border-b border-line px-5 py-4">
-          <p className="font-heading text-lg font-semibold text-ink">My Reviews</p>
+          <p className="font-heading text-lg font-semibold text-ink">{t("tech.reviews.title")}</p>
         </div>
 
         {reviews.length === 0 ? (
           <EmptyState
             icon={MessageSquare}
-            title="No reviews yet"
-            description="Clients can leave a review after each completed job."
+            title={t("tech.reviews.empty")}
+            description={t("tech.reviews.emptyHint")}
           />
         ) : (
           <div className="px-5 py-5 flex flex-col gap-6">
@@ -42,7 +45,7 @@ export default async function TechReviewsPage() {
                   </p>
                   <StarRating value={breakdown.avg ?? 0} size={14} className="mt-1" />
                   <p className="text-xs text-muted mt-1">
-                    {breakdown.total} review{breakdown.total !== 1 ? "s" : ""}
+                    {t(breakdown.total === 1 ? "tech.reviews.countOne" : "tech.reviews.countMany", { n: breakdown.total })}
                   </p>
                 </div>
                 <div className="flex flex-1 flex-col gap-1.5">
@@ -53,7 +56,7 @@ export default async function TechReviewsPage() {
                       : 0;
                     return (
                       <div key={star} className="flex items-center gap-2">
-                        <span className="w-3 shrink-0 text-right text-xs text-muted">{star}</span>
+                        <span className="w-3 shrink-0 text-end text-xs text-muted">{star}</span>
                         <Star size={11} className="fill-star text-star shrink-0" />
                         <div className="flex-1 h-1.5 rounded-full bg-surface-alt overflow-hidden">
                           <div className="h-full rounded-full bg-star" style={{ width: `${pct}%` }} />
@@ -73,7 +76,7 @@ export default async function TechReviewsPage() {
                     <Avatar src={review.authorAvatarUrl} name={review.authorFullName} size={40} />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-semibold text-ink">{review.authorFullName}</p>
-                      <p className="text-xs text-muted">{formatRelativeTime(review.createdAt)}</p>
+                      <p className="text-xs text-muted">{formatRelativeTime(review.createdAt, t, locale)}</p>
                     </div>
                     <StarRating value={review.rating} size={14} className="shrink-0" />
                   </div>

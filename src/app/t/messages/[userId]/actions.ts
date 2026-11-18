@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db/client";
 import { areBothActiveSeniors } from "@/lib/db/seniorChat";
 import { sendSupportMessage } from "@/lib/db/supportChat";
 import { createNotification } from "@/lib/db/notifications";
+import { i18nText } from "@/lib/i18n/translate";
 
 export async function sendTechMessageAction(
   techUserId: string,
@@ -28,7 +29,7 @@ export async function sendTechMessageAction(
   await createNotification({
     userId: toUserId,
     type: "NEW_MESSAGE",
-    title: `💬 Message de ${session.fullName}`,
+    title: i18nText("tech.notif.newMessage.title", { name: session.fullName }),
     body: body.slice(0, 80),
     requestId: null,
     url: target.role === "TECHNICIAN" ? `/t/messages/${techUserId}?from=senior` : `/chats/direct/${techUserId}`,

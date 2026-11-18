@@ -9,7 +9,9 @@ import {
 import { prisma } from "@/lib/db/client";
 import { Button } from "@/components/ui/Button";
 import { CategoryIcon } from "@/components/CategoryIcon";
-import { formatDT, parseStringArray } from "@/lib/utils";
+import { parseStringArray } from "@/lib/utils";
+import { getT } from "@/lib/i18n/server";
+import { tOr } from "@/lib/i18n/translate";
 import {
   createCategoryAction,
   updateCategoryAction,
@@ -37,6 +39,7 @@ export default async function AdminCategoriesPage({
 }: {
   searchParams: Promise<{ edit?: string; error?: string }>;
 }) {
+  const t = await getT();
   const session = await requirePermission("categories");
   const isAdmin = session.role === "ADMIN";
   const { edit, error } = await searchParams;
@@ -55,11 +58,10 @@ export default async function AdminCategoriesPage({
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="font-heading text-2xl font-bold text-ink">
-          Categories
+          {t("admin.categories.title")}
         </h1>
         <p className="text-sm text-muted mt-0.5">
-          {categories.length} categories ·{" "}
-          {categories.filter((c) => c.isActive).length} active
+          {t("admin.categories.summary", { total: categories.length, active: categories.filter((c) => c.isActive).length })}
         </p>
       </div>
 
@@ -74,8 +76,8 @@ export default async function AdminCategoriesPage({
         <table className="w-full text-sm">
           <thead className="bg-surface-alt border-b border-line">
             <tr>
-              {["Order", "Category", "Status", "Visit Price", "Techs", "Jobs", "Actions"].map((h) => (
-                <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-muted">
+              {[t("admin.categories.col.order"), t("admin.categories.col.category"), t("common.status"), t("admin.categories.col.visitPrice"), t("admin.categories.col.techs"), t("admin.categories.col.jobs"), t("common.actions")].map((h) => (
+                <th key={h} className="px-4 py-3 text-start text-xs font-semibold text-muted">
                   {h}
                 </th>
               ))}
@@ -110,7 +112,7 @@ export default async function AdminCategoriesPage({
                       badgeSize={30}
                     />
                     <div>
-                      <p className="font-medium text-ink">{cat.name}</p>
+                      <p className="font-medium text-ink">{tOr(t, `category.${cat.slug}.name`, cat.name)}</p>
                       <p className="text-[10px] text-muted font-mono">
                         {cat.slug}
                       </p>
@@ -130,9 +132,9 @@ export default async function AdminCategoriesPage({
                       }`}
                     >
                       {cat.isActive ? (
-                        <><Eye size={10} />Active</>
+                        <><Eye size={10} />{t("common.active")}</>
                       ) : (
-                        <><EyeOff size={10} />Inactive</>
+                        <><EyeOff size={10} />{t("common.inactive")}</>
                       )}
                     </button>
                   </form>
@@ -151,12 +153,12 @@ export default async function AdminCategoriesPage({
                       defaultValue={cat.visitPrice}
                       className="w-16 rounded-lg border border-line px-2 py-1 text-xs outline-none focus:border-brand-orange"
                     />
-                    <span className="text-xs text-muted">DT</span>
+                    <span className="text-xs text-muted">{t("common.dt")}</span>
                     <button
                       type="submit"
                       className="rounded-lg bg-surface-alt px-2 py-1 text-[10px] font-semibold text-muted hover:text-ink transition-colors"
                     >
-                      Save
+                      {t("common.save")}
                     </button>
                   </form>
                 </td>
@@ -214,7 +216,7 @@ export default async function AdminCategoriesPage({
         {categories.length === 0 && (
           <div className="flex flex-col items-center gap-2 py-12 text-center">
             <Layers size={28} className="text-muted" />
-            <p className="text-sm text-muted">No categories yet</p>
+            <p className="text-sm text-muted">{t("admin.categories.empty")}</p>
           </div>
         )}
       </div>
@@ -223,11 +225,11 @@ export default async function AdminCategoriesPage({
       <div className="rounded-2xl border border-line bg-surface p-5">
         <p className="font-heading text-base font-semibold text-ink mb-4">
           {editing ? (
-            `Edit: ${editing.name}`
+            t("admin.categories.editTitle", { name: tOr(t, `category.${editing.slug}.name`, editing.name) })
           ) : (
             <span className="flex items-center gap-2">
               <Plus size={16} />
-              Add Category
+              {t("admin.categories.addTitle")}
             </span>
           )}
         </p>
@@ -240,19 +242,19 @@ export default async function AdminCategoriesPage({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-sm font-medium text-ink">Name</label>
+              <label className="text-sm font-medium text-ink">{t("common.name")}</label>
               <input
                 name="name"
                 required
                 defaultValue={editing?.name ?? ""}
-                placeholder="e.g. Pool Cleaning"
+                placeholder={t("admin.categories.namePlaceholder")}
                 className="mt-1.5 w-full rounded-xl border border-line px-4 py-2.5 text-sm outline-none focus:border-brand-orange"
               />
             </div>
 
             <div>
               <label className="text-sm font-medium text-ink">
-                Icon (Lucide name)
+                {t("admin.categories.icon")}
               </label>
               <select
                 name="icon"
@@ -269,7 +271,7 @@ export default async function AdminCategoriesPage({
             </div>
 
             <div>
-              <label className="text-sm font-medium text-ink">Color</label>
+              <label className="text-sm font-medium text-ink">{t("admin.categories.color")}</label>
               <div className="mt-1.5 flex flex-wrap gap-2">
                 {COLORS.map((c) => (
                   <label key={c} className="relative cursor-pointer">
@@ -293,7 +295,7 @@ export default async function AdminCategoriesPage({
 
             <div>
               <label className="text-sm font-medium text-ink">
-                Visit price (DT)
+                {t("admin.categories.visitPriceDt")}
               </label>
               <input
                 name="visitPrice"
@@ -308,21 +310,21 @@ export default async function AdminCategoriesPage({
 
           <div>
             <label className="text-sm font-medium text-ink">
-              Description
+              {t("admin.categories.description")}
             </label>
             <input
               name="description"
               defaultValue={editing?.description ?? ""}
-              placeholder="Short description for clients"
+              placeholder={t("admin.categories.descPlaceholder")}
               className="mt-1.5 w-full rounded-xl border border-line px-4 py-2.5 text-sm outline-none focus:border-brand-orange"
             />
           </div>
 
           <div>
             <label className="text-sm font-medium text-ink">
-              Category image
-              <span className="ml-1 font-normal text-muted">
-                (shown on the category page instead of the icon — JPG/PNG/WEBP, max 4 MB)
+              {t("admin.categories.image")}
+              <span className="ms-1 font-normal text-muted">
+                {t("admin.categories.imageHint")}
               </span>
             </label>
             {editing?.imageUrl && (
@@ -335,7 +337,7 @@ export default async function AdminCategoriesPage({
                 />
                 <label className="flex items-center gap-2 text-xs text-muted">
                   <input type="checkbox" name="removeImage" />
-                  Remove current image
+                  {t("admin.categories.removeImage")}
                 </label>
               </div>
             )}
@@ -343,50 +345,51 @@ export default async function AdminCategoriesPage({
               name="image"
               type="file"
               accept="image/jpeg,image/png,image/webp"
-              className="mt-1.5 w-full rounded-xl border border-line px-4 py-2 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-brand-orange-light file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-brand-orange"
+              className="mt-1.5 w-full rounded-xl border border-line px-4 py-2 text-sm file:me-3 file:rounded-lg file:border-0 file:bg-brand-orange-light file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-brand-orange"
             />
             {editing?.imageUrl && (
               <p className="mt-1 text-[11px] text-muted">
-                Choose a new file to replace the current image.
+                {t("admin.categories.replaceImageHint")}
               </p>
             )}
           </div>
 
           <div>
             <label className="text-sm font-medium text-ink">
-              How it works
-              <span className="ml-1 font-normal text-muted">(one step per line)</span>
+              {t("admin.categories.howItWorks")}
+              <span className="ms-1 font-normal text-muted">{t("admin.categories.howItWorksHint")}</span>
             </label>
             <textarea
               name="howItWorks"
               rows={5}
               defaultValue={parseStringArray(editing?.howItWorks).join("\n")}
-              placeholder={"Tell us what's wrong\nPick a verified technician near you\nTrack them in real time"}
+              placeholder={t("admin.categories.howItWorksPlaceholder")}
               className="mt-1.5 w-full rounded-xl border border-line px-4 py-2.5 text-sm outline-none focus:border-brand-orange"
             />
           </div>
 
           <div>
             <label className="text-sm font-medium text-ink">
-              Video link <span className="font-normal text-muted">(optional)</span>
+              {t("admin.categories.videoLink")} <span className="font-normal text-muted">{t("common.optionalSuffix")}</span>
             </label>
             <input
               name="videoUrl"
               type="url"
               defaultValue={editing?.videoUrl ?? ""}
               placeholder="https://..."
-              className="mt-1.5 w-full rounded-xl border border-line px-4 py-2.5 text-sm outline-none focus:border-brand-orange"
+              dir="ltr"
+              className="mt-1.5 w-full rounded-xl border border-line px-4 py-2.5 text-sm text-start outline-none focus:border-brand-orange"
             />
           </div>
 
           <div className="flex gap-3">
             <Button type="submit" size="sm">
-              {editing ? "Save Changes" : "Add Category"}
+              {editing ? t("admin.categories.saveChanges") : t("admin.categories.addTitle")}
             </Button>
             {editing && (
               <Link href="/admin/categories">
                 <Button type="button" variant="outline" size="sm">
-                  Cancel
+                  {t("common.cancel")}
                 </Button>
               </Link>
             )}

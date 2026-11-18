@@ -11,7 +11,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { FaceCapture, preloadFaceModels } from "@/components/FaceCapture";
-import { DARK_BG, ORANGE } from "@/lib/theme";
+import { DARK_BG } from "@/lib/theme";
 import { FaceIntro } from "@/components/FaceIntro";
 import { AccentTitle } from "@/components/AccentTitle";
 import { useT } from "@/lib/i18n/I18nProvider";
@@ -72,8 +72,7 @@ export default function FaceVerifyPage() {
         }
 
         setErrorMsg(
-          data.error ??
-            "Face verification failed. Please try again."
+          data.error ?? t("auth.face.verify.fail")
         );
         setStep("error");
         return;
@@ -91,7 +90,7 @@ export default function FaceVerifyPage() {
       }, 1500);
     } catch {
       setAttempts((a) => a + 1);
-      setErrorMsg("Network error. Check your connection and try again.");
+      setErrorMsg(t("auth.face.verify.network"));
       setStep("error");
     }
   }
@@ -133,14 +132,14 @@ export default function FaceVerifyPage() {
           </button>
           <div className="text-center">
             <h1 className="font-heading text-xl font-bold text-white">
-              Face Verification
+              {t("auth.face.verify.scanTitle")}
             </h1>
             <p className="mt-1 text-sm text-white/60">
-              Look directly at the camera — it verifies by itself.
+              {t("auth.face.verify.scanText")}
             </p>
             {attempts > 0 && (
               <p className="mt-1.5 text-xs text-amber-300 font-medium">
-                Attempt {attempts} of {MAX_ATTEMPTS}
+                {t("auth.face.verify.attempt", { n: attempts, max: MAX_ATTEMPTS })}
               </p>
             )}
           </div>
@@ -154,7 +153,7 @@ export default function FaceVerifyPage() {
 
           <FaceCapture
             onCapture={handleCapture}
-            captureLabel="Verify My Face"
+            captureLabel={t("auth.face.verify.captureLabel")}
             threshold={0.5}
             autoCapture={step === "scanning"}
           />
@@ -165,7 +164,7 @@ export default function FaceVerifyPage() {
               className="flex items-center gap-1.5 text-xs text-white/60 hover:text-white transition-colors mx-auto"
             >
               <HelpCircle size={13} />
-              Having trouble? Get help
+              {t("auth.face.verify.help")}
             </button>
           </div>
         </div>
@@ -183,10 +182,10 @@ export default function FaceVerifyPage() {
             className="text-brand-orange animate-spin"
           />
           <p className="font-heading text-base font-semibold text-white">
-            Verifying your identity…
+            {t("auth.face.verify.verifying")}
           </p>
           <p className="text-sm text-white/60 text-center">
-            Comparing face with your registered data.
+            {t("auth.face.verify.verifyingSub")}
           </p>
         </div>
       </div>
@@ -202,10 +201,10 @@ export default function FaceVerifyPage() {
             <ShieldCheck size={40} className="text-emerald-400" />
           </div>
           <h1 className="font-heading text-2xl font-bold text-white">
-            Identity Verified!
+            {t("auth.face.verify.okTitle")}
           </h1>
           <p className="text-[15px] text-white/60 leading-relaxed">
-            Welcome back. Your account is now active on this device only.
+            {t("auth.face.verify.okText")}
           </p>
           <Loader2 size={20} className="text-white/60 animate-spin mt-2" />
         </div>
@@ -223,25 +222,19 @@ export default function FaceVerifyPage() {
 
         <h1 className="font-heading text-xl font-bold text-white">
           {attempts >= MAX_ATTEMPTS
-            ? "Too Many Failed Attempts"
-            : "Need Help?"}
+            ? t("auth.face.verify.tooMany")
+            : t("auth.face.verify.needHelp")}
         </h1>
 
         <p className="text-[15px] text-white/60 leading-relaxed">
           {attempts >= MAX_ATTEMPTS
-            ? "You've exceeded the maximum number of verification attempts."
-            : "If you're having trouble verifying your face, here's what you can do."}
+            ? t("auth.face.verify.tooManyText")
+            : t("auth.face.verify.helpText")}
         </p>
 
-        <div className="w-full rounded-2xl bg-white/5 p-4 text-left flex flex-col gap-3">
-          <p className="text-sm font-semibold text-white">Tips to fix this</p>
-          {[
-            "Move to a brighter room or face a window",
-            "Remove glasses, hat or anything covering your face",
-            "Hold the phone at eye level, not from below",
-            "Make sure the camera lens is clean",
-            "Try using the same expression as when you registered",
-          ].map((tip, i) => (
+        <div className="w-full rounded-2xl bg-white/5 p-4 text-start flex flex-col gap-3">
+          <p className="text-sm font-semibold text-white">{t("auth.face.verify.tipsTitle")}</p>
+          {[1, 2, 3, 4, 5].map((n) => t(`auth.face.verify.tip${n}`)).map((tip, i) => (
             <div key={i} className="flex items-start gap-2">
               <span className="text-brand-orange font-bold text-xs mt-0.5">•</span>
               <p className="text-sm text-white/60">{tip}</p>
@@ -259,16 +252,16 @@ export default function FaceVerifyPage() {
                 setStep("scanning");
               }}
             >
-              Try Again
+              {t("common.retry")}
             </Button>
           )}
 
           <a
-            href="mailto:support@fixitn.tn?subject=Face verification issue"
+            href={`mailto:support@fixitn.tn?subject=${encodeURIComponent(t("auth.face.verify.mailSubject"))}`}
             className="flex w-full items-center justify-center gap-2 rounded-2xl bg-white/5 py-4 text-sm font-semibold text-white"
           >
             <HelpCircle size={16} className="text-white/60" />
-            Contact Support
+            {t("auth.face.verify.contact")}
           </a>
 
           <Button
@@ -279,14 +272,13 @@ export default function FaceVerifyPage() {
             onClick={handleLogout}
           >
             <LogOut size={18} />
-            Log Out
+            {t("auth.face.verify.logout")}
           </Button>
         </div>
 
         <p className="text-xs text-white/60 px-2">
-          If you believe your account has been compromised or you cannot
-          verify your identity, contact us at{" "}
-          <span className="text-brand-orange font-medium">
+          {t("auth.face.verify.compromised")}{" "}
+          <span dir="ltr" className="text-brand-orange font-medium">
             support@fixitn.tn
           </span>
         </p>

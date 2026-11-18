@@ -6,10 +6,12 @@ import { ArrowLeft, ShieldCheck, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { FaceCapture, preloadFaceModels } from "@/components/FaceCapture";
 import { DARK_BG } from "@/lib/theme";
+import { useT } from "@/lib/i18n/I18nProvider";
 
 type Step = "phone" | "scanning" | "verifying" | "reset" | "done" | "error";
 
 export default function FacePasswordResetPage() {
+  const t = useT();
   const router = useRouter();
   const [step, setStep]       = useState<Step>("phone");
   const [phone, setPhone]     = useState("");
@@ -30,7 +32,7 @@ export default function FacePasswordResetPage() {
     e.preventDefault();
     setPhoneError("");
     if (!phone.trim()) {
-      setPhoneError("Veuillez saisir votre numéro de téléphone.");
+      setPhoneError(t("auth.forgot.phoneRequired"));
       return;
     }
     setStep("scanning");
@@ -52,7 +54,7 @@ export default function FacePasswordResetPage() {
     const data = await res.json();
 
     if (!res.ok) {
-      setErrorMsg(data.error ?? "Visage non reconnu.");
+      setErrorMsg(data.error ?? t("auth.forgot.err.notRecognized"));
       setStep("error");
       return;
     }
@@ -67,11 +69,11 @@ export default function FacePasswordResetPage() {
     setErrorMsg("");
 
     if (password.length < 6) {
-      setErrorMsg("Le mot de passe doit contenir au moins 6 caractères.");
+      setErrorMsg(t("auth.forgot.err.passMin"));
       return;
     }
     if (password !== confirm) {
-      setErrorMsg("Les mots de passe ne correspondent pas.");
+      setErrorMsg(t("auth.forgot.err.mismatch"));
       return;
     }
 
@@ -90,16 +92,14 @@ export default function FacePasswordResetPage() {
     setLoading(false);
 
     if (!res.ok) {
-      setErrorMsg(data.error ?? "Erreur. Réessayez.");
+      setErrorMsg(data.error ?? t("auth.forgot.err.generic"));
       return;
     }
 
     setStep("done");
     setTimeout(() => {
       router.replace(
-        `/login?success=${encodeURIComponent(
-          "Mot de passe réinitialisé avec succès !"
-        )}`
+        `/login?success=${encodeURIComponent(t("auth.forgot.success"))}`
       );
     }, 2000);
   }
@@ -109,13 +109,13 @@ export default function FacePasswordResetPage() {
     return (
       <div className="app-content px-6 py-8">
         <Link href="/forgot-password" className="flex items-center gap-1.5 text-sm text-muted">
-          <ArrowLeft size={15} /> Retour
+          <ArrowLeft size={15} className="rtl:rotate-180" /> {t("forgot.back")}
         </Link>
         <h1 className="font-heading mt-8 text-2xl font-bold text-ink">
-          Entrez votre numéro
+          {t("auth.forgot.phoneTitle")}
         </h1>
         <p className="mt-1 text-sm text-muted">
-          Nous allons vérifier votre visage pour confirmer votre identité.
+          {t("auth.forgot.phoneText")}
         </p>
         <form onSubmit={handlePhoneSubmit} className="mt-8 flex flex-col gap-4">
           {phoneError && (
@@ -125,14 +125,15 @@ export default function FacePasswordResetPage() {
           )}
           <div>
             <label className="text-sm font-medium text-ink">
-              Numéro de téléphone
+              {t("login.phone")}
             </label>
             <input
               type="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              placeholder="2XXXXXXX"
+              placeholder={t("auth.phonePlaceholder")}
               required
+              dir="ltr"
               className="mt-1.5 w-full rounded-xl border border-line px-4 py-3 text-[15px] outline-none focus:border-brand-orange"
             />
           </div>
@@ -140,7 +141,7 @@ export default function FacePasswordResetPage() {
             type="submit"
             className="w-full rounded-2xl bg-brand-orange py-4 text-base font-bold text-white"
           >
-            Continuer
+            {t("auth.forgot.continue")}
           </button>
         </form>
       </div>
@@ -156,15 +157,14 @@ export default function FacePasswordResetPage() {
             onClick={() => setStep("phone")}
             className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-alt"
           >
-            <ArrowLeft size={18} />
+            <ArrowLeft size={18} className="rtl:rotate-180" />
           </button>
           <h1 className="font-heading text-xl font-bold text-ink">
-            Vérification du visage
+            {t("auth.forgot.faceTitle")}
           </h1>
         </div>
         <p className="text-sm text-muted text-center">
-          Regardez la caméra — votre visage doit correspondre au compte{" "}
-          <span className="font-semibold text-ink">{phone}</span>
+          {t("auth.forgot.faceText", { phone })}
         </p>
         {step === "error" && errorMsg && (
           <div className="rounded-xl bg-danger-light px-4 py-3 text-sm text-danger text-center">
@@ -174,7 +174,7 @@ export default function FacePasswordResetPage() {
         <div className="rounded-3xl px-4 py-6" style={{ background: DARK_BG }}>
           <FaceCapture
             onCapture={handleCapture}
-            captureLabel="Vérifier mon visage"
+            captureLabel={t("forgot.verify")}
             threshold={0.5}
           />
         </div>
@@ -188,7 +188,7 @@ export default function FacePasswordResetPage() {
       <div className="app-content flex flex-col items-center justify-center gap-4 px-6">
         <Loader2 size={40} className="text-brand-orange animate-spin" />
         <p className="font-heading text-base font-semibold text-ink">
-          Vérification en cours…
+          {t("auth.forgot.verifying")}
         </p>
       </div>
     );
@@ -199,10 +199,10 @@ export default function FacePasswordResetPage() {
     return (
       <div className="app-content px-6 py-8">
         <h1 className="font-heading text-2xl font-bold text-ink">
-          Nouveau mot de passe
+          {t("auth.forgot.newPassTitle")}
         </h1>
         <p className="mt-1 text-sm text-success font-medium">
-          ✓ Identité confirmée
+          {t("auth.forgot.confirmed")}
         </p>
         <form onSubmit={handleReset} className="mt-6 flex flex-col gap-4">
           {errorMsg && (
@@ -212,7 +212,7 @@ export default function FacePasswordResetPage() {
           )}
           <div>
             <label className="text-sm font-medium text-ink">
-              Nouveau mot de passe
+              {t("auth.forgot.newPassTitle")}
             </label>
             <input
               type="password"
@@ -220,20 +220,22 @@ export default function FacePasswordResetPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={6}
-              placeholder="Min. 6 caractères"
+              placeholder={t("auth.forgot.passPlaceholder")}
+              dir="ltr"
               className="mt-1.5 w-full rounded-xl border border-line px-4 py-3 text-[15px] outline-none focus:border-brand-orange"
             />
           </div>
           <div>
             <label className="text-sm font-medium text-ink">
-              Confirmer le mot de passe
+              {t("auth.forgot.confirmLabel")}
             </label>
             <input
               type="password"
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
               required
-              placeholder="Répétez le mot de passe"
+              placeholder={t("auth.forgot.confirmPlaceholder")}
+              dir="ltr"
               className="mt-1.5 w-full rounded-xl border border-line px-4 py-3 text-[15px] outline-none focus:border-brand-orange"
             />
           </div>
@@ -242,7 +244,7 @@ export default function FacePasswordResetPage() {
             disabled={loading}
             className="w-full rounded-2xl bg-brand-orange py-4 text-base font-bold text-white disabled:opacity-60"
           >
-            {loading ? "Enregistrement…" : "Réinitialiser le mot de passe"}
+            {loading ? t("auth.forgot.saving") : t("auth.forgot.resetBtn")}
           </button>
         </form>
       </div>
@@ -256,9 +258,9 @@ export default function FacePasswordResetPage() {
         <ShieldCheck size={40} className="text-success" />
       </div>
       <h1 className="font-heading text-2xl font-bold text-ink">
-        Mot de passe réinitialisé !
+        {t("auth.forgot.doneTitle")}
       </h1>
-      <p className="text-sm text-muted">Redirection vers la connexion…</p>
+      <p className="text-sm text-muted">{t("auth.forgot.redirecting")}</p>
       <Loader2 size={20} className="text-muted animate-spin" />
     </div>
   );

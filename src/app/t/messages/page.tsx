@@ -9,6 +9,8 @@ import { isActiveSenior, seniorUnreadCount, countSeniorMembers, seniorDirectUnre
 import { Avatar } from "@/components/ui/Avatar";
 import { TechBottomNav } from "@/components/TechBottomNav";
 import { formatRelativeTime } from "@/lib/utils";
+import { getT, getLocale } from "@/lib/i18n/server";
+import { renderText } from "@/lib/i18n/translate";
 
 async function getContacts(techUserId: string, technicianId: string) {
   // 1. Admin + Sous-admin contacts
@@ -83,9 +85,9 @@ async function getContacts(techUserId: string, technicianId: string) {
 }
 
 const ROLE_LABEL: Record<string, string> = {
-  ADMIN:      "Administrateur",
-  SOUS_ADMIN: "Support",
-  CLIENT:     "Client",
+  ADMIN:      "role.ADMIN",
+  SOUS_ADMIN: "tech.messages.roleSupport",
+  CLIENT:     "role.CLIENT",
 };
 
 const ROLE_STYLE: Record<string, string> = {
@@ -96,6 +98,8 @@ const ROLE_STYLE: Record<string, string> = {
 
 export default async function TechMessagesPage() {
   const session    = await requireRole("TECHNICIAN");
+  const t = await getT();
+  const locale = await getLocale();
   const technician = await getTechnicianByUserId(session.userId);
   if (!technician) redirect("/onboarding");
 
@@ -118,7 +122,7 @@ export default async function TechMessagesPage() {
         <div className="border-b border-line px-5 py-4">
           <div className="flex items-center gap-2">
             <p className="font-heading text-lg font-semibold text-ink">
-              Messages
+              {t("tech.messages.title")}
             </p>
             {totalUnread > 0 && (
               <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-orange px-1 text-[10px] font-bold text-white">
@@ -127,7 +131,7 @@ export default async function TechMessagesPage() {
             )}
           </div>
           <p className="text-xs text-muted mt-0.5">
-            {contacts.length} contact{contacts.length !== 1 ? "s" : ""}
+            {t(contacts.length === 1 ? "tech.messages.contactOne" : "tech.messages.contactMany", { n: contacts.length })}
           </p>
         </div>
 
@@ -141,9 +145,9 @@ export default async function TechMessagesPage() {
               <Users size={20} />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-ink">Cercle Senior</p>
+              <p className="text-sm font-semibold text-ink">{t("tech.senior.title")}</p>
               <p className="text-xs text-muted">
-                Choisissez un des {seniorMembers} techniciens Senior pour discuter
+                {t("tech.messages.seniorHint", { n: seniorMembers })}
               </p>
             </div>
             {seniorUnread > 0 && (
@@ -161,11 +165,10 @@ export default async function TechMessagesPage() {
               <MessageCircle size={28} className="text-muted" />
             </div>
             <p className="font-heading text-base font-semibold text-ink">
-              Aucune conversation
+              {t("tech.messages.empty")}
             </p>
             <p className="text-sm text-muted">
-              Vos contacts apparaîtront ici une fois que des clients
-              vous auront réservé ou que l'admin vous aura écrit.
+              {t("tech.messages.emptyHint")}
             </p>
           </div>
         ) : (
@@ -185,7 +188,7 @@ export default async function TechMessagesPage() {
                     size={46}
                   />
                   {contact.unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-orange px-1 text-[10px] font-bold text-white">
+                    <span className="absolute -top-1 -end-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-orange px-1 text-[10px] font-bold text-white">
                       {contact.unreadCount > 9 ? "9+" : contact.unreadCount}
                     </span>
                   )}
@@ -203,7 +206,7 @@ export default async function TechMessagesPage() {
                     <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
                       ROLE_STYLE[contact.role] ?? "bg-surface-alt text-muted"
                     }`}>
-                      {ROLE_LABEL[contact.role] ?? contact.role}
+                      {ROLE_LABEL[contact.role] ? t(ROLE_LABEL[contact.role]) : contact.role}
                     </span>
                   </div>
                   <p className={`text-xs truncate ${
@@ -211,8 +214,8 @@ export default async function TechMessagesPage() {
                       ? "font-medium text-ink"
                       : "text-muted"
                   }`}>
-                    {contact.lastMessage ?? (
-                      <span className="italic">Démarrer la conversation</span>
+                    {contact.lastMessage ? renderText(t, contact.lastMessage) : (
+                      <span className="italic">{t("tech.messages.startConversation")}</span>
                     )}
                   </p>
                 </div>
@@ -220,7 +223,7 @@ export default async function TechMessagesPage() {
                 <div className="shrink-0 flex flex-col items-end gap-1">
                   {contact.lastMessageAt && (
                     <span className="text-[10px] text-muted">
-                      {formatRelativeTime(contact.lastMessageAt)}
+                      {formatRelativeTime(contact.lastMessageAt, t, locale)}
                     </span>
                   )}
                   {contact.unreadCount > 0 && (

@@ -10,12 +10,14 @@ import { requireRole } from "@/lib/auth";
 import { listCategories } from "@/lib/db/catalog";
 import { listPlans } from "@/lib/db/monetization";
 import { CreateAccountForm } from "./CreateAccountForm";
+import { getT } from "@/lib/i18n/server";
 
 export default async function AdminCreateAccountPage({
   searchParams,
 }: {
   searchParams: Promise<{ error?: string; success?: string }>;
 }) {
+  const t = await getT();
   await requireRole("ADMIN");
   const { error, success } = await searchParams;
 
@@ -31,14 +33,14 @@ export default async function AdminCreateAccountPage({
           href="/admin"
           className="flex h-9 w-9 items-center justify-center rounded-full bg-surface border border-line"
         >
-          <ArrowLeft size={18} />
+          <ArrowLeft size={18} className="rtl:rotate-180" />
         </Link>
         <div>
           <h1 className="font-heading text-2xl font-bold text-ink">
-            Create Account
+            {t("admin.createAccount.title")}
           </h1>
           <p className="text-sm text-muted">
-            Create any account type with a chosen plan
+            {t("admin.createAccount.subtitle")}
           </p>
         </div>
       </div>
@@ -47,7 +49,7 @@ export default async function AdminCreateAccountPage({
         <div className="flex items-center gap-2 rounded-xl bg-success-light px-4 py-3">
           <CheckCircle2 size={16} className="text-success shrink-0" />
           <p className="text-sm font-medium text-success">
-            Account created successfully!
+            {t("admin.createAccount.success")}
           </p>
         </div>
       )}
@@ -62,7 +64,7 @@ export default async function AdminCreateAccountPage({
         <div className="flex items-center gap-2 mb-5">
           <UserPlus size={18} className="text-brand-orange" />
           <p className="font-heading text-base font-semibold text-ink">
-            New Account Details
+            {t("admin.createAccount.detailsTitle")}
           </p>
         </div>
 
@@ -73,23 +75,23 @@ export default async function AdminCreateAccountPage({
 
       {/* Role guide */}
       <div className="rounded-2xl border border-line bg-surface-alt p-4">
-        <p className="text-sm font-semibold text-ink mb-2">Role guide</p>
+        <p className="text-sm font-semibold text-ink mb-2">{t("admin.createAccount.roleGuide")}</p>
         <div className="flex flex-col gap-2 text-xs text-muted">
           <div className="flex items-start gap-2">
-            <span className="font-semibold text-ink shrink-0">CLIENT</span>
-            <span>Can browse categories, book technicians, rate jobs.</span>
+            <span className="font-semibold text-ink shrink-0">{t("role.CLIENT")}</span>
+            <span>{t("admin.createAccount.guide.client")}</span>
           </div>
           <div className="flex items-start gap-2">
-            <span className="font-semibold text-ink shrink-0">TECHNICIAN</span>
-            <span>Can receive jobs. Auto-approved when created by admin. Plan determines commission and visibility.</span>
+            <span className="font-semibold text-ink shrink-0">{t("role.TECHNICIAN")}</span>
+            <span>{t("admin.createAccount.guide.technician")}</span>
           </div>
           <div className="flex items-start gap-2">
-            <span className="font-semibold text-ink shrink-0">SOUS_ADMIN</span>
-            <span>Gets only the functions you tick in “Team & Access” (default: technicians + support). Every change is recorded.</span>
+            <span className="font-semibold text-ink shrink-0">{t("role.SOUS_ADMIN")}</span>
+            <span>{t("admin.createAccount.guide.sousAdmin")}</span>
           </div>
           <div className="flex items-start gap-2">
-            <span className="font-semibold text-ink shrink-0">ADMIN</span>
-            <span>Full access to all platform features.</span>
+            <span className="font-semibold text-ink shrink-0">{t("role.ADMIN")}</span>
+            <span>{t("admin.createAccount.guide.admin")}</span>
           </div>
         </div>
       </div>

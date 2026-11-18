@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { SignJWT, jwtVerify } from "jose";
 import bcrypt from "bcryptjs";
+import { getT } from "./i18n/server";
 import { SESSION_COOKIE } from "./constants";
 import type { Role } from "./constants";
 import type { SessionPayload, PendingSessionPayload } from "./types";
@@ -131,7 +132,7 @@ export async function requireUser(): Promise<SessionPayload> {
       await destroySession();
       redirect(
         `/login?error=${encodeURIComponent(
-          "Your session was ended because you logged in from another device."
+          (await getT())("sys.err.sessionEnded")
         )}`
       );
     }

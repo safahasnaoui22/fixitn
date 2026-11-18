@@ -4,14 +4,17 @@ import { revalidatePath } from "next/cache";
 import { requirePermission } from "@/lib/auth";
 import { prisma } from "@/lib/db/client";
 import { createNotification } from "@/lib/db/notifications";
+import { getT } from "@/lib/i18n/server";
+import { i18nText } from "@/lib/i18n/translate";
 
 export async function updateComplaintAction(formData: FormData): Promise<void> {
+  const t = await getT();
   const session = await requirePermission("complaints");
   const reportId = String(formData.get("reportId") ?? "").trim();
   const status = String(formData.get("status") ?? "").trim();
   const adminNote = String(formData.get("adminNote") ?? "").trim().slice(0, 3000);
   if (!reportId || !["OPEN", "INVESTIGATING", "RESOLVED", "REJECTED"].includes(status)) {
-    throw new Error("Invalid complaint update.");
+    throw new Error(t("adminSup.complaints.err.invalidUpdate"));
   }
 
   const admin = await prisma.user.findUnique({
@@ -19,7 +22,7 @@ export async function updateComplaintAction(formData: FormData): Promise<void> {
     select: { fullName: true, role: true },
   });
   if (!admin || !["ADMIN", "SOUS_ADMIN"].includes(admin.role)) {
-    throw new Error("Not authorized.");
+    throw new Error(t("adminSup.complaints.err.notAuthorized"));
   }
 
   const before = await prisma.report.findUnique({
@@ -44,10 +47,10 @@ export async function updateComplaintAction(formData: FormData): Promise<void> {
       type: "STATUS_UPDATE",
       title:
         status === "RESOLVED"
-          ? "✅ Your report was handled"
+          ? i18nText("adminSup.notif.complaintResolved.title")
           : status === "REJECTED"
-            ? "Your report was reviewed"
-            : "🔎 We are looking at your report",
+            ? i18nText("adminSup.notif.complaintRejected.title")
+            : i18nText("adminSup.notif.complaintInvestigating.title"),
       body: before.reason,
       requestId: before.requestId,
     }).catch(() => undefined);
@@ -61,7 +64,7 @@ export async function updateComplaintAction(formData: FormData): Promise<void> {
       action: "complaint.update",
       entityType: "report",
       entityId: reportId,
-      summary: `Updated complaint status to ${status}`,
+      summary: i18nText("sys.audit.complaintStatus", { status }),
     },
   }).catch(() => undefined);
 
@@ -70,29 +73,30 @@ export async function updateComplaintAction(formData: FormData): Promise<void> {
 }
 
 export async function moderateConversationAction(formData: FormData): Promise<void> {
+  const t = await getT();
   const session = await requirePermission("complaints");
   const requestId = String(formData.get("requestId") ?? "").trim();
   const mode = String(formData.get("mode") ?? "").trim();
   const reason = String(formData.get("reason") ?? "").trim().slice(0, 1000);
   if (!requestId || !["RESTRICT", "RESTORE"].includes(mode)) {
-    throw new Error("Invalid conversation moderation request.");
+    throw new Error(t("adminSup.complaints.err.invalidModeration"));
   }
   const request = await prisma.serviceRequest.findUnique({
     where: { id: requestId },
     select: { id: true },
   });
-  if (!request) throw new Error("Request not found.");
+  if (!request) throw new Error(t("adminSup.complaints.err.requestNotFound"));
 
   if (mode === "RESTRICT") {
     await prisma.chatRestriction.upsert({
       where: { requestId },
-      create: { requestId, active: true, reason: reason || "Restricted after complaint review.", createdBy: session.userId },
-      update: { active: true, reason: reason || "Restricted after complaint review.", createdBy: session.userId },
+      create: { requestId, active: true, reason: reason || i18nText("sys.audit.chatRestricted"), createdBy: session.userId },
+      update: { active: true, reason: reason || i18nText("sys.audit.chatRestricted"), createdBy: session.userId },
     });
   } else {
     await prisma.chatRestriction.updateMany({
       where: { requestId },
-      data: { active: false, reason: reason || "Restriction lifted after review.", createdBy: session.userId },
+      data: { active: false, reason: reason || i18nText("sys.audit.chatRestrictionLifted"), createdBy: session.userId },
     });
   }
   revalidatePath("/admin/complaints");

@@ -7,7 +7,7 @@ import { InstallPrompt } from "@/components/InstallPrompt";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { SessionGuard } from "@/components/SessionGuard";
 import { I18nProvider } from "@/lib/i18n/I18nProvider";
-import { getLocale } from "@/lib/i18n/server";
+import { getLocale, getT } from "@/lib/i18n/server";
 import { dirOf } from "@/lib/i18n/config";
 import { getMessages } from "@/lib/i18n/translate";
 
@@ -29,12 +29,14 @@ const arabic = Noto_Sans_Arabic({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  title: "Fixili — Votre maison entre de bonnes mains",
-  description:
-    "Trouvez un technicien vérifié près de chez vous en Tunisie.",
-  manifest: "/manifest.json",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getT();
+  return {
+    title: t("comp.meta.title"),
+    description: t("comp.meta.description"),
+    manifest: "/manifest.json",
+  };
+}
 
 export const viewport: Viewport = {
   width: "device-width",

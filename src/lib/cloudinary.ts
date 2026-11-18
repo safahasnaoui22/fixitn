@@ -1,4 +1,5 @@
 import { v2 as cloudinary } from "cloudinary";
+import { getT } from "./i18n/server";
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME!,
@@ -24,10 +25,7 @@ export async function uploadFile(
     !process.env.CLOUDINARY_API_KEY ||
     !process.env.CLOUDINARY_API_SECRET
   ) {
-    throw new Error(
-      "Cloudinary environment variables are not set. " +
-      "Add CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET to .env"
-    );
+    throw new Error((await getT())("sys.err.cloudinaryEnv"));
   }
 
   const buffer = Buffer.from(await file.arrayBuffer());
@@ -60,7 +58,7 @@ export async function uploadFile(
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     console.error(`[Cloudinary] Upload failed for folder=${folder}:`, message);
-    throw new Error(`Cloudinary upload failed: ${message}`);
+    throw new Error((await getT())("sys.err.uploadFailed", { message }));
   }
 }
 

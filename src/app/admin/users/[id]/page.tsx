@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/Button";
 import { formatDate, formatRelativeTime } from "@/lib/utils";
 import { deleteUserAction, resetFaceAction } from "../../actions";
 import type { JobStatus } from "@/lib/constants";
+import { getT, getLocale } from "@/lib/i18n/server";
 
 export default async function AdminUserDetailPage({
   params,
@@ -31,6 +32,8 @@ export default async function AdminUserDetailPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ success?: string }>;
 }) {
+  const t = await getT();
+  const locale = await getLocale();
   const session = await requirePermission("users");
   const isAdmin = session.role === "ADMIN";
   const { id } = await params;
@@ -59,11 +62,11 @@ export default async function AdminUserDetailPage({
           href="/admin/users"
           className="flex h-9 w-9 items-center justify-center rounded-full bg-surface border border-line"
         >
-          <ArrowLeft size={18} />
+          <ArrowLeft size={18} className="rtl:rotate-180" />
         </Link>
         <div>
           <h1 className="font-heading text-2xl font-bold text-ink">
-            User Detail
+            {t("admin.userDetail.title")}
           </h1>
           <p className="text-xs text-muted font-mono">{id.slice(0, 20)}...</p>
           <ModifiedBy change={lastChange} />
@@ -76,8 +79,8 @@ export default async function AdminUserDetailPage({
           <CheckCircle2 size={16} className="text-success shrink-0" />
           <p className="text-sm font-medium text-success">
             {success === "face-reset"
-              ? "Face ID and all known devices have been cleared. The user must re-verify on next login."
-              : "Action completed successfully."}
+              ? t("admin.userDetail.faceReset")
+              : t("admin.userDetail.actionDone")}
           </p>
         </div>
       )}
@@ -95,7 +98,7 @@ export default async function AdminUserDetailPage({
                 ROLE_STYLE[user.role] ?? "bg-surface-alt text-muted"
               }`}
             >
-              {user.role}
+              {t(`role.${user.role}`)}
             </span>
           </div>
           {user.role === "TECHNICIAN" && (
@@ -103,7 +106,7 @@ export default async function AdminUserDetailPage({
               href={`/admin/technicians`}
               className="shrink-0 text-xs font-semibold text-brand-orange hover:underline"
             >
-              View technician profile →
+              {t("admin.userDetail.viewTech")} <span className="inline-block rtl:rotate-180">→</span>
             </Link>
           )}
         </div>
@@ -111,27 +114,29 @@ export default async function AdminUserDetailPage({
         <div className="grid grid-cols-2 gap-3">
           <InfoRow
             icon={Phone}
-            label="Phone"
+            label={t("admin.userDetail.phone")}
             value={user.phone}
+            ltr
           />
           {user.email && (
             <InfoRow
               icon={Phone}
-              label="Email"
+              label={t("admin.userDetail.email")}
               value={user.email}
+              ltr
             />
           )}
           {user.city && (
             <InfoRow
               icon={MapPin}
-              label="City"
+              label={t("admin.userDetail.city")}
               value={user.city}
             />
           )}
           <InfoRow
             icon={Calendar}
-            label="Joined"
-            value={formatDate(user.createdAt)}
+            label={t("admin.userDetail.joined")}
+            value={formatDate(user.createdAt, locale)}
           />
         </div>
       </div>
@@ -141,13 +146,13 @@ export default async function AdminUserDetailPage({
         <div>
           <div className="flex items-center justify-between mb-3">
             <p className="font-heading text-base font-semibold text-ink">
-              Recent Requests
+              {t("admin.userDetail.recentRequests")}
             </p>
             <Link
               href={`/admin/requests`}
               className="text-xs font-semibold text-brand-orange hover:underline"
             >
-              View all →
+              {t("admin.userDetail.viewAll")} <span className="inline-block rtl:rotate-180">→</span>
             </Link>
           </div>
           <div className="rounded-2xl border border-line bg-surface divide-y divide-line overflow-hidden">
@@ -162,7 +167,7 @@ export default async function AdminUserDetailPage({
                     {req.categoryName}
                   </p>
                   <p className="text-xs text-muted">
-                    {formatDate(req.createdAt)}
+                    {formatDate(req.createdAt, locale)}
                   </p>
                 </div>
                 <StatusBadge status={req.status as JobStatus} />
@@ -175,7 +180,7 @@ export default async function AdminUserDetailPage({
       {user.recentRequests.length === 0 && (
         <div className="flex flex-col items-center gap-2 rounded-2xl border border-line bg-surface py-8 text-center">
           <ClipboardList size={24} className="text-muted" />
-          <p className="text-sm text-muted">No requests yet</p>
+          <p className="text-sm text-muted">{t("admin.userDetail.noRequests")}</p>
         </div>
       )}
 
@@ -187,7 +192,7 @@ export default async function AdminUserDetailPage({
             className={faceRegistered ? "text-success" : "text-muted"}
           />
           <p className="font-heading text-base font-semibold text-ink">
-            Face ID &amp; Devices
+            {t("admin.userDetail.faceTitle")}
           </p>
         </div>
 
@@ -197,14 +202,14 @@ export default async function AdminUserDetailPage({
             <>
               <ShieldCheck size={15} className="text-success shrink-0" />
               <p className="text-sm font-medium text-success">
-                Face ID registered — account is protected
+                {t("admin.userDetail.faceOk")}
               </p>
             </>
           ) : (
             <>
               <AlertTriangle size={15} className="text-amber-500 shrink-0" />
               <p className="text-sm font-medium text-amber-600">
-                Face ID not registered — user will be prompted on next login
+                {t("admin.userDetail.faceNone")}
               </p>
             </>
           )}
@@ -214,7 +219,7 @@ export default async function AdminUserDetailPage({
         {devices.length > 0 && (
           <div className="mb-4">
             <p className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">
-              Known devices ({devices.length})
+              {t("admin.userDetail.knownDevices", { count: devices.length })}
             </p>
             <div className="flex flex-col gap-2">
               {devices.map((device) => (
@@ -225,11 +230,13 @@ export default async function AdminUserDetailPage({
                   <p className="text-xs font-medium text-ink truncate">
                     {device.userAgent
                       ? device.userAgent.slice(0, 60) + (device.userAgent.length > 60 ? "…" : "")
-                      : "Unknown device"}
+                      : t("admin.userDetail.unknownDevice")}
                   </p>
                   <p className="text-[10px] text-muted mt-0.5">
-                    Last seen {formatRelativeTime(device.lastSeenAt)} ·
-                    Added {formatDate(device.createdAt)}
+                    {t("admin.userDetail.deviceSeen", {
+                      seen: formatRelativeTime(device.lastSeenAt, t, locale),
+                      added: formatDate(device.createdAt, locale),
+                    })}
                   </p>
                 </div>
               ))}
@@ -242,16 +249,13 @@ export default async function AdminUserDetailPage({
           <div className="flex flex-col gap-3">
             <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5">
               <p className="text-xs text-amber-700 leading-relaxed">
-                Resetting Face ID clears the stored face descriptor and all
-                known devices. The user will be required to re-register their
-                face on next login. Only do this if the user has genuinely
-                lost access to their account.
+                {t("admin.userDetail.resetWarn")}
               </p>
             </div>
             <form action={resetFaceAction.bind(null, id)}>
               <Button type="submit" variant="danger" size="sm">
                 <AlertTriangle size={15} />
-                Reset Face ID &amp; All Devices
+                {t("admin.userDetail.resetBtn")}
               </Button>
             </form>
           </div>
@@ -259,7 +263,7 @@ export default async function AdminUserDetailPage({
 
         {devices.length === 0 && !faceRegistered && (
           <p className="text-xs text-muted">
-            No known devices registered for this account.
+            {t("admin.userDetail.noDevices")}
           </p>
         )}
       </div>
@@ -268,17 +272,15 @@ export default async function AdminUserDetailPage({
       {isAdmin && (
       <div className="rounded-2xl border border-danger-light bg-danger-light/30 p-5">
         <p className="font-heading text-sm font-semibold text-danger mb-1">
-          Danger Zone
+          {t("admin.userDetail.danger")}
         </p>
         <p className="text-xs text-danger/70 mb-4 leading-relaxed">
-          Deleting this user is permanent and cannot be undone. All their
-          data — requests, messages, reviews, notifications — will be removed
-          from the platform.
+          {t("admin.userDetail.dangerText")}
         </p>
         <form action={deleteUserAction.bind(null, id)}>
           <Button type="submit" variant="danger" size="sm">
             <Trash2 size={15} />
-            Delete User Permanently
+            {t("admin.userDetail.deleteBtn")}
           </Button>
         </form>
       </div>
@@ -291,10 +293,12 @@ function InfoRow({
   icon: Icon,
   label,
   value,
+  ltr,
 }: {
   icon: typeof Phone;
   label: string;
   value: string;
+  ltr?: boolean;
 }) {
   return (
     <div className="rounded-xl bg-surface-alt px-3 py-2.5">
@@ -302,7 +306,7 @@ function InfoRow({
         <Icon size={11} className="text-muted" />
         <p className="text-[10px] text-muted">{label}</p>
       </div>
-      <p className="text-sm font-medium text-ink break-all">{value}</p>
+      <p className="text-sm font-medium text-ink break-all text-start" dir={ltr ? "ltr" : undefined}>{value}</p>
     </div>
   );
 }

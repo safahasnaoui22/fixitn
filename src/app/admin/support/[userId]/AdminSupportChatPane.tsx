@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Send } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { formatTime } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n/I18nProvider";
 import { sendAdminSupportMessageAction } from "./actions";
 import type { SupportMessage } from "@/lib/db/supportChat";
 
@@ -19,6 +20,7 @@ export function AdminSupportChatPane({
   otherUserName: string;
   initialMessages: SupportMessage[];
 }) {
+  const { t, locale } = useI18n();
   const router = useRouter();
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -38,7 +40,7 @@ export function AdminSupportChatPane({
       <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3 no-scrollbar">
         {initialMessages.length === 0 && (
           <p className="text-center text-sm text-muted py-8">
-            Aucun message — commencez la conversation.
+            {t("adminSup.chat.empty")}
           </p>
         )}
         {initialMessages.map(msg => {
@@ -54,13 +56,13 @@ export function AdminSupportChatPane({
                 )}
                 <div className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
                   isMe
-                    ? "bg-brand-navy text-white rounded-br-sm"
-                    : "bg-surface-alt text-ink rounded-bl-sm"
+                    ? "bg-brand-navy text-white rounded-ee-sm"
+                    : "bg-surface-alt text-ink rounded-es-sm"
                 }`}>
                   {msg.body}
                 </div>
                 <span className="text-[10px] text-muted px-1">
-                  {formatTime(msg.createdAt)}
+                  {formatTime(msg.createdAt, locale)}
                 </span>
               </div>
             </div>
@@ -77,14 +79,14 @@ export function AdminSupportChatPane({
           name="body"
           type="text"
           required
-          placeholder={`Répondre à ${otherUserName}…`}
+          placeholder={t("adminSup.chat.replyTo", { name: otherUserName })}
           className="flex-1 rounded-full border border-line bg-surface-alt px-4 py-2.5 text-sm outline-none focus:border-brand-navy"
         />
         <button
           type="submit"
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-navy text-white"
         >
-          <Send size={16} />
+          <Send size={16} className="rtl:-scale-x-100" />
         </button>
       </form>
     </div>

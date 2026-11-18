@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { createServiceRequest } from "@/lib/db/requests";
+import { getT } from "@/lib/i18n/server";
 
 function fail(technicianId: string, message: string): never {
   redirect(`/technician/${technicianId}/request?error=${encodeURIComponent(message)}`);
@@ -10,6 +11,7 @@ function fail(technicianId: string, message: string): never {
 
 export async function requestServiceAction(formData: FormData): Promise<void> {
   const session = await requireUser();
+  const t = await getT();
 
   const technicianId = String(formData.get("technicianId") ?? "");
   const categoryId = String(formData.get("categoryId") ?? "");
@@ -21,7 +23,7 @@ export async function requestServiceAction(formData: FormData): Promise<void> {
   const longitude = formData.get("longitude") ? Number(formData.get("longitude")) : null;
 
   if (!technicianId || !categoryId || !fullName || !phone || !address || !description) {
-    fail(technicianId || "unknown", "Please fill in all the required fields.");
+    fail(technicianId || "unknown", t("client.request.fillAll"));
   }
 
   // Photos are stored as base64 data-URLs directly in SQLite — no cloud

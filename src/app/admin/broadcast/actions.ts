@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth";
 import { logAudit } from "@/lib/db/audit";
 import { prisma } from "@/lib/db/client";
+import { getT } from "@/lib/i18n/server";
+import { i18nText } from "@/lib/i18n/translate";
 import { createNotification } from "@/lib/db/notifications";
 
 const AUDIENCES = ["CLIENTS", "TECHNICIANS", "SENIORS", "EVERYONE"] as const;
@@ -12,11 +14,12 @@ export async function sendBroadcastAction(
   formData: FormData
 ): Promise<{ ok: boolean; sent?: number; error?: string }> {
   const actor = await requireRole("ADMIN");
+  const t = await getT();
   const audience = String(formData.get("audience") ?? "") as (typeof AUDIENCES)[number];
   const title = String(formData.get("title") ?? "").trim().slice(0, 80);
   const body = String(formData.get("body") ?? "").trim().slice(0, 300);
-  if (!AUDIENCES.includes(audience)) return { ok: false, error: "Choose who receives it." };
-  if (!title || !body) return { ok: false, error: "Title and message are required." };
+  if (!AUDIENCES.includes(audience)) return { ok: false, error: t("adminOps.broadcast.errAudience") };
+  if (!title || !body) return { ok: false, error: t("adminOps.broadcast.errRequired") };
 
   const where =
     audience === "CLIENTS"
@@ -46,7 +49,7 @@ export async function sendBroadcastAction(
     action: "broadcast.send",
     entityType: "user",
     entityId: "broadcast",
-    summary: `Broadcast to ${audience} (${users.length}): ${title}`,
+    summary: i18nText("adminOps.broadcast.audit.send", { audience: t(`adminOps.broadcast.aud.${audience}`), n: users.length, title }),
   });
   revalidatePath("/admin/broadcast");
   return { ok: true, sent: users.length };

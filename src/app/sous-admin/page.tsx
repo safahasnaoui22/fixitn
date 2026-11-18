@@ -16,6 +16,7 @@ import {
 } from "@/lib/db/supportChat";
 import { Avatar } from "@/components/ui/Avatar";
 import { formatRelativeTime } from "@/lib/utils";
+import { getT, getLocale } from "@/lib/i18n/server";
 
 async function getDashboardStats(userId: string) {
   const [pending, active, declined, archived, unread] = await Promise.all([
@@ -67,6 +68,8 @@ async function getRecentPending() {
 }
 
 export default async function SousAdminDashboardPage() {
+  const t = await getT();
+  const locale = await getLocale();
   const session = await getSession();
 
   if (!session) {
@@ -93,10 +96,10 @@ export default async function SousAdminDashboardPage() {
       {/* Header */}
       <div>
         <h1 className="font-heading text-2xl font-bold text-ink">
-          Dashboard
+          {t("sous.dash.title")}
         </h1>
         <p className="mt-0.5 text-sm text-muted">
-          Welcome back, {session.fullName}
+          {t("sous.dash.welcome", { name: session.fullName })}
         </p>
       </div>
 
@@ -104,7 +107,7 @@ export default async function SousAdminDashboardPage() {
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard
           icon={Clock}
-          label="Pending Approval"
+          label={t("sous.dash.pendingApproval")}
           value={String(stats.pending)}
           color="bg-amber-50 text-amber-600"
           urgent={stats.pending > 0}
@@ -112,21 +115,21 @@ export default async function SousAdminDashboardPage() {
 
         <StatCard
           icon={CheckCircle2}
-          label="Active Technicians"
+          label={t("sous.dash.activeTechs")}
           value={String(stats.active)}
           color="bg-success-light text-success"
         />
 
         <StatCard
           icon={XCircle}
-          label="Declined / Archived"
+          label={t("sous.dash.declinedArchived")}
           value={String(stats.declined + stats.archived)}
           color="bg-danger-light text-danger"
         />
 
         <StatCard
           icon={MessageCircle}
-          label="Unread Messages"
+          label={t("sous.dash.unreadMessages")}
           value={String(stats.unread)}
           color="bg-blue-50 text-blue-600"
           urgent={stats.unread > 0}
@@ -139,7 +142,7 @@ export default async function SousAdminDashboardPage() {
         <section>
           <div className="mb-3 flex items-center justify-between">
             <h2 className="font-heading text-base font-semibold text-ink">
-              Pending Approval
+              {t("sous.dash.pendingApproval")}
             </h2>
 
             <Link
@@ -147,7 +150,7 @@ export default async function SousAdminDashboardPage() {
               prefetch={false}
               className="text-sm font-medium text-brand-orange hover:underline"
             >
-              View all →
+              {t("sous.dash.viewAll")} <span aria-hidden className="inline-block rtl:rotate-180">→</span>
             </Link>
           </div>
 
@@ -156,7 +159,7 @@ export default async function SousAdminDashboardPage() {
               <div className="flex flex-col items-center gap-2 py-10 text-center">
                 <CheckCircle2 size={28} className="text-success" />
                 <p className="text-sm text-muted">
-                  No pending technicians — you&apos;re all caught up!
+                  {t("sous.dash.noPending")}
                 </p>
               </div>
             ) : (
@@ -188,13 +191,15 @@ export default async function SousAdminDashboardPage() {
 
                     <p className="text-[10px] text-muted">
                       {formatRelativeTime(
-                        tech.user.createdAt.toISOString()
+                        tech.user.createdAt.toISOString(),
+                        t,
+                        locale
                       )}
                     </p>
                   </div>
 
                   <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700">
-                    Pending
+                    {t("sous.dash.pendingBadge")}
                   </span>
                 </Link>
               ))
@@ -206,7 +211,7 @@ export default async function SousAdminDashboardPage() {
         <section>
           <div className="mb-3 flex items-center justify-between">
             <h2 className="font-heading text-base font-semibold text-ink">
-              Support Messages
+              {t("sous.dash.supportMessages")}
             </h2>
 
             <Link
@@ -214,7 +219,7 @@ export default async function SousAdminDashboardPage() {
               prefetch={false}
               className="text-sm font-medium text-brand-orange hover:underline"
             >
-              View all →
+              {t("sous.dash.viewAll")} <span aria-hidden className="inline-block rtl:rotate-180">→</span>
             </Link>
           </div>
 
@@ -223,7 +228,7 @@ export default async function SousAdminDashboardPage() {
               <div className="flex flex-col items-center gap-2 py-10 text-center">
                 <MessageCircle size={28} className="text-muted" />
                 <p className="text-sm text-muted">
-                  No support messages yet
+                  {t("sous.dash.noSupport")}
                 </p>
               </div>
             ) : (
@@ -242,7 +247,7 @@ export default async function SousAdminDashboardPage() {
                     />
 
                     {conversation.unreadCount > 0 && (
-                      <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-orange px-1 text-[9px] font-bold text-white">
+                      <span className="absolute -end-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-orange px-1 text-[9px] font-bold text-white">
                         {conversation.unreadCount}
                       </span>
                     )}
@@ -256,9 +261,9 @@ export default async function SousAdminDashboardPage() {
 
                       <span className="shrink-0 rounded-full border border-line px-1.5 py-0.5 text-[10px] text-muted">
                         {conversation.role === "TECHNICIAN"
-                          ? "Tech"
+                          ? t("sous.dash.roleTech")
                           : conversation.role === "CLIENT"
-                            ? "Client"
+                            ? t("role.CLIENT")
                             : conversation.role}
                       </span>
                     </div>
@@ -269,7 +274,7 @@ export default async function SousAdminDashboardPage() {
                   </div>
 
                   <span className="shrink-0 text-[10px] text-muted">
-                    {formatRelativeTime(conversation.lastMessageAt)}
+                    {formatRelativeTime(conversation.lastMessageAt, t, locale)}
                   </span>
                 </Link>
               ))

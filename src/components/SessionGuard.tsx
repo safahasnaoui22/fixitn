@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useT } from "@/lib/i18n/I18nProvider";
 
 const CHECK_EVERY_MS = 15_000;
 
@@ -10,6 +11,7 @@ const CHECK_EVERY_MS = 15_000;
  * another device. It does nothing for visitors who are not logged in.
  */
 export function SessionGuard() {
+  const t = useT();
   useEffect(() => {
     let stopped = false;
 
@@ -23,9 +25,7 @@ export function SessionGuard() {
           stopped = true;
           window.location.href =
             "/login?error=" +
-            encodeURIComponent(
-              "Your session was ended because you logged in from another device."
-            );
+            encodeURIComponent(t("comp.session.ended"));
         }
       } catch {
         // offline or server restarting: try again next time
@@ -46,7 +46,7 @@ export function SessionGuard() {
       document.removeEventListener("visibilitychange", onVisible);
       window.removeEventListener("focus", check);
     };
-  }, []);
+  }, [t]);
 
   return null;
 }

@@ -5,6 +5,7 @@
 // ADMIN_ONLY functions can never be granted.
 // ─────────────────────────────────────────────────────────────────────
 
+/** label/hint are legacy English defaults: display with t(`adminOps.team.perm.${key}.label|hint`). */
 export const PERMISSIONS = [
   { key: "technicians", label: "Technicians", hint: "Approve, decline, archive, verify, change plan" },
   { key: "support", label: "Support chat", hint: "Answer users in the support inbox" },

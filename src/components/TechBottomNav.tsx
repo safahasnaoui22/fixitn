@@ -11,15 +11,17 @@ import {
 import { useState } from "react";
 import { useTheme } from "./ThemeProvider";
 import { cn } from "@/lib/utils";
+import { useT } from "@/lib/i18n/I18nProvider";
 
 const TABS = [
-  { href: "/t/requests",  icon: ClipboardList,   label: "Missions" },
-  { href: "/t/earnings",  icon: Wallet,          label: "Gains" },
-  { href: "/t/messages",  icon: MessageCircle,   label: "Chat" },
-  { href: "/t/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+  { href: "/t/requests",  icon: ClipboardList,   label: "tech.nav.missions" },
+  { href: "/t/earnings",  icon: Wallet,          label: "tech.nav.earnings" },
+  { href: "/t/messages",  icon: MessageCircle,   label: "tech.nav.chat" },
+  { href: "/t/dashboard", icon: LayoutDashboard, label: "tech.nav.dashboard" },
 ];
 
 export function TechBottomNav() {
+  const t = useT();
   const pathname = usePathname();
   const router   = useRouter();
   const { theme, toggle } = useTheme();
@@ -44,10 +46,11 @@ export function TechBottomNav() {
         <div className="fixed bottom-0 inset-x-0 z-50 rounded-t-3xl border-t border-line bg-surface pb-safe shadow-2xl">
           <div className="flex items-center justify-between px-5 py-4 border-b border-line">
             <p className="font-heading text-base font-semibold text-ink">
-              Mon compte
+              {t("tech.nav.myAccount")}
             </p>
             <button
               onClick={() => setShowProfile(false)}
+              aria-label={t("common.close")}
               className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-alt"
             >
               <X size={16} className="text-muted" />
@@ -65,7 +68,7 @@ export function TechBottomNav() {
                   : <Moon size={18} className="text-muted" />
                 }
                 <span className="text-sm font-medium text-ink">
-                  {theme === "dark" ? "Mode clair" : "Mode sombre"}
+                  {theme === "dark" ? t("tech.nav.lightMode") : t("tech.nav.darkMode")}
                 </span>
               </div>
               <div className={cn(
@@ -73,8 +76,8 @@ export function TechBottomNav() {
                 theme === "dark" ? "bg-brand-orange" : "bg-line"
               )}>
                 <div className={cn(
-                  "absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-transform",
-                  theme === "dark" ? "translate-x-6" : "translate-x-1"
+                  "absolute start-0 top-1 h-4 w-4 rounded-full bg-white shadow transition-transform",
+                  theme === "dark" ? "translate-x-6 rtl:-translate-x-6" : "translate-x-1 rtl:-translate-x-1"
                 )} />
               </div>
             </button>
@@ -85,7 +88,7 @@ export function TechBottomNav() {
               className="flex items-center gap-3 rounded-2xl border border-line bg-surface-alt px-4 py-3.5"
             >
               <User size={18} className="text-muted" />
-              <span className="text-sm font-medium text-ink">Mon profil</span>
+              <span className="text-sm font-medium text-ink">{t("tech.nav.myProfile")}</span>
             </Link>
 
             <Link
@@ -94,7 +97,7 @@ export function TechBottomNav() {
               className="flex items-center gap-3 rounded-2xl border border-line bg-surface-alt px-4 py-3.5"
             >
               <span className="text-sm font-medium text-ink">
-                Mon portfolio
+                {t("tech.nav.myPortfolio")}
               </span>
             </Link>
 <Link
@@ -105,10 +108,10 @@ export function TechBottomNav() {
   <HeadphonesIcon size={18} className="text-brand-orange" />
   <div>
     <p className="text-sm font-semibold text-brand-orange">
-      Contacter le support
+      {t("tech.nav.contactSupport")}
     </p>
     <p className="text-[10px] text-muted">
-      Signalez un problème ou posez une question
+      {t("tech.nav.supportHint")}
     </p>
   </div>
 </Link>
@@ -118,7 +121,7 @@ export function TechBottomNav() {
             >
               <LogOut size={18} className="text-danger" />
               <span className="text-sm font-semibold text-danger">
-                Se déconnecter
+                {t("tech.nav.logout")}
               </span>
             </button>
           </div>
@@ -148,7 +151,7 @@ export function TechBottomNav() {
                   "text-[10px] font-medium",
                   active ? "text-brand-orange" : "text-muted"
                 )}>
-                  {label}
+                  {t(label)}
                 </span>
               </Link>
             );
@@ -170,7 +173,7 @@ export function TechBottomNav() {
               "text-[10px] font-medium",
               showProfile ? "text-brand-orange" : "text-muted"
             )}>
-              Profil
+              {t("tech.nav.profileTab")}
             </span>
           </button>
         </div>

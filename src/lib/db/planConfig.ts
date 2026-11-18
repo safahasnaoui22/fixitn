@@ -1,3 +1,4 @@
+import { i18nText } from "../i18n/translate";
 import { prisma } from "./client";
 
 export interface PlanConfigData {
@@ -96,8 +97,8 @@ export async function checkSeniorEligibility(technicianId: string): Promise<void
   await createNotification({
     userId: tech.userId,
     type: "STATUS_UPDATE",
-    title: "🎉 You are now a Senior Pro!",
-    body: "Congratulations — you've earned the Senior Pro badge. Clients will see it on your profile.",
+    title: i18nText("sys.notif.seniorEarned.title"),
+    body: i18nText("sys.notif.seniorEarned.body"),
     requestId: null,
   });
 }
@@ -133,11 +134,11 @@ export async function manuallySetSenior(
     userId: tech.userId,
     type: "STATUS_UPDATE",
     title: isSenior
-      ? "🎉 You've been promoted to Senior Pro!"
-      : "Your plan has been updated to Beginner",
+      ? i18nText("sys.notif.seniorGranted.title")
+      : i18nText("sys.notif.planBeginner.title"),
     body: isSenior
-      ? "An admin has granted you Senior Pro status."
-      : "Your account plan has been adjusted by an admin.",
+      ? i18nText("sys.notif.seniorGranted.body")
+      : i18nText("sys.notif.planBeginner.body"),
     requestId: null,
   });
 }

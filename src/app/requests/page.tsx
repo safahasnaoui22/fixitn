@@ -8,30 +8,33 @@ import { CategoryIcon } from "@/components/CategoryIcon";
 import { ClientBottomNav } from "@/components/ClientBottomNav";
 import { EmptyState } from "@/components/ui/Card";
 import { formatRelativeTime } from "@/lib/utils";
+import { getT, getLocale } from "@/lib/i18n/server";
 
 export default async function RequestsPage() {
   const session = await requireUser();
   if (session.role === "TECHNICIAN") redirect("/t/requests");
 
   const requests = await listRequestsForClient(session.userId);
+  const t = await getT();
+  const locale = await getLocale();
 
   return (
     <>
       <div className="app-content no-scrollbar">
         <div className="border-b border-line px-5 py-4">
           <p className="font-heading text-lg font-semibold text-ink">
-            My Bookings
+            {t("booking.list.title")}
           </p>
           <p className="text-xs text-muted mt-0.5">
-            {requests.length} total
+            {t("booking.list.total", { n: requests.length })}
           </p>
         </div>
 
         {requests.length === 0 ? (
           <EmptyState
             icon={ClipboardList}
-            title="No bookings yet"
-            description="Book a technician to get started."
+            title={t("booking.list.emptyTitle")}
+            description={t("booking.list.emptyDesc")}
           />
         ) : (
           <div className="flex flex-col divide-y divide-line">
@@ -55,7 +58,7 @@ export default async function RequestsPage() {
                     {req.technicianFullName}
                   </p>
                   <p className="text-[11px] text-muted mt-0.5">
-                    {formatRelativeTime(req.createdAt)}
+                    {formatRelativeTime(req.createdAt, t, locale)}
                   </p>
                 </div>
                 <StatusBadge status={req.status} />

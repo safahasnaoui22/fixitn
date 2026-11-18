@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { Camera, RefreshCw, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import { NAVY_TILE, ORANGE } from "@/lib/theme";
 import { FaceCorners } from "@/components/FaceCorners";
+import { useT } from "@/lib/i18n/I18nProvider";
 
 // ── Module-level singleton ─────────────────────────────────────────────
 // Models are heavy (~7 MB). Load them once per page session,
@@ -101,9 +102,10 @@ export function FaceCapture({
   onCapture,
   compareWith,
   threshold = 0.5,
-  captureLabel = "Capture Face",
+  captureLabel,
   autoCapture = false,
 }: FaceCaptureProps) {
+  const t = useT();
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const scanningRef = useRef(false);
@@ -207,11 +209,10 @@ export function FaceCapture({
     } catch {
       if (mountedRef.current) {
         setStatus("error");
-        setErrorMsg(
-          "Camera access denied. Please allow camera permissions and refresh the page."
-        );
+        setErrorMsg(t("auth.faceCapture.cameraDenied"));
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ── Init on mount: camera + models at the same time ────────────────
@@ -229,7 +230,7 @@ export function FaceCapture({
         modelsLoaded = false;
         if (mountedRef.current) {
           setStatus("error");
-          setErrorMsg(err instanceof Error ? err.message : String(err));
+          setErrorMsg(t("auth.faceCapture.modelsError"));
         }
       });
 
@@ -266,7 +267,7 @@ export function FaceCapture({
 
       if (!detection) {
         setStatus("no-face");
-        setErrorMsg("No face detected. Make sure your face is clearly visible and well lit.");
+        setErrorMsg(t("auth.faceCapture.noFaceMsg"));
         startLiveScan();
         return;
       }
@@ -279,8 +280,7 @@ export function FaceCapture({
         if (distance > threshold) {
           setStatus("error");
           setErrorMsg(
-            `Face does not match (score: ${distance.toFixed(3)}). ` +
-              "Try better lighting or contact support."
+            t("auth.faceCapture.mismatch", { score: distance.toFixed(3) })
           );
           startLiveScan();
           return;
@@ -292,7 +292,7 @@ export function FaceCapture({
       onCapture(descriptor);
     } catch {
       setStatus("error");
-      setErrorMsg("Detection failed. Please retry.");
+      setErrorMsg(t("auth.faceCapture.detectFailed"));
       startLiveScan();
     }
   }
@@ -316,10 +316,7 @@ export function FaceCapture({
         .catch(() => {
           if (!mountedRef.current) return;
           setStatus("error");
-          setErrorMsg(
-            "Models still unavailable. Check your internet connection and that " +
-              "the /public/models/ folder contains all the model files."
-          );
+          setErrorMsg(t("auth.faceCapture.modelsUnavailable"));
         });
     }
 
@@ -343,12 +340,12 @@ export function FaceCapture({
         : "faceRingSpin 14s linear infinite";
 
   const STATUS_MSG: Partial<Record<Status, string>> = {
-    "loading-models": "Getting ready…",
-    waiting: faceDetected ? "Face detected — ready to capture" : "Position your face in the circle",
-    scanning: "Analysing your face…",
-    "no-face": "No face detected — try again",
-    success: "Face captured successfully!",
-    error: errorMsg ?? "Something went wrong",
+    "loading-models": t("auth.faceCapture.gettingReady"),
+    waiting: faceDetected ? t("auth.faceCapture.ready") : t("auth.faceCapture.position"),
+    scanning: t("auth.faceCapture.analysing"),
+    "no-face": t("auth.faceCapture.noFaceStatus"),
+    success: t("auth.faceCapture.success"),
+    error: errorMsg ?? t("auth.faceCapture.wrong"),
   };
 
   const bad = status === "error" || status === "no-face";
@@ -387,7 +384,7 @@ export function FaceCapture({
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/55 backdrop-blur-[2px]">
                 <Loader2 size={30} className="animate-spin text-white" />
                 <p className="px-6 text-center text-xs text-white/80">
-                  {cameraReady ? "Almost ready…" : "Starting camera…"}
+                  {cameraReady ? t("auth.faceCapture.almost") : t("auth.faceCapture.startingCam")}
                 </p>
               </div>
             )}
@@ -429,7 +426,7 @@ export function FaceCapture({
             className="flex h-14 flex-1 items-center justify-center gap-2 rounded-2xl border border-white/25 text-base font-semibold text-white active:scale-[0.98]"
           >
             <RefreshCw size={16} />
-            Retry
+            {t("common.retry")}
           </button>
         )}
         {(status === "waiting" || status === "no-face") && (
@@ -441,7 +438,7 @@ export function FaceCapture({
             style={{ backgroundColor: ORANGE }}
           >
             <Camera size={18} />
-            {captureLabel}
+            {captureLabel ?? t("auth.faceCapture.defaultLabel")}
           </button>
         )}
       </div>
@@ -449,9 +446,9 @@ export function FaceCapture({
       {/* Tips */}
       {status === "waiting" && !faceDetected && (
         <ul className="space-y-1 text-center text-xs text-white/50">
-          <li>• Face the camera directly in good light</li>
-          <li>• Remove glasses or hat if needed</li>
-          <li>• Hold your phone at eye level</li>
+          <li>{t("auth.faceCapture.tip1")}</li>
+          <li>{t("auth.faceCapture.tip2")}</li>
+          <li>{t("auth.faceCapture.tip3")}</li>
         </ul>
       )}
     </div>

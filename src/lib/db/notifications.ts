@@ -1,6 +1,8 @@
 import { prisma } from "./client";
 import type { Notification } from "../types";
 import type { NotificationType } from "../constants";
+import { DEFAULT_LOCALE } from "../i18n/config";
+import { getMessages, makeT, renderText } from "../i18n/translate";
 
 function mapNotification(n: {
   id: string; userId: string; type: string; title: string;
@@ -31,9 +33,10 @@ export async function createNotification(input: {
   // Also send a push notification so they get it even with the app closed
   try {
     const { sendPushToUser } = await import("../webpush");
+    const tr = makeT(getMessages(DEFAULT_LOCALE));
     await sendPushToUser(input.userId, {
-      title: input.title,
-      body: input.body ?? undefined,
+      title: renderText(tr, input.title),
+      body: input.body ? renderText(tr, input.body) : undefined,
       url: input.url ?? (input.requestId ? `/requests/${input.requestId}` : "/notifications"),
       tag: input.type,
     });

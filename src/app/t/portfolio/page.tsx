@@ -15,6 +15,7 @@ import { listPortfolioItems } from "@/lib/db/portfolio";
 import { TechBottomNav } from "@/components/TechBottomNav";
 import { Button } from "@/components/ui/Button";
 import { formatRelativeTime } from "@/lib/utils";
+import { getT, getLocale } from "@/lib/i18n/server";
 import {
   uploadPortfolioItemAction,
   deletePortfolioItemAction,
@@ -29,6 +30,8 @@ export default async function PortfolioPage({
   searchParams: Promise<{ error?: string; success?: string }>;
 }) {
   const session = await requireRole("TECHNICIAN");
+  const t = await getT();
+  const locale = await getLocale();
   const { error, success } = await searchParams;
 
   const technician = await getTechnicianByUserId(session.userId);
@@ -49,14 +52,14 @@ export default async function PortfolioPage({
             href="/t/profile"
             className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-alt"
           >
-            <ArrowLeft size={18} />
+            <ArrowLeft size={18} className="rtl:rotate-180" />
           </Link>
           <div>
             <p className="font-heading text-base font-semibold text-ink">
-              My Portfolio
+              {t("tech.portfolio.title")}
             </p>
             <p className="text-xs text-muted">
-              {items.length}/{MAX_ITEMS} items
+              {t("tech.portfolio.count", { n: items.length, max: MAX_ITEMS })}
             </p>
           </div>
         </div>
@@ -67,7 +70,7 @@ export default async function PortfolioPage({
             <div className="flex items-center gap-2 rounded-xl bg-success-light px-4 py-3">
               <CheckCircle2 size={16} className="text-success shrink-0" />
               <p className="text-sm font-medium text-success">
-                Item uploaded successfully!
+                {t("tech.portfolio.uploaded")}
               </p>
             </div>
           )}
@@ -81,15 +84,14 @@ export default async function PortfolioPage({
           {remaining > 0 ? (
             <div className="rounded-2xl border border-line bg-surface p-4">
               <p className="font-heading text-sm font-semibold text-ink mb-3">
-                <Plus size={15} className="inline mr-1" />
-                Add to Portfolio
+                <Plus size={15} className="inline me-1" />
+                {t("tech.portfolio.add")}
               </p>
               <PortfolioUploader remaining={remaining} />
             </div>
           ) : (
             <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-              You&apos;ve reached the {MAX_ITEMS}-item limit. Delete an item
-              to upload a new one.
+              {t("tech.portfolio.limit", { n: MAX_ITEMS })}
             </div>
           )}
 
@@ -99,7 +101,7 @@ export default async function PortfolioPage({
               <div className="flex items-center gap-2 mb-3">
                 <ImageIcon size={15} className="text-muted" />
                 <p className="font-heading text-sm font-semibold text-ink">
-                  Photos ({images.length})
+                  {t("tech.portfolio.photos", { n: images.length })}
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -111,7 +113,7 @@ export default async function PortfolioPage({
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={item.url}
-                      alt={item.caption ?? "Portfolio image"}
+                      alt={item.caption ?? t("tech.portfolio.imageAlt")}
                       className="h-36 w-full object-cover"
                     />
                     {item.caption && (
@@ -121,13 +123,14 @@ export default async function PortfolioPage({
                     )}
                     <div className="flex items-center justify-between px-2 pb-2">
                       <span className="text-[10px] text-muted">
-                        {formatRelativeTime(item.createdAt)}
+                        {formatRelativeTime(item.createdAt, t, locale)}
                       </span>
                       <form
                         action={deletePortfolioItemAction.bind(null, item.id)}
                       >
                         <button
                           type="submit"
+                          aria-label={t("common.delete")}
                           className="flex h-7 w-7 items-center justify-center rounded-lg bg-danger-light text-danger hover:bg-danger hover:text-white transition-colors"
                         >
                           <Trash2 size={13} />
@@ -146,7 +149,7 @@ export default async function PortfolioPage({
               <div className="flex items-center gap-2 mb-3">
                 <Video size={15} className="text-muted" />
                 <p className="font-heading text-sm font-semibold text-ink">
-                  Videos ({videos.length})
+                  {t("tech.portfolio.videos", { n: videos.length })}
                 </p>
               </div>
               <div className="flex flex-col gap-3">
@@ -171,7 +174,7 @@ export default async function PortfolioPage({
                           </p>
                         )}
                         <p className="text-[10px] text-muted mt-0.5">
-                          {formatRelativeTime(item.createdAt)}
+                          {formatRelativeTime(item.createdAt, t, locale)}
                         </p>
                       </div>
                       <form
@@ -179,6 +182,7 @@ export default async function PortfolioPage({
                       >
                         <button
                           type="submit"
+                          aria-label={t("common.delete")}
                           className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-danger-light text-danger hover:bg-danger hover:text-white transition-colors"
                         >
                           <Trash2 size={14} />
@@ -198,11 +202,10 @@ export default async function PortfolioPage({
                 <ImageIcon size={28} className="text-muted" />
               </div>
               <p className="font-heading text-base font-semibold text-ink">
-                No portfolio items yet
+                {t("tech.portfolio.empty")}
               </p>
               <p className="text-sm text-muted max-w-xs">
-                Upload photos and videos of your past work to attract more
-                clients.
+                {t("tech.portfolio.emptyHint")}
               </p>
             </div>
           )}

@@ -11,6 +11,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { SeniorBadge } from "@/components/SeniorBadge";
 import { Button } from "@/components/ui/Button";
 import { formatDate } from "@/lib/utils";
+import { getT, getLocale } from "@/lib/i18n/server";
 import {
   approveTechnicianAction,
   declineTechnicianAction,
@@ -21,11 +22,11 @@ import {
 type AccountStatus = "PENDING" | "ACTIVE" | "DECLINED" | "ARCHIVED";
 
 const STATUS_TABS = [
-  { label: "All", value: "ALL" },
-  { label: "Pending", value: "PENDING" },
-  { label: "Active", value: "ACTIVE" },
-  { label: "Declined", value: "DECLINED" },
-  { label: "Archived", value: "ARCHIVED" },
+  { label: "common.all", value: "ALL" },
+  { label: "accountStatus.PENDING", value: "PENDING" },
+  { label: "accountStatus.ACTIVE", value: "ACTIVE" },
+  { label: "accountStatus.DECLINED", value: "DECLINED" },
+  { label: "accountStatus.ARCHIVED", value: "ARCHIVED" },
 ];
 
 const STATUS_BADGE: Record<AccountStatus, string> = {
@@ -40,6 +41,8 @@ export default async function AdminTechniciansPage({
 }: {
   searchParams: Promise<{ status?: string }>;
 }) {
+  const t = await getT();
+  const locale = await getLocale();
   await requirePermission("technicians");
   const { status = "ALL" } = await searchParams;
   const activeStatus = status as AccountStatus | "ALL";
@@ -64,7 +67,7 @@ export default async function AdminTechniciansPage({
     prisma.plan.findMany({ orderBy: { price: "asc" } }),
     prisma.technician.groupBy({ by: ["accountStatus"], _count: true }),
   ]);
-  const lastChanges = await getLastChanges("technician", technicians.map((t) => t.id));
+  const lastChanges = await getLastChanges("technician", technicians.map((x) => x.id));
 
   const countMap = Object.fromEntries(
     counts.map((c) => [c.accountStatus, c._count])
@@ -76,11 +79,10 @@ export default async function AdminTechniciansPage({
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="font-heading text-2xl font-bold text-ink">
-          Technicians
+          {t("admin.technicians.title")}
         </h1>
         <p className="text-sm text-muted mt-0.5">
-          {totalCount} registered ·{" "}
-          {countMap["PENDING"] ?? 0} pending approval
+          {t("admin.technicians.summary", { total: totalCount, pending: countMap["PENDING"] ?? 0 })}
         </p>
       </div>
 
@@ -102,7 +104,7 @@ export default async function AdminTechniciansPage({
                   : "bg-surface border border-line text-muted hover:text-ink"
               }`}
             >
-              {tab.label}
+              {t(tab.label)}
               {count > 0 && (
                 <span
                   className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
@@ -125,7 +127,7 @@ export default async function AdminTechniciansPage({
       {technicians.length === 0 ? (
         <div className="flex flex-col items-center gap-2 rounded-2xl border border-line bg-surface py-16 text-center">
           <Wrench size={32} className="text-muted" />
-          <p className="text-sm text-muted">No technicians found</p>
+          <p className="text-sm text-muted">{t("admin.technicians.empty")}</p>
         </div>
       ) : (
         <div className="flex flex-col gap-4">
@@ -168,7 +170,7 @@ export default async function AdminTechniciansPage({
                     </div>
                     <p className="text-sm text-muted">{tech.title}</p>
                     <p className="text-xs text-muted">
-                      {tech.user.phone}
+                      <span dir="ltr">{tech.user.phone}</span>
                       {tech.user.city && ` · ${tech.user.city}`}
                     </p>
                     <div className="flex items-center gap-3 mt-1 text-xs text-muted">
@@ -176,9 +178,9 @@ export default async function AdminTechniciansPage({
                         <span>⭐ {ratingAvg.toFixed(1)} ({ratingCount})</span>
                       )}
                       <span>
-                        {tech._count.requestsReceived} jobs
+                        {t("admin.users.jobs", { count: tech._count.requestsReceived })}
                       </span>
-                      <span>{formatDate(tech.user.createdAt.toISOString())}</span>
+                      <span>{formatDate(tech.user.createdAt.toISOString(), locale)}</span>
                     </div>
                     <ModifiedBy change={lastChanges.get(tech.id)} />
                   </div>
@@ -189,7 +191,7 @@ export default async function AdminTechniciansPage({
                       STATUS_BADGE[accountStatus]
                     }`}
                   >
-                    {accountStatus}
+                    {t(`accountStatus.${accountStatus}`)}
                   </span>
                 </div>
 
@@ -217,12 +219,12 @@ export default async function AdminTechniciansPage({
                       className="flex items-center gap-1 rounded-lg border border-line px-2.5 py-1 text-xs text-ink hover:border-brand-orange transition-colors"
                     >
                       <FileText size={11} />
-                      CIN
+                      {t("admin.technicians.cin")}
                       <ExternalLink size={9} />
                     </a>
                   ) : (
                     <span className="rounded-lg border border-danger-light px-2.5 py-1 text-xs text-danger">
-                      No CIN
+                      {t("admin.technicians.noCin")}
                     </span>
                   )}
                   {tech.diplomeUrl ? (
@@ -233,12 +235,12 @@ export default async function AdminTechniciansPage({
                       className="flex items-center gap-1 rounded-lg border border-line px-2.5 py-1 text-xs text-ink hover:border-brand-orange transition-colors"
                     >
                       <FileText size={11} />
-                      Diploma
+                      {t("admin.technicians.diploma")}
                       <ExternalLink size={9} />
                     </a>
                   ) : (
                     <span className="rounded-lg border border-danger-light px-2.5 py-1 text-xs text-danger">
-                      No Diploma
+                      {t("admin.technicians.noDiploma")}
                     </span>
                   )}
                 </div>
@@ -249,14 +251,14 @@ export default async function AdminTechniciansPage({
                   <form action={updateTechnicianPlanAction.bind(null, tech.id)}>
                     <div className="flex items-center gap-2">
                       <label className="text-xs font-medium text-muted shrink-0">
-                        Plan:
+                        {t("admin.technicians.planLabel")}
                       </label>
                       <select
                         name="planId"
                         defaultValue={tech.plan?.id ?? ""}
                         className="rounded-lg border border-line px-2 py-1.5 text-xs outline-none focus:border-brand-orange bg-surface"
                       >
-                        <option value="">— None —</option>
+                        <option value="">{t("admin.technicians.planNone")}</option>
                         {plans.map((p) => (
                           <option key={p.id} value={p.id}>
                             {p.name}
@@ -267,7 +269,7 @@ export default async function AdminTechniciansPage({
                         type="submit"
                         className="rounded-lg bg-surface-alt px-2 py-1.5 text-[11px] font-semibold text-muted hover:text-ink transition-colors"
                       >
-                        Save
+                        {t("common.save")}
                       </button>
                     </div>
                   </form>
@@ -275,9 +277,9 @@ export default async function AdminTechniciansPage({
                   {/* View detail link */}
                   <Link
                     href={`/admin/technicians/${tech.id}`}
-                    className="text-xs font-semibold text-brand-orange hover:underline ml-auto"
+                    className="text-xs font-semibold text-brand-orange hover:underline ms-auto"
                   >
-                    View →
+                    {t("common.view")} <span className="inline-block rtl:rotate-180">→</span>
                   </Link>
 
                   {/* Action buttons */}
@@ -292,13 +294,13 @@ export default async function AdminTechniciansPage({
                             className="text-danger border-danger-light hover:bg-danger-light"
                           >
                             <XCircle size={14} />
-                            Decline
+                            {t("admin.technicians.decline")}
                           </Button>
                         </form>
                         <form action={approveTechnicianAction.bind(null, tech.id)}>
                           <Button type="submit" size="sm">
                             <CheckCircle2 size={14} />
-                            Approve
+                            {t("common.approve")}
                           </Button>
                         </form>
                       </>
@@ -309,7 +311,7 @@ export default async function AdminTechniciansPage({
                         <form action={archiveTechnicianAction.bind(null, tech.id)}>
                           <Button type="submit" size="sm" variant="outline">
                             <Archive size={14} />
-                            Archive
+                            {t("admin.technicians.archive")}
                           </Button>
                         </form>
                         <form action={declineTechnicianAction.bind(null, tech.id)}>
@@ -320,7 +322,7 @@ export default async function AdminTechniciansPage({
                             className="text-danger border-danger-light hover:bg-danger-light"
                           >
                             <XCircle size={14} />
-                            Decline
+                            {t("admin.technicians.decline")}
                           </Button>
                         </form>
                       </>
@@ -331,7 +333,7 @@ export default async function AdminTechniciansPage({
                       <form action={approveTechnicianAction.bind(null, tech.id)}>
                         <Button type="submit" size="sm" variant="outline">
                           <CheckCircle2 size={14} />
-                          Re-approve
+                          {t("admin.technicians.reapprove")}
                         </Button>
                       </form>
                     )}

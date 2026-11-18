@@ -11,6 +11,8 @@ import { formatDT, formatRelativeTime } from "@/lib/utils";
 import { ReportUserButton } from "@/components/ReportUserButton";
 import { listPortfolioItems } from "@/lib/db/portfolio";
 import { requireUser } from "@/lib/auth";
+import { getT, getLocale } from "@/lib/i18n/server";
+import { tOr } from "@/lib/i18n/translate";
 import { DARK_BG, NAVY_ROW, NAVY_TILE, NAV_BG } from "@/lib/theme";
 
 export default async function TechnicianProfilePage({
@@ -21,6 +23,8 @@ export default async function TechnicianProfilePage({
   searchParams: Promise<{ category?: string }>;
 }) {
   const session = await requireUser();
+  const t = await getT();
+  const locale = await getLocale();
   const { id } = await params;
   const { category: categorySlug } = await searchParams;
   const technician = await getTechnicianById(id);
@@ -43,13 +47,13 @@ export default async function TechnicianProfilePage({
       <div className="flex items-center gap-3 border-b border-white/10 px-5 py-4">
         <Link
           href={effectiveSlug ? `/category/${effectiveSlug}/technicians` : "/"}
-          aria-label="Retour"
+          aria-label={t("common.back")}
           className="flex h-9 w-9 items-center justify-center rounded-full text-white"
           style={{ backgroundColor: NAVY_TILE }}
         >
-          <ArrowLeft size={18} />
+          <ArrowLeft size={18} className="rtl:rotate-180" />
         </Link>
-        <p className="flex-1 font-heading text-base font-semibold text-white">Technician Profile</p>
+        <p className="flex-1 font-heading text-base font-semibold text-white">{t("client.techProfile.title")}</p>
         {session.role === "CLIENT" && technician.userId !== session.userId && (
           <ReportUserButton reportedUserId={technician.userId} reportedName={technician.fullName} />
         )}
@@ -63,7 +67,7 @@ export default async function TechnicianProfilePage({
               <p className="truncate font-heading text-lg font-bold text-white">{technician.fullName}</p>
               {technician.verified && (
                 <span className="rounded-full bg-success/15 px-1.5 py-0.5 text-[10px] font-bold text-emerald-400">
-                  Verified
+                  {t("client.techProfile.verified")}
                 </span>
               )}
             </div>
@@ -79,20 +83,20 @@ export default async function TechnicianProfilePage({
         </div>
 
         <div className="mt-5 grid grid-cols-3 gap-3">
-          <StatBox icon={Briefcase} label="Jobs done" value={String(stats.jobsCompleted)} />
+          <StatBox icon={Briefcase} label={t("client.techProfile.jobsDone")} value={String(stats.jobsCompleted)} />
           <StatBox
             icon={ThumbsUp}
-            label="Satisfaction"
+            label={t("client.techProfile.satisfaction")}
             value={stats.satisfactionPct != null ? `${stats.satisfactionPct}%` : "—"}
           />
-          <StatBox icon={Star} label="Years exp." value={String(technician.yearsExperience)} />
+          <StatBox icon={Star} label={t("client.techProfile.yearsExp")} value={String(technician.yearsExperience)} />
         </div>
 
         {technician.bio && <p className="mt-5 text-[15px] leading-relaxed text-white/60">{technician.bio}</p>}
 
         {categories.length > 0 && (
           <div className="mt-6">
-            <p className="font-heading text-sm font-semibold text-white">Services</p>
+            <p className="font-heading text-sm font-semibold text-white">{t("client.techProfile.services")}</p>
             <div className="mt-2 flex flex-wrap gap-2">
               {categories.map((cat) => (
                 <span
@@ -101,7 +105,7 @@ export default async function TechnicianProfilePage({
                   style={{ backgroundColor: NAVY_ROW }}
                 >
                   <CategoryIcon icon={cat.icon} color={cat.color} size={12} badgeSize={20} variant="dark" />
-                  {cat.name}
+                  {tOr(t, `category.${cat.slug}.name`, cat.name)}
                 </span>
               ))}
             </div>
@@ -110,7 +114,7 @@ export default async function TechnicianProfilePage({
 
         {technician.galleryImages.length > 0 && (
           <div className="mt-6">
-            <p className="font-heading text-sm font-semibold text-white">Work gallery</p>
+            <p className="font-heading text-sm font-semibold text-white">{t("client.techProfile.gallery")}</p>
             <div className="mt-2 grid grid-cols-2 gap-2">
               {technician.galleryImages.map((src, i) => (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -122,7 +126,7 @@ export default async function TechnicianProfilePage({
 
         {portfolio.length > 0 && (
           <div className="mt-6">
-            <p className="font-heading text-sm font-semibold text-white">Portfolio</p>
+            <p className="font-heading text-sm font-semibold text-white">{t("client.techProfile.portfolio")}</p>
             <div className="mt-2 flex flex-col gap-3">
               {portfolio.map((item) => (
                 <div key={item.id} className="overflow-hidden rounded-2xl" style={{ backgroundColor: NAVY_ROW }}>
@@ -142,7 +146,7 @@ export default async function TechnicianProfilePage({
 
         <div className="mt-6">
           <div className="flex items-center justify-between">
-            <p className="font-heading text-sm font-semibold text-white">Reviews ({ratingBreakdown.total})</p>
+            <p className="font-heading text-sm font-semibold text-white">{t("client.techProfile.reviews", { count: ratingBreakdown.total })}</p>
             {ratingBreakdown.avg != null && (
               <div className="flex items-center gap-1">
                 <Star size={14} className="fill-star text-star" />
@@ -157,14 +161,14 @@ export default async function TechnicianProfilePage({
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
                     <p className="truncate text-sm font-semibold text-white">{review.authorFullName}</p>
-                    <span className="shrink-0 text-xs text-white/60">{formatRelativeTime(review.createdAt)}</span>
+                    <span className="shrink-0 text-xs text-white/60">{formatRelativeTime(review.createdAt, t, locale)}</span>
                   </div>
                   <StarRating value={review.rating} size={13} className="mt-0.5" />
                   {review.comment && <p className="mt-1 text-sm text-white/60">{review.comment}</p>}
                 </div>
               </div>
             ))}
-            {reviews.length === 0 && <p className="text-sm text-white/60">No reviews yet.</p>}
+            {reviews.length === 0 && <p className="text-sm text-white/60">{t("client.techProfile.noReviews")}</p>}
           </div>
         </div>
       </div>
@@ -175,12 +179,12 @@ export default async function TechnicianProfilePage({
         style={{ backgroundColor: NAV_BG }}
       >
         <div>
-          <p className="text-xs text-white/60">Starting at</p>
-          <p className="font-heading text-lg font-bold text-white">{formatDT(technician.startingPrice)}</p>
+          <p className="text-xs text-white/60">{t("client.techProfile.startingAt")}</p>
+          <p className="font-heading text-lg font-bold text-white">{formatDT(technician.startingPrice, locale)}</p>
         </div>
         <Link href={requestHref} className="flex-1">
           <Button fullWidth size="lg">
-            Request Service
+            {t("client.techProfile.requestService")}
           </Button>
         </Link>
       </div>

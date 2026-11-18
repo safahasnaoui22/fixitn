@@ -3,9 +3,11 @@
 
 import { useState } from "react";
 import { Navigation, Loader2, AlertCircle } from "lucide-react";
+import { useT } from "@/lib/i18n/I18nProvider";
 import { departAction } from "./actions";
 
 export function DepartButton({ requestId }: { requestId: string }) {
+  const t = useT();
   const [locating, setLocating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -13,7 +15,7 @@ export function DepartButton({ requestId }: { requestId: string }) {
     if (locating) return;
 
     if (!navigator.geolocation) {
-      setError("Location is not supported by this browser.");
+      setError(t("booking.depart.noGeo"));
       return;
     }
 
@@ -29,7 +31,7 @@ export function DepartButton({ requestId }: { requestId: string }) {
         );
         // Normally, departAction redirects after success.
       } catch {
-        setError("Could not start navigation. Please try again.");
+        setError(t("booking.depart.startFail"));
         setLocating(false);
       }
     };
@@ -41,15 +43,15 @@ export function DepartButton({ requestId }: { requestId: string }) {
 
       if (err.code === err.PERMISSION_DENIED) {
         setError(
-          "Location access is blocked by your browser. Please allow location access for this website."
+          t("booking.depart.denied")
         );
       } else if (err.code === err.POSITION_UNAVAILABLE) {
         setError(
-          "Your location is temporarily unavailable. Check that Location Services are enabled and try again."
+          t("booking.depart.unavailable")
         );
       } else {
         setError(
-          "Could not get your location. Please try again in an area with a better GPS or network signal."
+          t("booking.depart.failed")
         );
       }
     };
@@ -92,12 +94,12 @@ export function DepartButton({ requestId }: { requestId: string }) {
         {locating ? (
           <>
             <Loader2 size={20} className="animate-spin" />
-            Getting your location…
+            {t("booking.depart.locating")}
           </>
         ) : (
           <>
             <Navigation size={20} />
-            Départ — Start Heading Over
+            {t("booking.depart.start")}
           </>
         )}
       </button>
@@ -116,7 +118,7 @@ export function DepartButton({ requestId }: { requestId: string }) {
       )}
 
       <p className="text-center text-xs text-muted">
-        Your location is used only to calculate transport fees.
+        {t("booking.depart.privacy")}
       </p>
     </div>
   );
